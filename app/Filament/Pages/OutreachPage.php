@@ -560,7 +560,7 @@ class OutreachPage extends Page
                     { name: 'Negative', filters: ['Negative'] },
                     { name: 'Positive Inbound Calls', filters: ['Positive', 'Inbound', 'Call'] },
                 ],
-                searchableColumns: ['Channel', 'Content', 'Direction', 'Outcome', 'Result', 'Name', 'Phone', 'Email'],
+                searchableColumns: ['Channel', 'Direction', 'Outcome', 'Result', 'Name', 'Phone', 'Email'],
                 searchableValues(row, column) {
                     const key = column.toLowerCase();
                     const value = String(row[key] || '').trim();

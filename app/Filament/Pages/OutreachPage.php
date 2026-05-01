@@ -33,7 +33,9 @@ class OutreachPage extends Page
         $domains = ['gmail.com', 'outlook.com', 'yahoo.com', 'icloud.com', 'proton.me', 'hotmail.com', 'companymail.com'];
         $areaCodes = [201, 212, 213, 214, 312, 415, 416, 438, 514, 604, 647, 702, 718, 778, 905];
         $canadianAreaCodes = [416, 438, 514, 604, 647, 778, 905];
-        $channels = ['Email', 'Call', 'SMS', 'WhatsApp'];
+        $allChannels = ['Email', 'Call', 'SMS', 'WhatsApp'];
+        $emailChannels = ['Email', 'WhatsApp'];
+        $phoneChannels = ['Call', 'SMS', 'WhatsApp'];
         $contents = ['View', '0:19', '0:25', '0:35', '0:48', '1:06', '1:31', '2:14', ''];
         $directions = ['Outbound', 'Inbound'];
         $outcomes = ['No Response', 'Engaged', 'Delivered', 'Failed'];
@@ -48,7 +50,15 @@ class OutreachPage extends Page
             $areaCode = $areaCodes[($index * 5) % count($areaCodes)];
             $prefix = 200 + (($index * 37) % 700);
             $line = 1000 + (($index * 143) % 9000);
-            $channel = $channels[(($index * 5) + intdiv($index, 4)) % count($channels)];
+            $contactMode = $index % 5;
+            $hasPhone = $contactMode !== 1;
+            $hasEmail = $contactMode !== 2;
+            $availableChannels = match (true) {
+                $hasPhone && $hasEmail => $allChannels,
+                $hasEmail => $emailChannels,
+                default => $phoneChannels,
+            };
+            $channel = $availableChannels[(($index * 5) + intdiv($index, 4)) % count($availableChannels)];
             $content = in_array($channel, ['Email', 'SMS', 'WhatsApp'], true)
                 ? 'View'
                 : ($channel === 'Call' ? $contents[1 + ($index % 7)] : (($index % 3) === 0 ? '' : 'View'));
@@ -56,6 +66,8 @@ class OutreachPage extends Page
             $ageDate = $now - $age['seconds'];
             $name = "{$firstName} {$lastName}";
             $result = $results[(($index * 7) + intdiv($index, 4)) % count($results)];
+            $phone = $hasPhone ? sprintf('(%d) %03d-%04d', $areaCode, $prefix, $line) : '';
+            $email = $hasEmail ? sprintf('%s.%s%d@%s', strtolower($firstName), strtolower($lastName), $index + 1, $domains[($index * 2) % count($domains)]) : '';
 
             if ($channel === 'Call' && ($index % 5) === 0) {
                 $result = 'Positive';
@@ -63,10 +75,10 @@ class OutreachPage extends Page
 
             $rows[] = [
                 'name' => $name,
-                'phone' => sprintf('(%d) %03d-%04d', $areaCode, $prefix, $line),
+                'phone' => $phone,
                 'phoneCountry' => in_array($areaCode, $canadianAreaCodes, true) ? 'Canada' : 'United States',
                 'phoneFlag' => in_array($areaCode, $canadianAreaCodes, true) ? '🇨🇦' : '🇺🇸',
-                'email' => sprintf('%s.%s%d@%s', strtolower($firstName), strtolower($lastName), $index + 1, $domains[($index * 2) % count($domains)]),
+                'email' => $email,
                 'channel' => $channel,
                 'content' => $content,
                 'contentPreview' => sprintf(
@@ -391,7 +403,8 @@ class OutreachPage extends Page
                                     </span>
                                 </td>
                                 <td class="px-4 py-4">
-                                    <span class="group relative inline-flex">
+                                    <span x-show="! row.phone" class="text-gray-300"></span>
+                                    <span x-show="row.phone" class="group relative inline-flex">
                                         <span x-text="row.phone"></span>
                                         <span class="pointer-events-none absolute bottom-full left-1/2 z-50 mb-2 -translate-x-1/2 translate-y-1 whitespace-nowrap rounded-lg bg-gray-900 px-3 py-2 text-xs font-medium text-white opacity-0 shadow-sm transition group-hover:translate-y-0 group-hover:opacity-100">
                                             <span class="mr-1" x-text="row.phoneFlag"></span>
@@ -401,7 +414,8 @@ class OutreachPage extends Page
                                     </span>
                                 </td>
                                 <td class="px-4 py-4">
-                                    <span class="group relative inline-flex max-w-full">
+                                    <span x-show="! row.email" class="text-gray-300"></span>
+                                    <span x-show="row.email" class="group relative inline-flex max-w-full">
                                         <span class="truncate" x-text="shortEmail(row.email)"></span>
                                         <span class="pointer-events-none absolute bottom-full left-1/2 z-50 mb-2 -translate-x-1/2 translate-y-1 whitespace-nowrap rounded-lg bg-gray-900 px-3 py-2 text-xs font-medium text-white opacity-0 shadow-sm transition group-hover:translate-y-0 group-hover:opacity-100">
                                             <span x-text="row.email"></span>

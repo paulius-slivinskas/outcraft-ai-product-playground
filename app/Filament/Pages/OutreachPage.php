@@ -147,6 +147,24 @@ class OutreachPage extends Page
             -webkit-font-smoothing: antialiased;
             font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 20;
         }
+        .filter-scroll {
+            scrollbar-color: #d1d5db transparent;
+            scrollbar-width: thin;
+        }
+        .filter-scroll::-webkit-scrollbar {
+            width: 8px;
+        }
+        .filter-scroll::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        .filter-scroll::-webkit-scrollbar-thumb {
+            background-color: #d1d5db;
+            border-radius: 9999px;
+            border: 2px solid #ffffff;
+        }
+        .filter-scroll::-webkit-scrollbar-thumb:hover {
+            background-color: #9ca3af;
+        }
     </style>
 
     <aside
@@ -280,7 +298,7 @@ class OutreachPage extends Page
 
                     <div x-cloak x-show="searchOpen" x-transition class="absolute left-0 right-0 top-0 z-30 rounded-xl border border-gray-200 bg-white p-5 shadow-lg">
                         <input x-model="query" x-ref="overlayInput" x-init="$watch('searchOpen', value => value && $nextTick(() => $refs.overlayInput.focus()))" class="w-full border-0 bg-transparent text-[17px] outline-none ring-0 focus:ring-0" placeholder="Filter anything">
-                        <div class="mt-4 max-h-[215px] space-y-1 overflow-y-auto pr-2">
+                        <div class="filter-scroll mt-4 max-h-[215px] space-y-1 overflow-y-auto pr-2">
                             <template x-for="group in groupedSuggestions()" :key="group.column">
                                 <div>
                                     <div class="px-1 py-2 text-[15px] font-semibold" x-text="group.column"></div>

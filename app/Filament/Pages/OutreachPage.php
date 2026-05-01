@@ -498,29 +498,73 @@ class OutreachPage extends Page
                     </tbody>
                 </table>
             </div>
-            <div class="flex items-center justify-between gap-4 border-t border-gray-200 px-6 py-4 text-[14px] text-gray-600">
-                <div class="flex items-center gap-3">
-                    <span>Rows per page</span>
-                    <select x-model.number="perPage" x-on:change="page = 1" class="h-9 rounded-lg border border-gray-200 bg-white px-3 text-[14px] text-gray-900 outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-200">
-                        <template x-for="option in perPageOptions" :key="option">
-                            <option :value="option" x-text="option"></option>
-                        </template>
-                    </select>
-                </div>
-                <div class="flex items-center gap-4">
-                    <span x-text="paginationSummary()"></span>
-                    <div class="flex items-center gap-1">
-                        <button type="button" x-on:click="page = Math.max(1, page - 1)" :disabled="page === 1" class="flex size-9 items-center justify-center rounded-lg text-gray-700 transition hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-40">
-                            <span class="material-symbols-rounded">chevron_left</span>
-                        </button>
-                        <template x-for="pageNumber in visiblePageNumbers()" :key="pageNumber">
-                            <button type="button" x-on:click="page = pageNumber" class="flex size-9 items-center justify-center rounded-lg text-gray-700 transition hover:bg-gray-50" :class="page === pageNumber ? 'bg-gray-100 font-semibold text-gray-950' : ''" x-text="pageNumber"></button>
-                        </template>
-                        <button type="button" x-on:click="page = Math.min(totalPages(), page + 1)" :disabled="page === totalPages()" class="flex size-9 items-center justify-center rounded-lg text-gray-700 transition hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-40">
-                            <span class="material-symbols-rounded">chevron_right</span>
-                        </button>
+            <div class="border-t border-gray-200 px-6 py-4">
+                <nav class="fi-pagination" role="navigation" aria-label="Pagination">
+                    <span class="fi-pagination-overview" x-text="paginationSummary()"></span>
+
+                    <div class="fi-pagination-records-per-page-select-ctn">
+                        <label class="fi-pagination-records-per-page-select fi-compact">
+                            <x-filament::input.wrapper>
+                                <x-filament::input.select x-model.number="perPage" x-on:change="page = 1">
+                                    <template x-for="option in perPageOptions" :key="option">
+                                        <option :value="option" x-text="option"></option>
+                                    </template>
+                                </x-filament::input.select>
+                            </x-filament::input.wrapper>
+
+                            <span class="fi-sr-only">Rows per page</span>
+                        </label>
+
+                        <label class="fi-pagination-records-per-page-select">
+                            <x-filament::input.wrapper prefix="Rows per page">
+                                <x-filament::input.select x-model.number="perPage" x-on:change="page = 1">
+                                    <template x-for="option in perPageOptions" :key="option">
+                                        <option :value="option" x-text="option"></option>
+                                    </template>
+                                </x-filament::input.select>
+                            </x-filament::input.wrapper>
+                        </label>
                     </div>
-                </div>
+
+                    <ol class="fi-pagination-items">
+                        <li class="fi-pagination-item" x-bind:class="{ 'fi-disabled': page === 1 }">
+                            <button
+                                type="button"
+                                class="fi-pagination-item-btn"
+                                aria-label="Previous"
+                                x-on:click="page = Math.max(1, page - 1)"
+                                x-bind:disabled="page === 1"
+                            >
+                                <x-heroicon-m-chevron-left class="fi-pagination-item-icon" />
+                            </button>
+                        </li>
+
+                        <template x-for="pageNumber in visiblePageNumbers()" :key="pageNumber">
+                            <li class="fi-pagination-item" x-bind:class="{ 'fi-active': page === pageNumber }">
+                                <button
+                                    type="button"
+                                    class="fi-pagination-item-btn"
+                                    x-bind:aria-label="`Go to page ${pageNumber}`"
+                                    x-on:click="page = pageNumber"
+                                >
+                                    <span class="fi-pagination-item-label" x-text="pageNumber"></span>
+                                </button>
+                            </li>
+                        </template>
+
+                        <li class="fi-pagination-item" x-bind:class="{ 'fi-disabled': page === totalPages() }">
+                            <button
+                                type="button"
+                                class="fi-pagination-item-btn"
+                                aria-label="Next"
+                                x-on:click="page = Math.min(totalPages(), page + 1)"
+                                x-bind:disabled="page === totalPages()"
+                            >
+                                <x-heroicon-m-chevron-right class="fi-pagination-item-icon" />
+                            </button>
+                        </li>
+                    </ol>
+                </nav>
             </div>
         </section>
     </main>

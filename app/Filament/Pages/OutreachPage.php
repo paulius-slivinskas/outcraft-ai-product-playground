@@ -574,8 +574,9 @@ class OutreachPage extends Page
 
                     const valueDigits = normalizedValue.replace(/\D/g, '');
                     const termDigits = normalizedTerm.replace(/\D/g, '');
+                    const termLooksLikePhone = /^[\d\s()+.-]+$/.test(normalizedTerm);
 
-                    return termDigits.length > 0 && valueDigits.includes(termDigits);
+                    return termLooksLikePhone && termDigits.length >= 3 && valueDigits.includes(termDigits);
                 },
                 groupedSuggestions() {
                     const term = this.query.toLowerCase().trim();

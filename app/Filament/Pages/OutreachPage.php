@@ -177,14 +177,77 @@ class OutreachPage extends Page
         .filter-scroll::-webkit-scrollbar-thumb:hover {
             background-color: #9ca3af;
         }
-        .outcraft-page .fi-pagination-item.fi-active .fi-pagination-item-btn {
-            background-color: #f3f4f6;
+        .outcraft-page .fi-pagination {
+            display: grid;
+            grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+            align-items: center;
+            gap: 1rem;
+            width: 100%;
+        }
+        .outcraft-page .fi-pagination-overview {
+            justify-self: start;
+            color: #4b5563;
+            font-size: 14px;
+            font-weight: 600;
+            line-height: 1.25rem;
+        }
+        .outcraft-page .fi-pagination-records-per-page-select-ctn {
+            justify-self: center;
+        }
+        .outcraft-page .fi-pagination-records-per-page-select .fi-input-wrp {
+            min-height: 44px;
+            border-color: #d1d5db;
+            border-radius: 12px;
+            background-color: #ffffff;
+            box-shadow: 0 1px 2px rgb(0 0 0 / 0.06);
+        }
+        .outcraft-page .fi-pagination-records-per-page-select .fi-input-wrp-label {
+            color: #6b7280;
+            font-size: 14px;
+        }
+        .outcraft-page .fi-pagination-records-per-page-select .fi-select-input {
+            min-width: 82px;
             color: #111827;
-            box-shadow: inset 0 0 0 1px #e5e7eb;
+            font-size: 14px;
+            font-weight: 600;
+        }
+        .outcraft-page .fi-pagination-items {
+            justify-self: end;
+            display: inline-flex;
+            gap: 0;
+            overflow: hidden;
+            border: 1px solid #d1d5db;
+            border-radius: 12px;
+            background-color: #ffffff;
+            box-shadow: 0 1px 2px rgb(0 0 0 / 0.06);
+        }
+        .outcraft-page .fi-pagination-item {
+            margin: 0;
+        }
+        .outcraft-page .fi-pagination-item:not(:last-child) .fi-pagination-item-btn {
+            border-right: 1px solid #e5e7eb;
+        }
+        .outcraft-page .fi-pagination-item .fi-pagination-item-btn {
+            width: 44px;
+            height: 44px;
+            border-radius: 0;
+            background-color: #ffffff;
+            color: #4b5563;
+            font-size: 14px;
+            font-weight: 600;
+        }
+        .outcraft-page .fi-pagination-item.fi-active .fi-pagination-item-btn {
+            background-color: #ffffff;
+            color: #111827;
+            box-shadow: none;
         }
         .outcraft-page .fi-pagination-item:not(.fi-active):not(.fi-disabled) .fi-pagination-item-btn:hover {
             background-color: #f9fafb;
             color: #111827;
+        }
+        .outcraft-page .fi-pagination-item.fi-disabled .fi-pagination-item-btn {
+            color: #9ca3af;
+            opacity: 1;
         }
         .outcraft-page .fi-pagination-item-btn:focus-visible,
         .outcraft-page .fi-select-input:focus {
@@ -512,7 +575,7 @@ class OutreachPage extends Page
                     </tbody>
                 </table>
             </div>
-            <div class="border-t border-gray-200 px-6 py-4">
+            <div class="border-t border-gray-200 bg-[#fbfbfc] px-6 py-4">
                 <nav class="fi-pagination" role="navigation" aria-label="Pagination">
                     <span class="fi-pagination-overview" x-text="paginationSummary()"></span>
 
@@ -530,7 +593,7 @@ class OutreachPage extends Page
                         </label>
 
                         <label class="fi-pagination-records-per-page-select">
-                            <x-filament::input.wrapper prefix="Rows per page">
+                            <x-filament::input.wrapper prefix="Per page">
                                 <x-filament::input.select x-model.number="perPage" x-on:change="page = 1">
                                     <template x-for="option in perPageOptions" :key="option">
                                         <option :value="option" x-text="option"></option>
@@ -597,7 +660,7 @@ class OutreachPage extends Page
                 filters: [],
                 ageSortDirection: 'asc',
                 page: 1,
-                perPage: 25,
+                perPage: 10,
                 perPageOptions: [10, 25, 50, 100],
                 selectedPresetName: 'Filter presets',
                 nav: [
@@ -778,13 +841,13 @@ class OutreachPage extends Page
                     const total = this.filteredRows().length;
 
                     if (total === 0) {
-                        return '0 results';
+                        return 'Showing 0 results';
                     }
 
                     const start = (this.page - 1) * this.perPage + 1;
                     const end = Math.min(total, this.page * this.perPage);
 
-                    return `${start}-${end} of ${total}`;
+                    return `Showing ${start} to ${end} of ${total} results`;
                 },
                 visiblePageNumbers() {
                     const total = this.totalPages();

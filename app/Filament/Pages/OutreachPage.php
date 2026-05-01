@@ -133,7 +133,7 @@ class OutreachPage extends Page
         return <<<'BLADE'
 <div
     x-data="outreachPage(@js($rows))"
-    class="fixed inset-0 z-50 overflow-hidden bg-white text-[#1f2024]"
+    class="outcraft-page fixed inset-0 z-50 overflow-hidden bg-white text-[#1f2024]"
     style="font-family: 'Inter Variable', Inter, ui-sans-serif, system-ui, sans-serif;"
 >
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -176,6 +176,20 @@ class OutreachPage extends Page
         }
         .filter-scroll::-webkit-scrollbar-thumb:hover {
             background-color: #9ca3af;
+        }
+        .outcraft-page .fi-pagination-item.fi-active .fi-pagination-item-btn {
+            background-color: #f3f4f6;
+            color: #111827;
+            box-shadow: inset 0 0 0 1px #e5e7eb;
+        }
+        .outcraft-page .fi-pagination-item:not(.fi-active):not(.fi-disabled) .fi-pagination-item-btn:hover {
+            background-color: #f9fafb;
+            color: #111827;
+        }
+        .outcraft-page .fi-pagination-item-btn:focus-visible,
+        .outcraft-page .fi-select-input:focus {
+            --tw-ring-color: #d1d5db;
+            border-color: #d1d5db;
         }
     </style>
 

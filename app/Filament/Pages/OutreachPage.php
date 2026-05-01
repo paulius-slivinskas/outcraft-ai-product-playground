@@ -563,8 +563,16 @@ class OutreachPage extends Page
                     const term = this.query.toLowerCase().trim();
                     const groups = [];
                     const delayedColumns = ['Name', 'Phone', 'Email'];
+                    const matchingDelayedColumns = delayedColumns.filter((column) => column.toLowerCase().includes(term));
+                    const columns = term
+                        ? [
+                            ...matchingDelayedColumns,
+                            ...this.searchableColumns.filter((column) => !delayedColumns.includes(column)),
+                            ...delayedColumns.filter((column) => !matchingDelayedColumns.includes(column)),
+                        ]
+                        : this.searchableColumns;
 
-                    this.searchableColumns.forEach((column) => {
+                    columns.forEach((column) => {
                         if (!term && delayedColumns.includes(column)) {
                             return;
                         }

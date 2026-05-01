@@ -177,83 +177,6 @@ class OutreachPage extends Page
         .filter-scroll::-webkit-scrollbar-thumb:hover {
             background-color: #9ca3af;
         }
-        .outcraft-page .fi-pagination {
-            display: grid;
-            grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
-            align-items: center;
-            gap: 1rem;
-            width: 100%;
-        }
-        .outcraft-page .fi-pagination-overview {
-            justify-self: start;
-            color: #4b5563;
-            font-size: 14px;
-            font-weight: 600;
-            line-height: 1.25rem;
-        }
-        .outcraft-page .fi-pagination-records-per-page-select-ctn {
-            justify-self: center;
-        }
-        .outcraft-page .fi-pagination-records-per-page-select .fi-input-wrp {
-            min-height: 44px;
-            border-color: #d1d5db;
-            border-radius: 12px;
-            background-color: #ffffff;
-            box-shadow: 0 1px 2px rgb(0 0 0 / 0.06);
-        }
-        .outcraft-page .fi-pagination-records-per-page-select .fi-input-wrp-label {
-            color: #6b7280;
-            font-size: 14px;
-        }
-        .outcraft-page .fi-pagination-records-per-page-select .fi-select-input {
-            min-width: 82px;
-            color: #111827;
-            font-size: 14px;
-            font-weight: 600;
-        }
-        .outcraft-page .fi-pagination-items {
-            justify-self: end;
-            display: inline-flex;
-            gap: 0;
-            overflow: hidden;
-            border: 1px solid #d1d5db;
-            border-radius: 12px;
-            background-color: #ffffff;
-            box-shadow: 0 1px 2px rgb(0 0 0 / 0.06);
-        }
-        .outcraft-page .fi-pagination-item {
-            margin: 0;
-        }
-        .outcraft-page .fi-pagination-item:not(:last-child) .fi-pagination-item-btn {
-            border-right: 1px solid #e5e7eb;
-        }
-        .outcraft-page .fi-pagination-item .fi-pagination-item-btn {
-            width: 44px;
-            height: 44px;
-            border-radius: 0;
-            background-color: #ffffff;
-            color: #4b5563;
-            font-size: 14px;
-            font-weight: 600;
-        }
-        .outcraft-page .fi-pagination-item.fi-active .fi-pagination-item-btn {
-            background-color: #ffffff;
-            color: #111827;
-            box-shadow: none;
-        }
-        .outcraft-page .fi-pagination-item:not(.fi-active):not(.fi-disabled) .fi-pagination-item-btn:hover {
-            background-color: #f9fafb;
-            color: #111827;
-        }
-        .outcraft-page .fi-pagination-item.fi-disabled .fi-pagination-item-btn {
-            color: #9ca3af;
-            opacity: 1;
-        }
-        .outcraft-page .fi-pagination-item-btn:focus-visible,
-        .outcraft-page .fi-select-input:focus {
-            --tw-ring-color: #d1d5db;
-            border-color: #d1d5db;
-        }
     </style>
 
     <aside
@@ -575,73 +498,29 @@ class OutreachPage extends Page
                     </tbody>
                 </table>
             </div>
-            <div class="border-t border-gray-200 bg-[#fbfbfc] px-6 py-4">
-                <nav class="fi-pagination" role="navigation" aria-label="Pagination">
-                    <span class="fi-pagination-overview" x-text="paginationSummary()"></span>
-
-                    <div class="fi-pagination-records-per-page-select-ctn">
-                        <label class="fi-pagination-records-per-page-select fi-compact">
-                            <x-filament::input.wrapper>
-                                <x-filament::input.select x-model.number="perPage" x-on:change="page = 1">
-                                    <template x-for="option in perPageOptions" :key="option">
-                                        <option :value="option" x-text="option"></option>
-                                    </template>
-                                </x-filament::input.select>
-                            </x-filament::input.wrapper>
-
-                            <span class="fi-sr-only">Rows per page</span>
-                        </label>
-
-                        <label class="fi-pagination-records-per-page-select">
-                            <x-filament::input.wrapper prefix="Per page">
-                                <x-filament::input.select x-model.number="perPage" x-on:change="page = 1">
-                                    <template x-for="option in perPageOptions" :key="option">
-                                        <option :value="option" x-text="option"></option>
-                                    </template>
-                                </x-filament::input.select>
-                            </x-filament::input.wrapper>
-                        </label>
-                    </div>
-
-                    <ol class="fi-pagination-items">
-                        <li class="fi-pagination-item" x-bind:class="{ 'fi-disabled': page === 1 }">
-                            <button
-                                type="button"
-                                class="fi-pagination-item-btn"
-                                aria-label="Previous"
-                                x-on:click="page = Math.max(1, page - 1)"
-                                x-bind:disabled="page === 1"
-                            >
-                                <x-heroicon-m-chevron-left class="fi-pagination-item-icon" />
-                            </button>
-                        </li>
-
-                        <template x-for="pageNumber in visiblePageNumbers()" :key="pageNumber">
-                            <li class="fi-pagination-item" x-bind:class="{ 'fi-active': page === pageNumber }">
-                                <button
-                                    type="button"
-                                    class="fi-pagination-item-btn"
-                                    x-bind:aria-label="`Go to page ${pageNumber}`"
-                                    x-on:click="page = pageNumber"
-                                >
-                                    <span class="fi-pagination-item-label" x-text="pageNumber"></span>
-                                </button>
-                            </li>
+            <div class="flex items-center justify-between gap-4 border-t border-gray-200 px-6 py-4 text-[14px] text-gray-600">
+                <div class="flex items-center gap-3">
+                    <span>Rows per page</span>
+                    <select x-model.number="perPage" x-on:change="page = 1" class="h-9 rounded-lg border border-gray-200 bg-white px-3 text-[14px] text-gray-900 outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-200">
+                        <template x-for="option in perPageOptions" :key="option">
+                            <option :value="option" x-text="option"></option>
                         </template>
-
-                        <li class="fi-pagination-item" x-bind:class="{ 'fi-disabled': page === totalPages() }">
-                            <button
-                                type="button"
-                                class="fi-pagination-item-btn"
-                                aria-label="Next"
-                                x-on:click="page = Math.min(totalPages(), page + 1)"
-                                x-bind:disabled="page === totalPages()"
-                            >
-                                <x-heroicon-m-chevron-right class="fi-pagination-item-icon" />
-                            </button>
-                        </li>
-                    </ol>
-                </nav>
+                    </select>
+                </div>
+                <div class="flex items-center gap-4">
+                    <span x-text="paginationSummary()"></span>
+                    <div class="flex items-center gap-1">
+                        <button type="button" x-on:click="page = Math.max(1, page - 1)" :disabled="page === 1" class="flex size-9 items-center justify-center rounded-lg text-gray-700 transition hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-40">
+                            <span class="material-symbols-rounded">chevron_left</span>
+                        </button>
+                        <template x-for="pageNumber in visiblePageNumbers()" :key="pageNumber">
+                            <button type="button" x-on:click="page = pageNumber" class="flex size-9 items-center justify-center rounded-lg text-gray-700 transition hover:bg-gray-50" :class="page === pageNumber ? 'bg-gray-100 font-semibold text-gray-950' : ''" x-text="pageNumber"></button>
+                        </template>
+                        <button type="button" x-on:click="page = Math.min(totalPages(), page + 1)" :disabled="page === totalPages()" class="flex size-9 items-center justify-center rounded-lg text-gray-700 transition hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-40">
+                            <span class="material-symbols-rounded">chevron_right</span>
+                        </button>
+                    </div>
+                </div>
             </div>
         </section>
     </main>
@@ -660,7 +539,7 @@ class OutreachPage extends Page
                 filters: [],
                 ageSortDirection: 'asc',
                 page: 1,
-                perPage: 10,
+                perPage: 25,
                 perPageOptions: [10, 25, 50, 100],
                 selectedPresetName: 'Filter presets',
                 nav: [
@@ -841,13 +720,13 @@ class OutreachPage extends Page
                     const total = this.filteredRows().length;
 
                     if (total === 0) {
-                        return 'Showing 0 results';
+                        return '0 results';
                     }
 
                     const start = (this.page - 1) * this.perPage + 1;
                     const end = Math.min(total, this.page * this.perPage);
 
-                    return `Showing ${start} to ${end} of ${total} results`;
+                    return `${start}-${end} of ${total}`;
                 },
                 visiblePageNumbers() {
                     const total = this.totalPages();

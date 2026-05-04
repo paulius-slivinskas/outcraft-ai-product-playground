@@ -424,7 +424,7 @@ class OutreachPage extends Page
                             <th class="w-[185px] px-4 py-4">Timezone</th>
                             <th class="w-[155px] px-4 py-4">State</th>
                             <th class="w-[60px] px-4 py-4">Age</th>
-                            <th class="w-[60px] px-4 py-4"></th>
+                            <th class="w-[76px] px-4 py-4"></th>
                         </tr>
                     </thead>
                     <tbody>
@@ -606,7 +606,7 @@ class OutreachPage extends Page
                             <th class="w-[130px] px-4 py-4">Follow Up</th>
                             <th class="w-[65px] px-4 py-4">Age</th>
                             <th class="w-[55px] px-4 py-4"></th>
-                            <th class="w-[55px] px-4 py-4"></th>
+                            <th class="w-[72px] px-4 py-4"></th>
                         </tr>
                     </thead>
                     <tbody>
@@ -778,7 +778,7 @@ class OutreachPage extends Page
                             <th class="w-[170px] px-4 py-4">Timezone</th>
                             <th class="w-[70px] px-4 py-4">Age</th>
                             <th class="w-[70px] px-4 py-4"></th>
-                            <th class="w-[80px] px-4 py-4"></th>
+                            <th class="w-[96px] px-4 py-4"></th>
                         </tr>
                     </thead>
                     <tbody>
@@ -978,7 +978,7 @@ class OutreachPage extends Page
                                     <span class="material-symbols-rounded !text-[16px]" x-text="ageSortDirection === 'asc' ? 'arrow_upward' : 'arrow_downward'"></span>
                                 </button>
                             </th>
-                            <th class="w-[70px] px-4 py-4"></th>
+                            <th class="w-[86px] px-4 py-4"></th>
                         </tr>
                     </thead>
                     <tbody>

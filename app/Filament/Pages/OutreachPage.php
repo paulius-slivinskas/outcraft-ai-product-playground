@@ -158,6 +158,10 @@ class OutreachPage extends Page
 
     <style>
         [x-cloak] { display: none !important; }
+        .outcraft-page ::selection {
+            background: #d4d4d4;
+            color: #171717;
+        }
         .material-symbols-rounded {
             font-family: 'Material Symbols Rounded';
             font-weight: normal;

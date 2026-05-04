@@ -192,6 +192,20 @@ class OutreachPage extends Page
         .filter-scroll::-webkit-scrollbar-thumb:hover {
             background-color: #9ca3af;
         }
+        .outcraft-label {
+            align-items: center;
+            min-width: 0;
+            max-width: 100%;
+            min-height: 26px;
+            white-space: nowrap;
+            overflow: hidden;
+        }
+        .outcraft-label > span:not(.material-symbols-rounded) {
+            min-width: 0;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
     </style>
 
     <aside
@@ -437,7 +451,7 @@ class OutreachPage extends Page
                                 <td class="px-4 py-4"><span class="mr-1" x-text="row.countryFlag"></span><span x-text="row.country"></span></td>
                                 <td class="px-4 py-4" x-text="row.timezone"></td>
                                 <td class="px-4 py-4">
-                                    <span class="inline-flex rounded-lg border border-gray-200 bg-gray-50 px-2 py-1 text-[13px] leading-none text-gray-600" x-text="row.state"></span>
+                                    <span class="outcraft-label inline-flex max-w-[120px] rounded-lg border border-gray-200 bg-gray-50 px-2 py-1 text-[13px] leading-none text-gray-600" x-text="row.state"></span>
                                 </td>
                                 <td class="px-4 py-4">
                                     <span class="group relative inline-flex">
@@ -598,17 +612,17 @@ class OutreachPage extends Page
                                     </span>
                                 </td>
                                 <td class="px-4 py-4">
-                                    <span class="inline-flex max-w-[104px] rounded-lg border px-2 py-1 text-[13px] leading-none" :class="campaignBadgeClass(row.campaignStatus)">
+                                    <span class="outcraft-label inline-flex max-w-[104px] rounded-lg border px-2 py-1 text-[13px] leading-none" :class="campaignBadgeClass(row.campaignStatus)">
                                         <span class="truncate" x-text="row.campaignStatus"></span>
                                     </span>
                                 </td>
                                 <td class="px-4 py-4">
-                                    <span class="inline-flex max-w-[116px] rounded-lg border px-2 py-1 text-[13px] leading-none" :class="campaignBadgeClass(row.firstInteraction)">
+                                    <span class="outcraft-label inline-flex max-w-[116px] rounded-lg border px-2 py-1 text-[13px] leading-none" :class="campaignBadgeClass(row.firstInteraction)">
                                         <span class="truncate" x-text="row.firstInteraction"></span>
                                     </span>
                                 </td>
                                 <td class="px-4 py-4">
-                                    <span class="inline-flex max-w-[110px] rounded-lg border px-2 py-1 text-[13px] leading-none" :class="campaignBadgeClass(row.followUp)">
+                                    <span class="outcraft-label inline-flex max-w-[110px] rounded-lg border px-2 py-1 text-[13px] leading-none" :class="campaignBadgeClass(row.followUp)">
                                         <span class="truncate" x-text="row.followUp"></span>
                                     </span>
                                 </td>
@@ -973,7 +987,7 @@ class OutreachPage extends Page
                                 <td class="px-4 py-4" x-text="row.channel"></td>
                                 <td class="px-4 py-4">
                                     <span x-show="row.content === 'View'" class="group relative inline-flex">
-                                        <span class="inline-flex max-w-[76px] cursor-pointer rounded-lg border border-gray-200 bg-gray-50 px-2 py-1 text-[13px] leading-none">
+                                        <span class="outcraft-label inline-flex max-w-[76px] cursor-pointer rounded-lg border border-gray-200 bg-gray-50 px-2 py-1 text-[13px] leading-none">
                                             <span class="truncate">View</span>
                                         </span>
                                         <span class="pointer-events-none absolute bottom-full left-1/2 z-50 mb-2 w-[320px] -translate-x-1/2 translate-y-1 rounded-lg bg-gray-900 px-4 py-3 text-left text-xs font-medium leading-5 text-white opacity-0 shadow-sm transition group-hover:translate-y-0 group-hover:opacity-100">
@@ -982,7 +996,7 @@ class OutreachPage extends Page
                                         </span>
                                     </span>
                                     <span x-show="row.content && row.content !== 'View'" class="group relative inline-flex">
-                                        <span class="inline-flex max-w-[76px] items-center gap-1 rounded-lg border border-gray-200 bg-gray-50 px-2 py-1 text-[13px] leading-none text-gray-600">
+                                        <span class="outcraft-label inline-flex max-w-[76px] items-center gap-1 rounded-lg border border-gray-200 bg-gray-50 px-2 py-1 text-[13px] leading-none text-gray-600">
                                             <span class="material-symbols-rounded !text-[14px]">play_circle</span>
                                             <span class="truncate" x-text="row.content"></span>
                                         </span>
@@ -994,7 +1008,7 @@ class OutreachPage extends Page
                                 </td>
                                 <td class="px-4 py-4">
                                     <span class="group relative inline-flex">
-                                        <span class="inline-flex max-w-[112px] items-center gap-1 rounded-lg border border-gray-200 bg-gray-50 px-2 py-1 text-[13px] leading-none text-gray-600">
+                                        <span class="outcraft-label inline-flex max-w-[112px] items-center gap-1 rounded-lg border border-gray-200 bg-gray-50 px-2 py-1 text-[13px] leading-none text-gray-600">
                                             <span class="material-symbols-rounded !text-[14px]" x-text="row.direction === 'Inbound' ? 'arrow_downward' : 'arrow_upward'"></span>
                                             <span class="truncate" x-text="row.direction"></span>
                                         </span>
@@ -1006,7 +1020,7 @@ class OutreachPage extends Page
                                 </td>
                                 <td class="px-4 py-4">
                                     <span class="group relative inline-flex">
-                                        <span class="inline-flex max-w-[138px] items-center gap-1 rounded-lg border px-2 py-1 text-[13px] leading-none" :class="pillClass(row.outcome)">
+                                        <span class="outcraft-label inline-flex max-w-[138px] items-center gap-1 rounded-lg border px-2 py-1 text-[13px] leading-none" :class="pillClass(row.outcome)">
                                             <span class="material-symbols-rounded !text-[14px]" x-text="outcomeIcon(row.outcome)"></span>
                                             <span class="truncate" x-text="row.outcome"></span>
                                         </span>
@@ -1018,7 +1032,7 @@ class OutreachPage extends Page
                                 </td>
                                 <td class="px-4 py-4">
                                     <span class="group relative inline-flex">
-                                        <span class="inline-flex max-w-[98px] rounded-lg border px-2 py-1 text-[13px] leading-none" :class="pillClass(row.result)">
+                                        <span class="outcraft-label inline-flex max-w-[98px] rounded-lg border px-2 py-1 text-[13px] leading-none" :class="pillClass(row.result)">
                                             <span class="truncate" x-text="row.result"></span>
                                         </span>
                                         <span class="pointer-events-none absolute bottom-full left-1/2 z-50 mb-2 -translate-x-1/2 translate-y-1 whitespace-nowrap rounded-lg bg-gray-900 px-3 py-2 text-xs font-medium text-white opacity-0 shadow-sm transition group-hover:translate-y-0 group-hover:opacity-100">

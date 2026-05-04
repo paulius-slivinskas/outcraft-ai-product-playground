@@ -449,7 +449,13 @@ class OutreachPage extends Page
                                 </td>
                                 <td class="px-4 py-4"><span class="mr-1" x-text="row.countryFlag"></span><span x-text="row.country"></span></td>
                                 <td class="px-4 py-4">
-                                    <span class="block truncate" x-text="row.timezone"></span>
+                                    <span class="group relative block max-w-full">
+                                        <span class="block truncate" x-text="row.timezone"></span>
+                                        <span class="pointer-events-none absolute bottom-full left-1/2 z-50 mb-2 -translate-x-1/2 translate-y-1 whitespace-nowrap rounded-lg bg-gray-900 px-3 py-2 text-xs font-medium text-white opacity-0 shadow-sm transition group-hover:translate-y-0 group-hover:opacity-100">
+                                            <span x-text="row.timezone"></span>
+                                            <span class="absolute left-1/2 top-full size-2 -translate-x-1/2 -translate-y-1 rotate-45 bg-gray-900"></span>
+                                        </span>
+                                    </span>
                                 </td>
                                 <td class="px-4 py-4">
                                     <span class="outcraft-label inline-flex max-w-full rounded-lg border px-2 py-1 text-[13px] leading-none" :class="leadStateClass(row.state)">
@@ -796,7 +802,15 @@ class OutreachPage extends Page
                                     </span>
                                 </td>
                                 <td class="px-4 py-4"><span class="mr-1" x-text="row.countryFlag"></span><span x-text="row.country"></span></td>
-                                <td class="px-4 py-4" x-text="row.timezone"></td>
+                                <td class="px-4 py-4">
+                                    <span class="group relative block max-w-full">
+                                        <span class="block truncate" x-text="row.timezone"></span>
+                                        <span class="pointer-events-none absolute bottom-full left-1/2 z-50 mb-2 -translate-x-1/2 translate-y-1 whitespace-nowrap rounded-lg bg-gray-900 px-3 py-2 text-xs font-medium text-white opacity-0 shadow-sm transition group-hover:translate-y-0 group-hover:opacity-100">
+                                            <span x-text="row.timezone"></span>
+                                            <span class="absolute left-1/2 top-full size-2 -translate-x-1/2 -translate-y-1 rotate-45 bg-gray-900"></span>
+                                        </span>
+                                    </span>
+                                </td>
                                 <td class="px-4 py-4">
                                     <span class="group relative inline-flex">
                                         <span x-text="leadAge(row)"></span>

@@ -404,14 +404,14 @@ class OutreachPage extends Page
                 <table class="w-full min-w-[1080px] table-fixed border-collapse text-[15px]">
                     <thead>
                         <tr class="border-b border-gray-200 bg-gray-50 text-left text-[14px] font-semibold text-gray-950">
-                            <th class="w-[240px] px-6 py-4">Name</th>
-                            <th class="w-[240px] px-4 py-4">Phone</th>
-                            <th class="w-[240px] px-4 py-4">Email</th>
-                            <th class="w-[90px] px-4 py-4">Country</th>
-                            <th class="w-[160px] px-4 py-4">Timezone</th>
-                            <th class="w-[90px] px-4 py-4">State</th>
-                            <th class="w-[65px] px-4 py-4">Age</th>
-                            <th class="w-[70px] px-4 py-4"></th>
+                            <th class="w-[170px] px-6 py-4">Name</th>
+                            <th class="w-[150px] px-4 py-4">Phone</th>
+                            <th class="w-[210px] px-4 py-4">Email</th>
+                            <th class="w-[80px] px-4 py-4">Country</th>
+                            <th class="w-[185px] px-4 py-4">Timezone</th>
+                            <th class="w-[155px] px-4 py-4">State</th>
+                            <th class="w-[60px] px-4 py-4">Age</th>
+                            <th class="w-[60px] px-4 py-4"></th>
                         </tr>
                     </thead>
                     <tbody>
@@ -448,9 +448,11 @@ class OutreachPage extends Page
                                     </span>
                                 </td>
                                 <td class="px-4 py-4"><span class="mr-1" x-text="row.countryFlag"></span><span x-text="row.country"></span></td>
-                                <td class="px-4 py-4" x-text="row.timezone"></td>
                                 <td class="px-4 py-4">
-                                    <span class="outcraft-label inline-flex max-w-[120px] rounded-lg border border-gray-200 bg-gray-50 px-2 py-1 text-[13px] leading-none text-gray-600">
+                                    <span class="block truncate" x-text="row.timezone"></span>
+                                </td>
+                                <td class="px-4 py-4">
+                                    <span class="outcraft-label inline-flex max-w-full rounded-lg border px-2 py-1 text-[13px] leading-none" :class="leadStateClass(row.state)">
                                         <span x-text="row.state"></span>
                                     </span>
                                 </td>
@@ -1347,6 +1349,13 @@ class OutreachPage extends Page
                 },
                 campaignAge(row) {
                     return ((Math.floor(Number(row.ageSeconds) / 2592000) % 6) + 1) + 'mo';
+                },
+                leadStateClass(value) {
+                    if (value === 'Review Required') {
+                        return 'border-amber-200 bg-amber-50 text-amber-700';
+                    }
+
+                    return 'border-gray-200 bg-gray-50 text-gray-600';
                 },
                 campaignBadgeClass(value) {
                     if (['Completed', 'Positive'].includes(value)) {

@@ -1113,6 +1113,7 @@ class OutreachPage extends Page
                 handoffSearchableColumns: ['Country', 'Timezone', 'Name', 'Phone', 'Email'],
                 setActiveTab(tab) {
                     this.activeTab = tab;
+                    this.campaign = tab === 'Campaigns' ? 'Abandoned Cart' : 'All campaigns';
                     this.page = 1;
                     this.query = '';
                     this.filters = [];

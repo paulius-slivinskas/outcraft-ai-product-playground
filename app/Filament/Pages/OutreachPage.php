@@ -208,7 +208,7 @@ class OutreachPage extends Page
     </style>
 
     <aside
-        class="absolute inset-y-0 left-0 flex flex-col overflow-hidden border-r border-gray-200 bg-white transition-[width] duration-300 ease-in-out"
+        class="absolute inset-y-0 left-0 flex flex-col overflow-hidden border-r border-neutral-200 bg-white transition-[width] duration-300 ease-in-out"
         :class="sidebarOpen ? 'w-[218px]' : 'w-16'"
     >
         <div class="flex h-[70px] items-center px-5">
@@ -227,18 +227,18 @@ class OutreachPage extends Page
             </div>
         </div>
 
-        <nav class="space-y-3 pt-4 text-[15px] font-medium text-gray-600 transition-[padding] duration-300 ease-in-out" :class="sidebarOpen ? 'px-4' : 'px-3'">
+        <nav class="space-y-3 pt-4 text-[15px] font-medium text-neutral-600 transition-[padding] duration-300 ease-in-out" :class="sidebarOpen ? 'px-4' : 'px-3'">
             <template x-for="item in nav" :key="item.label">
-                <button class="group flex h-10 w-full items-center overflow-hidden whitespace-nowrap rounded-xl text-left transition-all duration-300 ease-in-out hover:bg-gray-200 hover:text-gray-950" :class="sidebarOpen ? 'gap-3 px-2' : 'justify-center gap-0 px-0'" :title="item.label">
-                    <span class="material-symbols-rounded shrink-0 text-gray-950" x-text="item.icon"></span>
+                <button class="group flex h-10 w-full items-center overflow-hidden whitespace-nowrap rounded-xl text-left transition-all duration-300 ease-in-out hover:bg-neutral-200 hover:text-neutral-950" :class="sidebarOpen ? 'gap-3 px-2' : 'justify-center gap-0 px-0'" :title="item.label">
+                    <span class="material-symbols-rounded shrink-0 text-neutral-950" x-text="item.icon"></span>
                     <span class="min-w-0 overflow-hidden transition-[max-width,opacity] duration-200 ease-in-out" :class="sidebarOpen ? 'max-w-[170px] opacity-100 delay-100' : 'max-w-0 opacity-0'" x-text="item.label"></span>
                 </button>
             </template>
         </nav>
 
-        <div class="mt-auto space-y-3 pb-6 text-[15px] font-medium text-gray-600 transition-[padding] duration-300 ease-in-out" :class="sidebarOpen ? 'px-4' : 'px-3'">
-            <button type="button" x-on:click="sidebarOpen = ! sidebarOpen" class="group flex h-10 w-full items-center overflow-hidden whitespace-nowrap rounded-xl text-left transition-all duration-300 ease-in-out hover:bg-gray-200 hover:text-gray-950" :class="sidebarOpen ? 'gap-3 px-2' : 'justify-center gap-0 px-0'" :title="sidebarOpen ? 'Collapse' : 'Expand'">
-                <span class="material-symbols-rounded shrink-0 text-gray-950" x-text="sidebarOpen ? 'dock_to_left' : 'dock_to_right'"></span>
+        <div class="mt-auto space-y-3 pb-6 text-[15px] font-medium text-neutral-600 transition-[padding] duration-300 ease-in-out" :class="sidebarOpen ? 'px-4' : 'px-3'">
+            <button type="button" x-on:click="sidebarOpen = ! sidebarOpen" class="group flex h-10 w-full items-center overflow-hidden whitespace-nowrap rounded-xl text-left transition-all duration-300 ease-in-out hover:bg-neutral-200 hover:text-neutral-950" :class="sidebarOpen ? 'gap-3 px-2' : 'justify-center gap-0 px-0'" :title="sidebarOpen ? 'Collapse' : 'Expand'">
+                <span class="material-symbols-rounded shrink-0 text-neutral-950" x-text="sidebarOpen ? 'dock_to_left' : 'dock_to_right'"></span>
                 <span class="overflow-hidden transition-[max-width,opacity] duration-200 ease-in-out" :class="sidebarOpen ? 'max-w-[120px] opacity-100 delay-100' : 'max-w-0 opacity-0'" x-text="sidebarOpen ? 'Collapse' : 'Expand'"></span>
             </button>
         </div>
@@ -247,9 +247,9 @@ class OutreachPage extends Page
     <main class="h-full overflow-auto transition-[margin-left] duration-300 ease-in-out" :class="sidebarOpen ? 'ml-[218px]' : 'ml-16'">
         <header class="relative flex h-[86px] items-center px-6">
             <div class="flex items-center gap-5 text-[15px] font-medium">
-                <span class="text-gray-500">Operations</span>
-                <span class="material-symbols-rounded text-gray-400">chevron_right</span>
-                <span class="text-gray-950" x-text="activeTab"></span>
+                <span class="text-neutral-500">Operations</span>
+                <span class="material-symbols-rounded text-neutral-400">chevron_right</span>
+                <span class="text-neutral-950" x-text="activeTab"></span>
             </div>
 
             <div class="absolute left-1/2 top-6 w-[600px] -translate-x-1/2">
@@ -257,22 +257,22 @@ class OutreachPage extends Page
                     <button
                         type="button"
                         x-on:click="campaignOpen = ! campaignOpen"
-                        class="flex h-10 w-full items-center justify-between rounded-xl border border-gray-200 bg-white px-4 text-left text-[15px] text-gray-900 shadow-sm outline-none transition hover:bg-gray-200 focus:border-blue-400 focus:ring-2 focus:ring-blue-200"
+                        class="flex h-10 w-full items-center justify-between rounded-xl border border-neutral-200 bg-white px-4 text-left text-[15px] text-neutral-900 shadow-sm outline-none transition hover:bg-neutral-200 focus:border-blue-400 focus:ring-2 focus:ring-blue-200"
                     >
                         <span x-text="campaign"></span>
-                        <span class="material-symbols-rounded text-gray-600">keyboard_arrow_down</span>
+                        <span class="material-symbols-rounded text-neutral-600">keyboard_arrow_down</span>
                     </button>
                     <div
                         x-cloak
                         x-show="campaignOpen"
                         x-transition
-                        class="absolute left-0 right-0 top-12 z-40 overflow-hidden rounded-xl border border-gray-200 bg-white p-1 text-[15px] text-gray-900 shadow-lg"
+                        class="absolute left-0 right-0 top-12 z-40 overflow-hidden rounded-xl border border-neutral-200 bg-white p-1 text-[15px] text-neutral-900 shadow-lg"
                     >
                         <template x-for="option in campaigns" :key="option">
                             <button
                                 type="button"
                                 x-on:click="campaign = option; campaignOpen = false; page = 1"
-                                class="flex w-full items-center justify-between rounded-lg px-3 py-2 text-left hover:bg-gray-200"
+                                class="flex w-full items-center justify-between rounded-lg px-3 py-2 text-left hover:bg-neutral-200"
                             >
                                 <span x-text="option"></span>
                                 <span x-show="campaign === option" class="material-symbols-rounded text-blue-500">check</span>
@@ -283,26 +283,26 @@ class OutreachPage extends Page
             </div>
 
             <div class="ml-auto flex items-center gap-3">
-                <button class="relative flex h-10 items-center justify-center rounded-xl px-3 text-gray-700 transition hover:bg-gray-200 hover:text-gray-950" title="Notifications">
+                <button class="relative flex h-10 items-center justify-center rounded-xl px-3 text-neutral-700 transition hover:bg-neutral-200 hover:text-neutral-950" title="Notifications">
                     <span class="material-symbols-rounded">notifications</span>
-                    <span class="absolute right-0.5 top-0.5 flex min-w-4 items-center justify-center rounded-full bg-gray-900 px-1 text-[10px] font-semibold leading-4 text-white">23</span>
+                    <span class="absolute right-0.5 top-0.5 flex min-w-4 items-center justify-center rounded-full bg-neutral-900 px-1 text-[10px] font-semibold leading-4 text-white">23</span>
                 </button>
-                <button class="flex h-10 items-center gap-2 rounded-xl px-3 text-[14px] font-medium text-gray-700 transition hover:bg-gray-200 hover:text-gray-950" title="Pulsetto.tech">
+                <button class="flex h-10 items-center gap-2 rounded-xl px-3 text-[14px] font-medium text-neutral-700 transition hover:bg-neutral-200 hover:text-neutral-950" title="Pulsetto.tech">
                     <span class="material-symbols-rounded">account_circle</span>
                     <span>Pulsetto.tech</span>
-                    <span class="material-symbols-rounded text-gray-500">keyboard_arrow_down</span>
+                    <span class="material-symbols-rounded text-neutral-500">keyboard_arrow_down</span>
                 </button>
             </div>
         </header>
 
-        <section class="mx-6 rounded-2xl border border-gray-200 bg-white p-2 shadow-sm">
-            <div class="flex h-11 items-center gap-2 text-[15px] font-medium text-gray-600">
+        <section class="mx-6 rounded-2xl border border-neutral-200 bg-white p-2 shadow-sm">
+            <div class="flex h-11 items-center gap-2 text-[15px] font-medium text-neutral-600">
                 <template x-for="tab in tabs" :key="tab.label">
                     <button
                         type="button"
                         x-on:click="setActiveTab(tab.label)"
-                        class="flex h-9 items-center gap-2 rounded-xl px-4 transition hover:bg-gray-200"
-                        :class="activeTab === tab.label ? 'bg-[#26262b] text-white shadow hover:bg-[#26262b]' : 'text-gray-600 hover:text-gray-950'"
+                        class="flex h-9 items-center gap-2 rounded-xl px-4 transition hover:bg-neutral-200"
+                        :class="activeTab === tab.label ? 'bg-[#26262b] text-white shadow hover:bg-[#26262b]' : 'text-neutral-600 hover:text-neutral-950'"
                     >
                         <span class="material-symbols-rounded" x-text="tab.icon"></span>
                         <span x-text="tab.label"></span>
@@ -311,47 +311,47 @@ class OutreachPage extends Page
             </div>
         </section>
 
-        <section x-cloak x-show="activeTab === 'Leads'" class="mx-6 mb-6 mt-5 overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm">
+        <section x-cloak x-show="activeTab === 'Leads'" class="mx-6 mb-6 mt-5 overflow-hidden rounded-2xl border border-neutral-200 bg-white shadow-sm">
             <div class="grid min-h-[92px] grid-cols-[250px_1fr_230px] items-start gap-6 p-6">
                 <div>
                     <h1 class="text-[19px] font-semibold tracking-normal">Leads</h1>
-                    <p class="mt-1 text-[15px] text-gray-500">Browse and manage all your leads</p>
+                    <p class="mt-1 text-[15px] text-neutral-500">Browse and manage all your leads</p>
                 </div>
 
                 <div class="relative" x-on:click.outside="searchOpen = false">
-                    <div class="rounded-xl border border-gray-200 bg-white shadow-sm">
+                    <div class="rounded-xl border border-neutral-200 bg-white shadow-sm">
                         <div class="flex min-h-10 items-center px-4">
                             <input
                                 x-model="query"
                                 x-on:focus="searchOpen = true"
                                 x-on:keydown.escape="searchOpen = false"
                                 x-on:keydown.enter.prevent="addFirstSuggestion()"
-                                class="w-full border-0 bg-transparent text-[15px] outline-none ring-0 placeholder:text-gray-400 focus:ring-0"
+                                class="w-full border-0 bg-transparent text-[15px] outline-none ring-0 placeholder:text-neutral-400 focus:ring-0"
                                 placeholder="Filter anything"
                             >
                         </div>
-                        <div x-show="filters.length > 0" x-transition class="flex min-h-10 items-center gap-2 border-t border-gray-200 px-4">
+                        <div x-show="filters.length > 0" x-transition class="flex min-h-10 items-center gap-2 border-t border-neutral-200 px-4">
                             <template x-for="tag in filters" :key="tag">
-                                <button x-on:click="removeFilter(tag)" class="inline-flex items-center gap-1 rounded-lg border border-gray-200 bg-gray-50 px-2 py-1 text-[15px] leading-none text-gray-600">
+                                <button x-on:click="removeFilter(tag)" class="inline-flex items-center gap-1 rounded-lg border border-neutral-200 bg-neutral-50 px-2 py-1 text-[15px] leading-none text-neutral-600">
                                     <span x-text="tag"></span>
-                                    <span class="text-gray-500">×</span>
+                                    <span class="text-neutral-500">×</span>
                                 </button>
                             </template>
                             <div class="ml-auto flex items-center gap-4">
-                                <button class="text-[14px] font-semibold text-gray-500 hover:text-gray-900" x-on:click="clearSearchTags()">Clear</button>
-                                <button class="text-[14px] font-semibold text-gray-600 hover:text-gray-900" x-on:click="savePreset()">Save preset</button>
+                                <button class="text-[14px] font-semibold text-neutral-500 hover:text-neutral-900" x-on:click="clearSearchTags()">Clear</button>
+                                <button class="text-[14px] font-semibold text-neutral-600 hover:text-neutral-900" x-on:click="savePreset()">Save preset</button>
                             </div>
                         </div>
                     </div>
 
-                    <div x-cloak x-show="searchOpen" x-transition class="absolute left-0 right-0 top-0 z-30 rounded-xl border border-gray-200 bg-white p-5 shadow-lg">
+                    <div x-cloak x-show="searchOpen" x-transition class="absolute left-0 right-0 top-0 z-30 rounded-xl border border-neutral-200 bg-white p-5 shadow-lg">
                         <input x-model="query" x-ref="leadsOverlayInput" x-init="$watch('searchOpen', value => value && activeTab === 'Leads' && $nextTick(() => $refs.leadsOverlayInput.focus()))" class="w-full border-0 bg-transparent text-[17px] outline-none ring-0 focus:ring-0" placeholder="Filter anything">
                         <div class="filter-scroll mt-4 max-h-[215px] space-y-1 overflow-y-auto pr-2">
                             <template x-for="group in groupedSuggestions()" :key="group.column">
                                 <div>
                                     <div class="px-1 py-2 text-[15px] font-semibold" x-text="group.column"></div>
                                     <template x-for="value in group.values" :key="group.column + value">
-                                        <button x-on:click="addFilter(value)" class="block w-full rounded-lg px-1 py-2 text-left text-[15px] hover:bg-gray-200" x-text="value"></button>
+                                        <button x-on:click="addFilter(value)" class="block w-full rounded-lg px-1 py-2 text-left text-[15px] hover:bg-neutral-200" x-text="value"></button>
                                     </template>
                                 </div>
                             </template>
@@ -363,20 +363,20 @@ class OutreachPage extends Page
                     <button
                         type="button"
                         x-on:click="presetOpen = ! presetOpen"
-                        class="flex h-10 min-w-[175px] items-center justify-between gap-3 rounded-xl border border-gray-200 bg-white px-4 text-left text-[15px] text-gray-900 shadow-sm outline-none transition hover:bg-gray-200 focus:border-blue-400 focus:ring-2 focus:ring-blue-200"
+                        class="flex h-10 min-w-[175px] items-center justify-between gap-3 rounded-xl border border-neutral-200 bg-white px-4 text-left text-[15px] text-neutral-900 shadow-sm outline-none transition hover:bg-neutral-200 focus:border-blue-400 focus:ring-2 focus:ring-blue-200"
                     >
                         <span x-text="selectedPresetName"></span>
-                        <span class="material-symbols-rounded text-gray-600">keyboard_arrow_down</span>
+                        <span class="material-symbols-rounded text-neutral-600">keyboard_arrow_down</span>
                     </button>
-                    <div x-cloak x-show="presetOpen" x-transition class="absolute right-0 top-12 z-40 w-[230px] overflow-hidden rounded-xl border border-gray-200 bg-white p-1 text-[15px] text-gray-900 shadow-lg">
-                        <button type="button" x-on:click="clearFilters()" class="block w-full rounded-lg px-3 py-2 text-left font-semibold hover:bg-gray-200">Clear filters</button>
+                    <div x-cloak x-show="presetOpen" x-transition class="absolute right-0 top-12 z-40 w-[230px] overflow-hidden rounded-xl border border-neutral-200 bg-white p-1 text-[15px] text-neutral-900 shadow-lg">
+                        <button type="button" x-on:click="clearFilters()" class="block w-full rounded-lg px-3 py-2 text-left font-semibold hover:bg-neutral-200">Clear filters</button>
                         <template x-for="preset in presets" :key="preset.name">
-                            <div class="group flex items-center rounded-lg hover:bg-gray-200">
+                            <div class="group flex items-center rounded-lg hover:bg-neutral-200">
                                 <button type="button" x-on:click="applyPreset(preset)" class="flex min-w-0 flex-1 items-center justify-between px-3 py-2 text-left">
                                     <span class="truncate" x-text="preset.name"></span>
                                     <span x-show="selectedPresetName === preset.name" class="material-symbols-rounded ml-3 shrink-0 text-blue-500">check</span>
                                 </button>
-                                <button type="button" x-on:click.stop="deletePreset(preset)" class="mr-2 flex size-8 shrink-0 items-center justify-center rounded-lg text-gray-400 opacity-0 transition hover:bg-red-50 hover:text-red-600 group-hover:opacity-100" :aria-label="`Delete ${preset.name}`">
+                                <button type="button" x-on:click.stop="deletePreset(preset)" class="mr-2 flex size-8 shrink-0 items-center justify-center rounded-lg text-neutral-400 opacity-0 transition hover:bg-red-50 hover:text-red-600 group-hover:opacity-100" :aria-label="`Delete ${preset.name}`">
                                     <span class="material-symbols-rounded !text-[18px]">delete</span>
                                 </button>
                             </div>
@@ -385,17 +385,17 @@ class OutreachPage extends Page
                 </div>
             </div>
 
-            <div class="flex min-h-[74px] items-center justify-end gap-3 border-y border-gray-200 bg-white px-6">
-                <button type="button" x-on:click="addFilter('Review Required')" class="inline-flex h-9 items-center gap-2 rounded-lg border border-gray-200 bg-white px-3 text-[14px] font-semibold text-gray-800 shadow-sm transition hover:bg-gray-200">
-                    <span class="material-symbols-rounded !text-[18px] text-gray-500">manage_search</span>
+            <div class="flex min-h-[74px] items-center justify-end gap-3 border-y border-neutral-200 bg-white px-6">
+                <button type="button" x-on:click="addFilter('Review Required')" class="inline-flex h-9 items-center gap-2 rounded-lg border border-neutral-200 bg-white px-3 text-[14px] font-semibold text-neutral-800 shadow-sm transition hover:bg-neutral-200">
+                    <span class="material-symbols-rounded !text-[18px] text-neutral-500">manage_search</span>
                     Review Required
                 </button>
-                <button type="button" class="inline-flex h-9 items-center gap-2 rounded-lg border border-gray-200 bg-white px-3 text-[14px] font-semibold text-gray-800 shadow-sm transition hover:bg-gray-200">
-                    <span class="material-symbols-rounded !text-[18px] text-gray-500">upload</span>
+                <button type="button" class="inline-flex h-9 items-center gap-2 rounded-lg border border-neutral-200 bg-white px-3 text-[14px] font-semibold text-neutral-800 shadow-sm transition hover:bg-neutral-200">
+                    <span class="material-symbols-rounded !text-[18px] text-neutral-500">upload</span>
                     Import CSV
                 </button>
-                <button type="button" class="inline-flex h-9 items-center gap-2 rounded-lg border border-gray-200 bg-white px-3 text-[14px] font-semibold text-gray-800 shadow-sm transition hover:bg-gray-200">
-                    <span class="material-symbols-rounded !text-[18px] text-gray-500">add</span>
+                <button type="button" class="inline-flex h-9 items-center gap-2 rounded-lg border border-neutral-200 bg-white px-3 text-[14px] font-semibold text-neutral-800 shadow-sm transition hover:bg-neutral-200">
+                    <span class="material-symbols-rounded !text-[18px] text-neutral-500">add</span>
                     Add Lead
                 </button>
             </div>
@@ -403,7 +403,7 @@ class OutreachPage extends Page
             <div class="overflow-x-auto">
                 <table class="w-full min-w-[1080px] table-fixed border-collapse text-[15px]">
                     <thead>
-                        <tr class="border-b border-gray-200 bg-gray-50 text-left text-[14px] font-semibold text-gray-950">
+                        <tr class="border-b border-neutral-200 bg-neutral-50 text-left text-[14px] font-semibold text-neutral-950">
                             <th class="w-[170px] px-6 py-4">Name</th>
                             <th class="w-[150px] px-4 py-4">Phone</th>
                             <th class="w-[210px] px-4 py-4">Email</th>
@@ -416,34 +416,34 @@ class OutreachPage extends Page
                     </thead>
                     <tbody>
                         <template x-for="row in paginatedRows()" :key="'lead-' + row.name + row.phone + row.email + row.age">
-                            <tr class="border-b border-gray-200">
+                            <tr class="border-b border-neutral-200">
                                 <td class="px-6 py-4">
                                     <span class="group relative inline-flex max-w-full">
                                         <span class="truncate" x-text="row.name"></span>
-                                        <span class="pointer-events-none absolute bottom-full left-1/2 z-50 mb-2 -translate-x-1/2 translate-y-1 whitespace-nowrap rounded-lg bg-gray-900 px-3 py-2 text-xs font-medium text-white opacity-0 shadow-sm transition group-hover:translate-y-0 group-hover:opacity-100">
+                                        <span class="pointer-events-none absolute bottom-full left-1/2 z-50 mb-2 -translate-x-1/2 translate-y-1 whitespace-nowrap rounded-lg bg-neutral-900 px-3 py-2 text-xs font-medium text-white opacity-0 shadow-sm transition group-hover:translate-y-0 group-hover:opacity-100">
                                             <span x-text="row.name"></span>
-                                            <span class="absolute left-1/2 top-full size-2 -translate-x-1/2 -translate-y-1 rotate-45 bg-gray-900"></span>
+                                            <span class="absolute left-1/2 top-full size-2 -translate-x-1/2 -translate-y-1 rotate-45 bg-neutral-900"></span>
                                         </span>
                                     </span>
                                 </td>
                                 <td class="px-4 py-4">
-                                    <span x-show="! row.phone" class="text-gray-300"></span>
+                                    <span x-show="! row.phone" class="text-neutral-300"></span>
                                     <span x-show="row.phone" class="group relative inline-flex">
                                         <span x-text="row.phone"></span>
-                                        <span class="pointer-events-none absolute bottom-full left-1/2 z-50 mb-2 -translate-x-1/2 translate-y-1 whitespace-nowrap rounded-lg bg-gray-900 px-3 py-2 text-xs font-medium text-white opacity-0 shadow-sm transition group-hover:translate-y-0 group-hover:opacity-100">
+                                        <span class="pointer-events-none absolute bottom-full left-1/2 z-50 mb-2 -translate-x-1/2 translate-y-1 whitespace-nowrap rounded-lg bg-neutral-900 px-3 py-2 text-xs font-medium text-white opacity-0 shadow-sm transition group-hover:translate-y-0 group-hover:opacity-100">
                                             <span class="mr-1" x-text="row.phoneFlag"></span>
                                             <span x-text="row.phoneCountry"></span>
-                                            <span class="absolute left-1/2 top-full size-2 -translate-x-1/2 -translate-y-1 rotate-45 bg-gray-900"></span>
+                                            <span class="absolute left-1/2 top-full size-2 -translate-x-1/2 -translate-y-1 rotate-45 bg-neutral-900"></span>
                                         </span>
                                     </span>
                                 </td>
                                 <td class="px-4 py-4">
-                                    <span x-show="! row.email" class="text-gray-300"></span>
+                                    <span x-show="! row.email" class="text-neutral-300"></span>
                                     <span x-show="row.email" class="group relative inline-flex max-w-full">
                                         <span class="truncate" x-text="shortLeadEmail(row.email)"></span>
-                                        <span class="pointer-events-none absolute bottom-full left-1/2 z-50 mb-2 -translate-x-1/2 translate-y-1 whitespace-nowrap rounded-lg bg-gray-900 px-3 py-2 text-xs font-medium text-white opacity-0 shadow-sm transition group-hover:translate-y-0 group-hover:opacity-100">
+                                        <span class="pointer-events-none absolute bottom-full left-1/2 z-50 mb-2 -translate-x-1/2 translate-y-1 whitespace-nowrap rounded-lg bg-neutral-900 px-3 py-2 text-xs font-medium text-white opacity-0 shadow-sm transition group-hover:translate-y-0 group-hover:opacity-100">
                                             <span x-text="row.email"></span>
-                                            <span class="absolute left-1/2 top-full size-2 -translate-x-1/2 -translate-y-1 rotate-45 bg-gray-900"></span>
+                                            <span class="absolute left-1/2 top-full size-2 -translate-x-1/2 -translate-y-1 rotate-45 bg-neutral-900"></span>
                                         </span>
                                     </span>
                                 </td>
@@ -451,9 +451,9 @@ class OutreachPage extends Page
                                 <td class="px-4 py-4">
                                     <span class="group relative block max-w-full">
                                         <span class="block truncate" x-text="row.timezone"></span>
-                                        <span class="pointer-events-none absolute bottom-full left-1/2 z-50 mb-2 -translate-x-1/2 translate-y-1 whitespace-nowrap rounded-lg bg-gray-900 px-3 py-2 text-xs font-medium text-white opacity-0 shadow-sm transition group-hover:translate-y-0 group-hover:opacity-100">
+                                        <span class="pointer-events-none absolute bottom-full left-1/2 z-50 mb-2 -translate-x-1/2 translate-y-1 whitespace-nowrap rounded-lg bg-neutral-900 px-3 py-2 text-xs font-medium text-white opacity-0 shadow-sm transition group-hover:translate-y-0 group-hover:opacity-100">
                                             <span x-text="row.timezone"></span>
-                                            <span class="absolute left-1/2 top-full size-2 -translate-x-1/2 -translate-y-1 rotate-45 bg-gray-900"></span>
+                                            <span class="absolute left-1/2 top-full size-2 -translate-x-1/2 -translate-y-1 rotate-45 bg-neutral-900"></span>
                                         </span>
                                     </span>
                                 </td>
@@ -465,25 +465,25 @@ class OutreachPage extends Page
                                 <td class="px-4 py-4">
                                     <span class="group relative inline-flex">
                                         <span x-text="leadAge(row)"></span>
-                                        <span class="pointer-events-none absolute bottom-full left-1/2 z-50 mb-2 -translate-x-1/2 translate-y-1 whitespace-nowrap rounded-lg bg-gray-900 px-3 py-2 text-xs font-medium text-white opacity-0 shadow-sm transition group-hover:translate-y-0 group-hover:opacity-100">
+                                        <span class="pointer-events-none absolute bottom-full left-1/2 z-50 mb-2 -translate-x-1/2 translate-y-1 whitespace-nowrap rounded-lg bg-neutral-900 px-3 py-2 text-xs font-medium text-white opacity-0 shadow-sm transition group-hover:translate-y-0 group-hover:opacity-100">
                                             <span x-text="row.ageTooltip"></span>
-                                            <span class="absolute left-1/2 top-full size-2 -translate-x-1/2 -translate-y-1 rotate-45 bg-gray-900"></span>
+                                            <span class="absolute left-1/2 top-full size-2 -translate-x-1/2 -translate-y-1 rotate-45 bg-neutral-900"></span>
                                         </span>
                                     </span>
                                 </td>
-                                <td class="cursor-pointer px-4 py-4 font-semibold text-gray-600 transition hover:text-gray-950">View</td>
+                                <td class="cursor-pointer px-4 py-4 font-semibold text-neutral-600 transition hover:text-neutral-950">View</td>
                             </tr>
                         </template>
                         <tr x-show="filteredRows().length === 0">
-                            <td colspan="8" class="px-8 py-16 text-center text-gray-500">No leads match these filters.</td>
+                            <td colspan="8" class="px-8 py-16 text-center text-neutral-500">No leads match these filters.</td>
                         </tr>
                     </tbody>
                 </table>
             </div>
-            <div class="flex items-center justify-between gap-4 border-t border-gray-200 px-6 py-4 text-[14px] text-gray-600">
+            <div class="flex items-center justify-between gap-4 border-t border-neutral-200 px-6 py-4 text-[14px] text-neutral-600">
                 <div class="flex items-center gap-3">
                     <span>Rows per page</span>
-                    <select x-model.number="perPage" x-on:change="page = 1" class="h-9 rounded-lg border border-gray-200 bg-white px-3 text-[14px] text-gray-900 outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-200">
+                    <select x-model.number="perPage" x-on:change="page = 1" class="h-9 rounded-lg border border-neutral-200 bg-white px-3 text-[14px] text-neutral-900 outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-200">
                         <template x-for="option in perPageOptions" :key="option">
                             <option :value="option" x-text="option"></option>
                         </template>
@@ -492,13 +492,13 @@ class OutreachPage extends Page
                 <div class="flex items-center gap-4">
                     <span x-text="paginationSummary()"></span>
                     <div class="flex items-center gap-1">
-                        <button type="button" x-on:click="page = Math.max(1, page - 1)" :disabled="page === 1" class="flex size-9 items-center justify-center rounded-lg text-gray-700 transition hover:bg-gray-200 disabled:cursor-not-allowed disabled:opacity-40">
+                        <button type="button" x-on:click="page = Math.max(1, page - 1)" :disabled="page === 1" class="flex size-9 items-center justify-center rounded-lg text-neutral-700 transition hover:bg-neutral-200 disabled:cursor-not-allowed disabled:opacity-40">
                             <span class="material-symbols-rounded">chevron_left</span>
                         </button>
                         <template x-for="pageNumber in visiblePageNumbers()" :key="pageNumber">
-                            <button type="button" x-on:click="page = pageNumber" class="flex size-9 items-center justify-center rounded-lg text-gray-700 transition hover:bg-gray-200" :class="page === pageNumber ? 'bg-gray-100 font-semibold text-gray-950' : ''" x-text="pageNumber"></button>
+                            <button type="button" x-on:click="page = pageNumber" class="flex size-9 items-center justify-center rounded-lg text-neutral-700 transition hover:bg-neutral-200" :class="page === pageNumber ? 'bg-neutral-100 font-semibold text-neutral-950' : ''" x-text="pageNumber"></button>
                         </template>
-                        <button type="button" x-on:click="page = Math.min(totalPages(), page + 1)" :disabled="page === totalPages()" class="flex size-9 items-center justify-center rounded-lg text-gray-700 transition hover:bg-gray-200 disabled:cursor-not-allowed disabled:opacity-40">
+                        <button type="button" x-on:click="page = Math.min(totalPages(), page + 1)" :disabled="page === totalPages()" class="flex size-9 items-center justify-center rounded-lg text-neutral-700 transition hover:bg-neutral-200 disabled:cursor-not-allowed disabled:opacity-40">
                             <span class="material-symbols-rounded">chevron_right</span>
                         </button>
                     </div>
@@ -506,47 +506,47 @@ class OutreachPage extends Page
             </div>
         </section>
 
-        <section x-cloak x-show="activeTab === 'Campaigns'" class="mx-6 mb-6 mt-5 overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm">
+        <section x-cloak x-show="activeTab === 'Campaigns'" class="mx-6 mb-6 mt-5 overflow-hidden rounded-2xl border border-neutral-200 bg-white shadow-sm">
             <div class="grid min-h-[112px] grid-cols-[250px_1fr_230px] items-start gap-6 p-6">
                 <div>
                     <h1 class="text-[19px] font-semibold tracking-normal">Lead Campaigns</h1>
-                    <p class="mt-1 max-w-[220px] text-[15px] leading-6 text-gray-500">Browse and manage lead campaigns for the selected campaign</p>
+                    <p class="mt-1 max-w-[220px] text-[15px] leading-6 text-neutral-500">Browse and manage lead campaigns for the selected campaign</p>
                 </div>
 
                 <div class="relative" x-on:click.outside="searchOpen = false">
-                    <div class="rounded-xl border border-gray-200 bg-white shadow-sm">
+                    <div class="rounded-xl border border-neutral-200 bg-white shadow-sm">
                         <div class="flex min-h-10 items-center px-4">
                             <input
                                 x-model="query"
                                 x-on:focus="searchOpen = true"
                                 x-on:keydown.escape="searchOpen = false"
                                 x-on:keydown.enter.prevent="addFirstSuggestion()"
-                                class="w-full border-0 bg-transparent text-[15px] outline-none ring-0 placeholder:text-gray-400 focus:ring-0"
+                                class="w-full border-0 bg-transparent text-[15px] outline-none ring-0 placeholder:text-neutral-400 focus:ring-0"
                                 placeholder="Filter anything"
                             >
                         </div>
-                        <div x-show="filters.length > 0" x-transition class="flex min-h-10 items-center gap-2 border-t border-gray-200 px-4">
+                        <div x-show="filters.length > 0" x-transition class="flex min-h-10 items-center gap-2 border-t border-neutral-200 px-4">
                             <template x-for="tag in filters" :key="tag">
-                                <button x-on:click="removeFilter(tag)" class="inline-flex items-center gap-1 rounded-lg border border-gray-200 bg-gray-50 px-2 py-1 text-[15px] leading-none text-gray-600">
+                                <button x-on:click="removeFilter(tag)" class="inline-flex items-center gap-1 rounded-lg border border-neutral-200 bg-neutral-50 px-2 py-1 text-[15px] leading-none text-neutral-600">
                                     <span x-text="tag"></span>
-                                    <span class="text-gray-500">×</span>
+                                    <span class="text-neutral-500">×</span>
                                 </button>
                             </template>
                             <div class="ml-auto flex items-center gap-4">
-                                <button class="text-[14px] font-semibold text-gray-500 hover:text-gray-900" x-on:click="clearSearchTags()">Clear</button>
-                                <button class="text-[14px] font-semibold text-gray-600 hover:text-gray-900" x-on:click="savePreset()">Save preset</button>
+                                <button class="text-[14px] font-semibold text-neutral-500 hover:text-neutral-900" x-on:click="clearSearchTags()">Clear</button>
+                                <button class="text-[14px] font-semibold text-neutral-600 hover:text-neutral-900" x-on:click="savePreset()">Save preset</button>
                             </div>
                         </div>
                     </div>
 
-                    <div x-cloak x-show="searchOpen" x-transition class="absolute left-0 right-0 top-0 z-30 rounded-xl border border-gray-200 bg-white p-5 shadow-lg">
+                    <div x-cloak x-show="searchOpen" x-transition class="absolute left-0 right-0 top-0 z-30 rounded-xl border border-neutral-200 bg-white p-5 shadow-lg">
                         <input x-model="query" x-ref="campaignsOverlayInput" x-init="$watch('searchOpen', value => value && activeTab === 'Campaigns' && $nextTick(() => $refs.campaignsOverlayInput.focus()))" class="w-full border-0 bg-transparent text-[17px] outline-none ring-0 focus:ring-0" placeholder="Filter anything">
                         <div class="filter-scroll mt-4 max-h-[215px] space-y-1 overflow-y-auto pr-2">
                             <template x-for="group in groupedSuggestions()" :key="group.column">
                                 <div>
                                     <div class="px-1 py-2 text-[15px] font-semibold" x-text="group.column"></div>
                                     <template x-for="value in group.values" :key="group.column + value">
-                                        <button x-on:click="addFilter(value)" class="block w-full rounded-lg px-1 py-2 text-left text-[15px] hover:bg-gray-200" x-text="value"></button>
+                                        <button x-on:click="addFilter(value)" class="block w-full rounded-lg px-1 py-2 text-left text-[15px] hover:bg-neutral-200" x-text="value"></button>
                                     </template>
                                 </div>
                             </template>
@@ -558,20 +558,20 @@ class OutreachPage extends Page
                     <button
                         type="button"
                         x-on:click="presetOpen = ! presetOpen"
-                        class="flex h-10 min-w-[175px] items-center justify-between gap-3 rounded-xl border border-gray-200 bg-white px-4 text-left text-[15px] text-gray-900 shadow-sm outline-none transition hover:bg-gray-200 focus:border-blue-400 focus:ring-2 focus:ring-blue-200"
+                        class="flex h-10 min-w-[175px] items-center justify-between gap-3 rounded-xl border border-neutral-200 bg-white px-4 text-left text-[15px] text-neutral-900 shadow-sm outline-none transition hover:bg-neutral-200 focus:border-blue-400 focus:ring-2 focus:ring-blue-200"
                     >
                         <span x-text="selectedPresetName"></span>
-                        <span class="material-symbols-rounded text-gray-600">keyboard_arrow_down</span>
+                        <span class="material-symbols-rounded text-neutral-600">keyboard_arrow_down</span>
                     </button>
-                    <div x-cloak x-show="presetOpen" x-transition class="absolute right-0 top-12 z-40 w-[230px] overflow-hidden rounded-xl border border-gray-200 bg-white p-1 text-[15px] text-gray-900 shadow-lg">
-                        <button type="button" x-on:click="clearFilters()" class="block w-full rounded-lg px-3 py-2 text-left font-semibold hover:bg-gray-200">Clear filters</button>
+                    <div x-cloak x-show="presetOpen" x-transition class="absolute right-0 top-12 z-40 w-[230px] overflow-hidden rounded-xl border border-neutral-200 bg-white p-1 text-[15px] text-neutral-900 shadow-lg">
+                        <button type="button" x-on:click="clearFilters()" class="block w-full rounded-lg px-3 py-2 text-left font-semibold hover:bg-neutral-200">Clear filters</button>
                         <template x-for="preset in presets" :key="preset.name">
-                            <div class="group flex items-center rounded-lg hover:bg-gray-200">
+                            <div class="group flex items-center rounded-lg hover:bg-neutral-200">
                                 <button type="button" x-on:click="applyPreset(preset)" class="flex min-w-0 flex-1 items-center justify-between px-3 py-2 text-left">
                                     <span class="truncate" x-text="preset.name"></span>
                                     <span x-show="selectedPresetName === preset.name" class="material-symbols-rounded ml-3 shrink-0 text-blue-500">check</span>
                                 </button>
-                                <button type="button" x-on:click.stop="deletePreset(preset)" class="mr-2 flex size-8 shrink-0 items-center justify-center rounded-lg text-gray-400 opacity-0 transition hover:bg-red-50 hover:text-red-600 group-hover:opacity-100" :aria-label="`Delete ${preset.name}`">
+                                <button type="button" x-on:click.stop="deletePreset(preset)" class="mr-2 flex size-8 shrink-0 items-center justify-center rounded-lg text-neutral-400 opacity-0 transition hover:bg-red-50 hover:text-red-600 group-hover:opacity-100" :aria-label="`Delete ${preset.name}`">
                                     <span class="material-symbols-rounded !text-[18px]">delete</span>
                                 </button>
                             </div>
@@ -583,7 +583,7 @@ class OutreachPage extends Page
             <div class="overflow-x-auto">
                 <table class="w-full min-w-[1110px] table-fixed border-collapse text-[15px]">
                     <thead>
-                        <tr class="border-y border-gray-200 bg-gray-50 text-left text-[14px] font-semibold text-gray-950">
+                        <tr class="border-y border-neutral-200 bg-neutral-50 text-left text-[14px] font-semibold text-neutral-950">
                             <th class="w-[150px] px-6 py-4">Campaign</th>
                             <th class="w-[150px] px-4 py-4">Name</th>
                             <th class="w-[150px] px-4 py-4">Phone</th>
@@ -598,25 +598,25 @@ class OutreachPage extends Page
                     </thead>
                     <tbody>
                         <template x-for="row in paginatedRows()" :key="'campaign-' + row.campaignName + row.name + row.phone + row.email + row.age">
-                            <tr class="border-b border-gray-200">
+                            <tr class="border-b border-neutral-200">
                                 <td class="px-6 py-4" x-text="row.campaignName"></td>
                                 <td class="px-4 py-4">
                                     <span class="group relative inline-flex max-w-full">
                                         <span class="truncate" x-text="row.name"></span>
-                                        <span class="pointer-events-none absolute bottom-full left-1/2 z-50 mb-2 -translate-x-1/2 translate-y-1 whitespace-nowrap rounded-lg bg-gray-900 px-3 py-2 text-xs font-medium text-white opacity-0 shadow-sm transition group-hover:translate-y-0 group-hover:opacity-100">
+                                        <span class="pointer-events-none absolute bottom-full left-1/2 z-50 mb-2 -translate-x-1/2 translate-y-1 whitespace-nowrap rounded-lg bg-neutral-900 px-3 py-2 text-xs font-medium text-white opacity-0 shadow-sm transition group-hover:translate-y-0 group-hover:opacity-100">
                                             <span x-text="row.name"></span>
-                                            <span class="absolute left-1/2 top-full size-2 -translate-x-1/2 -translate-y-1 rotate-45 bg-gray-900"></span>
+                                            <span class="absolute left-1/2 top-full size-2 -translate-x-1/2 -translate-y-1 rotate-45 bg-neutral-900"></span>
                                         </span>
                                     </span>
                                 </td>
                                 <td class="px-4 py-4" x-text="row.phone"></td>
                                 <td class="px-4 py-4">
-                                    <span x-show="! row.email" class="text-gray-300"></span>
+                                    <span x-show="! row.email" class="text-neutral-300"></span>
                                     <span x-show="row.email" class="group relative inline-flex max-w-full">
                                         <span class="truncate" x-text="shortEmail(row.email)"></span>
-                                        <span class="pointer-events-none absolute bottom-full left-1/2 z-50 mb-2 -translate-x-1/2 translate-y-1 whitespace-nowrap rounded-lg bg-gray-900 px-3 py-2 text-xs font-medium text-white opacity-0 shadow-sm transition group-hover:translate-y-0 group-hover:opacity-100">
+                                        <span class="pointer-events-none absolute bottom-full left-1/2 z-50 mb-2 -translate-x-1/2 translate-y-1 whitespace-nowrap rounded-lg bg-neutral-900 px-3 py-2 text-xs font-medium text-white opacity-0 shadow-sm transition group-hover:translate-y-0 group-hover:opacity-100">
                                             <span x-text="row.email"></span>
-                                            <span class="absolute left-1/2 top-full size-2 -translate-x-1/2 -translate-y-1 rotate-45 bg-gray-900"></span>
+                                            <span class="absolute left-1/2 top-full size-2 -translate-x-1/2 -translate-y-1 rotate-45 bg-neutral-900"></span>
                                         </span>
                                     </span>
                                 </td>
@@ -638,26 +638,26 @@ class OutreachPage extends Page
                                 <td class="px-4 py-4">
                                     <span class="group relative inline-flex">
                                         <span x-text="campaignAge(row)"></span>
-                                        <span class="pointer-events-none absolute bottom-full left-1/2 z-50 mb-2 -translate-x-1/2 translate-y-1 whitespace-nowrap rounded-lg bg-gray-900 px-3 py-2 text-xs font-medium text-white opacity-0 shadow-sm transition group-hover:translate-y-0 group-hover:opacity-100">
+                                        <span class="pointer-events-none absolute bottom-full left-1/2 z-50 mb-2 -translate-x-1/2 translate-y-1 whitespace-nowrap rounded-lg bg-neutral-900 px-3 py-2 text-xs font-medium text-white opacity-0 shadow-sm transition group-hover:translate-y-0 group-hover:opacity-100">
                                             <span x-text="row.ageTooltip"></span>
-                                            <span class="absolute left-1/2 top-full size-2 -translate-x-1/2 -translate-y-1 rotate-45 bg-gray-900"></span>
+                                            <span class="absolute left-1/2 top-full size-2 -translate-x-1/2 -translate-y-1 rotate-45 bg-neutral-900"></span>
                                         </span>
                                     </span>
                                 </td>
-                                <td class="cursor-pointer px-4 py-4 font-semibold text-gray-600 transition hover:text-gray-950">Flow</td>
-                                <td class="cursor-pointer px-4 py-4 font-semibold text-gray-600 transition hover:text-gray-950">View</td>
+                                <td class="cursor-pointer px-4 py-4 font-semibold text-neutral-600 transition hover:text-neutral-950">Flow</td>
+                                <td class="cursor-pointer px-4 py-4 font-semibold text-neutral-600 transition hover:text-neutral-950">View</td>
                             </tr>
                         </template>
                         <tr x-show="filteredRows().length === 0">
-                            <td colspan="10" class="px-8 py-16 text-center text-gray-500">No lead campaign records match these filters.</td>
+                            <td colspan="10" class="px-8 py-16 text-center text-neutral-500">No lead campaign records match these filters.</td>
                         </tr>
                     </tbody>
                 </table>
             </div>
-            <div class="flex items-center justify-between gap-4 border-t border-gray-200 px-6 py-4 text-[14px] text-gray-600">
+            <div class="flex items-center justify-between gap-4 border-t border-neutral-200 px-6 py-4 text-[14px] text-neutral-600">
                 <div class="flex items-center gap-3">
                     <span>Rows per page</span>
-                    <select x-model.number="perPage" x-on:change="page = 1" class="h-9 rounded-lg border border-gray-200 bg-white px-3 text-[14px] text-gray-900 outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-200">
+                    <select x-model.number="perPage" x-on:change="page = 1" class="h-9 rounded-lg border border-neutral-200 bg-white px-3 text-[14px] text-neutral-900 outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-200">
                         <template x-for="option in perPageOptions" :key="option">
                             <option :value="option" x-text="option"></option>
                         </template>
@@ -666,13 +666,13 @@ class OutreachPage extends Page
                 <div class="flex items-center gap-4">
                     <span x-text="paginationSummary()"></span>
                     <div class="flex items-center gap-1">
-                        <button type="button" x-on:click="page = Math.max(1, page - 1)" :disabled="page === 1" class="flex size-9 items-center justify-center rounded-lg text-gray-700 transition hover:bg-gray-200 disabled:cursor-not-allowed disabled:opacity-40">
+                        <button type="button" x-on:click="page = Math.max(1, page - 1)" :disabled="page === 1" class="flex size-9 items-center justify-center rounded-lg text-neutral-700 transition hover:bg-neutral-200 disabled:cursor-not-allowed disabled:opacity-40">
                             <span class="material-symbols-rounded">chevron_left</span>
                         </button>
                         <template x-for="pageNumber in visiblePageNumbers()" :key="pageNumber">
-                            <button type="button" x-on:click="page = pageNumber" class="flex size-9 items-center justify-center rounded-lg text-gray-700 transition hover:bg-gray-200" :class="page === pageNumber ? 'bg-gray-100 font-semibold text-gray-950' : ''" x-text="pageNumber"></button>
+                            <button type="button" x-on:click="page = pageNumber" class="flex size-9 items-center justify-center rounded-lg text-neutral-700 transition hover:bg-neutral-200" :class="page === pageNumber ? 'bg-neutral-100 font-semibold text-neutral-950' : ''" x-text="pageNumber"></button>
                         </template>
-                        <button type="button" x-on:click="page = Math.min(totalPages(), page + 1)" :disabled="page === totalPages()" class="flex size-9 items-center justify-center rounded-lg text-gray-700 transition hover:bg-gray-200 disabled:cursor-not-allowed disabled:opacity-40">
+                        <button type="button" x-on:click="page = Math.min(totalPages(), page + 1)" :disabled="page === totalPages()" class="flex size-9 items-center justify-center rounded-lg text-neutral-700 transition hover:bg-neutral-200 disabled:cursor-not-allowed disabled:opacity-40">
                             <span class="material-symbols-rounded">chevron_right</span>
                         </button>
                     </div>
@@ -680,47 +680,47 @@ class OutreachPage extends Page
             </div>
         </section>
 
-        <section x-cloak x-show="activeTab === 'Handoffs'" class="mx-6 mb-6 mt-5 overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm">
+        <section x-cloak x-show="activeTab === 'Handoffs'" class="mx-6 mb-6 mt-5 overflow-hidden rounded-2xl border border-neutral-200 bg-white shadow-sm">
             <div class="grid min-h-[112px] grid-cols-[250px_1fr_230px] items-start gap-6 p-6">
                 <div>
                     <h1 class="text-[19px] font-semibold tracking-normal">Handoff requests</h1>
-                    <p class="mt-1 max-w-[230px] text-[15px] leading-6 text-gray-500">Leads that have requested a handoff from AI to a human support.</p>
+                    <p class="mt-1 max-w-[230px] text-[15px] leading-6 text-neutral-500">Leads that have requested a handoff from AI to a human support.</p>
                 </div>
 
                 <div class="relative" x-on:click.outside="searchOpen = false">
-                    <div class="rounded-xl border border-gray-200 bg-white shadow-sm">
+                    <div class="rounded-xl border border-neutral-200 bg-white shadow-sm">
                         <div class="flex min-h-10 items-center px-4">
                             <input
                                 x-model="query"
                                 x-on:focus="searchOpen = true"
                                 x-on:keydown.escape="searchOpen = false"
                                 x-on:keydown.enter.prevent="addFirstSuggestion()"
-                                class="w-full border-0 bg-transparent text-[15px] outline-none ring-0 placeholder:text-gray-400 focus:ring-0"
+                                class="w-full border-0 bg-transparent text-[15px] outline-none ring-0 placeholder:text-neutral-400 focus:ring-0"
                                 placeholder="Filter anything"
                             >
                         </div>
-                        <div x-show="filters.length > 0" x-transition class="flex min-h-10 items-center gap-2 border-t border-gray-200 px-4">
+                        <div x-show="filters.length > 0" x-transition class="flex min-h-10 items-center gap-2 border-t border-neutral-200 px-4">
                             <template x-for="tag in filters" :key="tag">
-                                <button x-on:click="removeFilter(tag)" class="inline-flex items-center gap-1 rounded-lg border border-gray-200 bg-gray-50 px-2 py-1 text-[15px] leading-none text-gray-600">
+                                <button x-on:click="removeFilter(tag)" class="inline-flex items-center gap-1 rounded-lg border border-neutral-200 bg-neutral-50 px-2 py-1 text-[15px] leading-none text-neutral-600">
                                     <span x-text="tag"></span>
-                                    <span class="text-gray-500">×</span>
+                                    <span class="text-neutral-500">×</span>
                                 </button>
                             </template>
                             <div class="ml-auto flex items-center gap-4">
-                                <button class="text-[14px] font-semibold text-gray-500 hover:text-gray-900" x-on:click="clearSearchTags()">Clear</button>
-                                <button class="text-[14px] font-semibold text-gray-600 hover:text-gray-900" x-on:click="savePreset()">Save preset</button>
+                                <button class="text-[14px] font-semibold text-neutral-500 hover:text-neutral-900" x-on:click="clearSearchTags()">Clear</button>
+                                <button class="text-[14px] font-semibold text-neutral-600 hover:text-neutral-900" x-on:click="savePreset()">Save preset</button>
                             </div>
                         </div>
                     </div>
 
-                    <div x-cloak x-show="searchOpen" x-transition class="absolute left-0 right-0 top-0 z-30 rounded-xl border border-gray-200 bg-white p-5 shadow-lg">
+                    <div x-cloak x-show="searchOpen" x-transition class="absolute left-0 right-0 top-0 z-30 rounded-xl border border-neutral-200 bg-white p-5 shadow-lg">
                         <input x-model="query" x-ref="handoffsOverlayInput" x-init="$watch('searchOpen', value => value && activeTab === 'Handoffs' && $nextTick(() => $refs.handoffsOverlayInput.focus()))" class="w-full border-0 bg-transparent text-[17px] outline-none ring-0 focus:ring-0" placeholder="Filter anything">
                         <div class="filter-scroll mt-4 max-h-[215px] space-y-1 overflow-y-auto pr-2">
                             <template x-for="group in groupedSuggestions()" :key="group.column">
                                 <div>
                                     <div class="px-1 py-2 text-[15px] font-semibold" x-text="group.column"></div>
                                     <template x-for="value in group.values" :key="group.column + value">
-                                        <button x-on:click="addFilter(value)" class="block w-full rounded-lg px-1 py-2 text-left text-[15px] hover:bg-gray-200" x-text="value"></button>
+                                        <button x-on:click="addFilter(value)" class="block w-full rounded-lg px-1 py-2 text-left text-[15px] hover:bg-neutral-200" x-text="value"></button>
                                     </template>
                                 </div>
                             </template>
@@ -732,20 +732,20 @@ class OutreachPage extends Page
                     <button
                         type="button"
                         x-on:click="presetOpen = ! presetOpen"
-                        class="flex h-10 min-w-[175px] items-center justify-between gap-3 rounded-xl border border-gray-200 bg-white px-4 text-left text-[15px] text-gray-900 shadow-sm outline-none transition hover:bg-gray-200 focus:border-blue-400 focus:ring-2 focus:ring-blue-200"
+                        class="flex h-10 min-w-[175px] items-center justify-between gap-3 rounded-xl border border-neutral-200 bg-white px-4 text-left text-[15px] text-neutral-900 shadow-sm outline-none transition hover:bg-neutral-200 focus:border-blue-400 focus:ring-2 focus:ring-blue-200"
                     >
                         <span x-text="selectedPresetName"></span>
-                        <span class="material-symbols-rounded text-gray-600">keyboard_arrow_down</span>
+                        <span class="material-symbols-rounded text-neutral-600">keyboard_arrow_down</span>
                     </button>
-                    <div x-cloak x-show="presetOpen" x-transition class="absolute right-0 top-12 z-40 w-[230px] overflow-hidden rounded-xl border border-gray-200 bg-white p-1 text-[15px] text-gray-900 shadow-lg">
-                        <button type="button" x-on:click="clearFilters()" class="block w-full rounded-lg px-3 py-2 text-left font-semibold hover:bg-gray-200">Clear filters</button>
+                    <div x-cloak x-show="presetOpen" x-transition class="absolute right-0 top-12 z-40 w-[230px] overflow-hidden rounded-xl border border-neutral-200 bg-white p-1 text-[15px] text-neutral-900 shadow-lg">
+                        <button type="button" x-on:click="clearFilters()" class="block w-full rounded-lg px-3 py-2 text-left font-semibold hover:bg-neutral-200">Clear filters</button>
                         <template x-for="preset in presets" :key="preset.name">
-                            <div class="group flex items-center rounded-lg hover:bg-gray-200">
+                            <div class="group flex items-center rounded-lg hover:bg-neutral-200">
                                 <button type="button" x-on:click="applyPreset(preset)" class="flex min-w-0 flex-1 items-center justify-between px-3 py-2 text-left">
                                     <span class="truncate" x-text="preset.name"></span>
                                     <span x-show="selectedPresetName === preset.name" class="material-symbols-rounded ml-3 shrink-0 text-blue-500">check</span>
                                 </button>
-                                <button type="button" x-on:click.stop="deletePreset(preset)" class="mr-2 flex size-8 shrink-0 items-center justify-center rounded-lg text-gray-400 opacity-0 transition hover:bg-red-50 hover:text-red-600 group-hover:opacity-100" :aria-label="`Delete ${preset.name}`">
+                                <button type="button" x-on:click.stop="deletePreset(preset)" class="mr-2 flex size-8 shrink-0 items-center justify-center rounded-lg text-neutral-400 opacity-0 transition hover:bg-red-50 hover:text-red-600 group-hover:opacity-100" :aria-label="`Delete ${preset.name}`">
                                     <span class="material-symbols-rounded !text-[18px]">delete</span>
                                 </button>
                             </div>
@@ -757,7 +757,7 @@ class OutreachPage extends Page
             <div class="overflow-x-auto">
                 <table class="w-full min-w-[1080px] table-fixed border-collapse text-[15px]">
                     <thead>
-                        <tr class="border-y border-gray-200 bg-gray-50 text-left text-[14px] font-semibold text-gray-950">
+                        <tr class="border-y border-neutral-200 bg-neutral-50 text-left text-[14px] font-semibold text-neutral-950">
                             <th class="w-[240px] px-6 py-4">Name</th>
                             <th class="w-[240px] px-4 py-4">Phone</th>
                             <th class="w-[240px] px-4 py-4">Email</th>
@@ -770,34 +770,34 @@ class OutreachPage extends Page
                     </thead>
                     <tbody>
                         <template x-for="row in paginatedRows()" :key="'handoff-' + row.name + row.phone + row.email + row.age">
-                            <tr class="border-b border-gray-200">
+                            <tr class="border-b border-neutral-200">
                                 <td class="px-6 py-4">
                                     <span class="group relative inline-flex max-w-full">
                                         <span class="truncate" x-text="row.name"></span>
-                                        <span class="pointer-events-none absolute bottom-full left-1/2 z-50 mb-2 -translate-x-1/2 translate-y-1 whitespace-nowrap rounded-lg bg-gray-900 px-3 py-2 text-xs font-medium text-white opacity-0 shadow-sm transition group-hover:translate-y-0 group-hover:opacity-100">
+                                        <span class="pointer-events-none absolute bottom-full left-1/2 z-50 mb-2 -translate-x-1/2 translate-y-1 whitespace-nowrap rounded-lg bg-neutral-900 px-3 py-2 text-xs font-medium text-white opacity-0 shadow-sm transition group-hover:translate-y-0 group-hover:opacity-100">
                                             <span x-text="row.name"></span>
-                                            <span class="absolute left-1/2 top-full size-2 -translate-x-1/2 -translate-y-1 rotate-45 bg-gray-900"></span>
+                                            <span class="absolute left-1/2 top-full size-2 -translate-x-1/2 -translate-y-1 rotate-45 bg-neutral-900"></span>
                                         </span>
                                     </span>
                                 </td>
                                 <td class="px-4 py-4">
-                                    <span x-show="! row.phone" class="text-gray-300"></span>
+                                    <span x-show="! row.phone" class="text-neutral-300"></span>
                                     <span x-show="row.phone" class="group relative inline-flex">
                                         <span x-text="row.phone"></span>
-                                        <span class="pointer-events-none absolute bottom-full left-1/2 z-50 mb-2 -translate-x-1/2 translate-y-1 whitespace-nowrap rounded-lg bg-gray-900 px-3 py-2 text-xs font-medium text-white opacity-0 shadow-sm transition group-hover:translate-y-0 group-hover:opacity-100">
+                                        <span class="pointer-events-none absolute bottom-full left-1/2 z-50 mb-2 -translate-x-1/2 translate-y-1 whitespace-nowrap rounded-lg bg-neutral-900 px-3 py-2 text-xs font-medium text-white opacity-0 shadow-sm transition group-hover:translate-y-0 group-hover:opacity-100">
                                             <span class="mr-1" x-text="row.phoneFlag"></span>
                                             <span x-text="row.phoneCountry"></span>
-                                            <span class="absolute left-1/2 top-full size-2 -translate-x-1/2 -translate-y-1 rotate-45 bg-gray-900"></span>
+                                            <span class="absolute left-1/2 top-full size-2 -translate-x-1/2 -translate-y-1 rotate-45 bg-neutral-900"></span>
                                         </span>
                                     </span>
                                 </td>
                                 <td class="px-4 py-4">
-                                    <span x-show="! row.email" class="text-gray-300"></span>
+                                    <span x-show="! row.email" class="text-neutral-300"></span>
                                     <span x-show="row.email" class="group relative inline-flex max-w-full">
                                         <span class="truncate" x-text="shortLeadEmail(row.email)"></span>
-                                        <span class="pointer-events-none absolute bottom-full left-1/2 z-50 mb-2 -translate-x-1/2 translate-y-1 whitespace-nowrap rounded-lg bg-gray-900 px-3 py-2 text-xs font-medium text-white opacity-0 shadow-sm transition group-hover:translate-y-0 group-hover:opacity-100">
+                                        <span class="pointer-events-none absolute bottom-full left-1/2 z-50 mb-2 -translate-x-1/2 translate-y-1 whitespace-nowrap rounded-lg bg-neutral-900 px-3 py-2 text-xs font-medium text-white opacity-0 shadow-sm transition group-hover:translate-y-0 group-hover:opacity-100">
                                             <span x-text="row.email"></span>
-                                            <span class="absolute left-1/2 top-full size-2 -translate-x-1/2 -translate-y-1 rotate-45 bg-gray-900"></span>
+                                            <span class="absolute left-1/2 top-full size-2 -translate-x-1/2 -translate-y-1 rotate-45 bg-neutral-900"></span>
                                         </span>
                                     </span>
                                 </td>
@@ -805,35 +805,35 @@ class OutreachPage extends Page
                                 <td class="px-4 py-4">
                                     <span class="group relative block max-w-full">
                                         <span class="block truncate" x-text="row.timezone"></span>
-                                        <span class="pointer-events-none absolute bottom-full left-1/2 z-50 mb-2 -translate-x-1/2 translate-y-1 whitespace-nowrap rounded-lg bg-gray-900 px-3 py-2 text-xs font-medium text-white opacity-0 shadow-sm transition group-hover:translate-y-0 group-hover:opacity-100">
+                                        <span class="pointer-events-none absolute bottom-full left-1/2 z-50 mb-2 -translate-x-1/2 translate-y-1 whitespace-nowrap rounded-lg bg-neutral-900 px-3 py-2 text-xs font-medium text-white opacity-0 shadow-sm transition group-hover:translate-y-0 group-hover:opacity-100">
                                             <span x-text="row.timezone"></span>
-                                            <span class="absolute left-1/2 top-full size-2 -translate-x-1/2 -translate-y-1 rotate-45 bg-gray-900"></span>
+                                            <span class="absolute left-1/2 top-full size-2 -translate-x-1/2 -translate-y-1 rotate-45 bg-neutral-900"></span>
                                         </span>
                                     </span>
                                 </td>
                                 <td class="px-4 py-4">
                                     <span class="group relative inline-flex">
                                         <span x-text="leadAge(row)"></span>
-                                        <span class="pointer-events-none absolute bottom-full left-1/2 z-50 mb-2 -translate-x-1/2 translate-y-1 whitespace-nowrap rounded-lg bg-gray-900 px-3 py-2 text-xs font-medium text-white opacity-0 shadow-sm transition group-hover:translate-y-0 group-hover:opacity-100">
+                                        <span class="pointer-events-none absolute bottom-full left-1/2 z-50 mb-2 -translate-x-1/2 translate-y-1 whitespace-nowrap rounded-lg bg-neutral-900 px-3 py-2 text-xs font-medium text-white opacity-0 shadow-sm transition group-hover:translate-y-0 group-hover:opacity-100">
                                             <span x-text="row.ageTooltip"></span>
-                                            <span class="absolute left-1/2 top-full size-2 -translate-x-1/2 -translate-y-1 rotate-45 bg-gray-900"></span>
+                                            <span class="absolute left-1/2 top-full size-2 -translate-x-1/2 -translate-y-1 rotate-45 bg-neutral-900"></span>
                                         </span>
                                     </span>
                                 </td>
-                                <td class="cursor-pointer px-4 py-4 font-semibold text-gray-600 transition hover:text-gray-950">View</td>
-                                <td class="cursor-pointer px-4 py-4 font-semibold text-gray-600 transition hover:text-gray-950">Resolve</td>
+                                <td class="cursor-pointer px-4 py-4 font-semibold text-neutral-600 transition hover:text-neutral-950">View</td>
+                                <td class="cursor-pointer px-4 py-4 font-semibold text-neutral-600 transition hover:text-neutral-950">Resolve</td>
                             </tr>
                         </template>
                         <tr x-show="filteredRows().length === 0">
-                            <td colspan="8" class="px-8 py-16 text-center text-gray-500">No handoff requests match these filters.</td>
+                            <td colspan="8" class="px-8 py-16 text-center text-neutral-500">No handoff requests match these filters.</td>
                         </tr>
                     </tbody>
                 </table>
             </div>
-            <div class="flex items-center justify-between gap-4 border-t border-gray-200 px-6 py-4 text-[14px] text-gray-600">
+            <div class="flex items-center justify-between gap-4 border-t border-neutral-200 px-6 py-4 text-[14px] text-neutral-600">
                 <div class="flex items-center gap-3">
                     <span>Rows per page</span>
-                    <select x-model.number="perPage" x-on:change="page = 1" class="h-9 rounded-lg border border-gray-200 bg-white px-3 text-[14px] text-gray-900 outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-200">
+                    <select x-model.number="perPage" x-on:change="page = 1" class="h-9 rounded-lg border border-neutral-200 bg-white px-3 text-[14px] text-neutral-900 outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-200">
                         <template x-for="option in perPageOptions" :key="option">
                             <option :value="option" x-text="option"></option>
                         </template>
@@ -842,13 +842,13 @@ class OutreachPage extends Page
                 <div class="flex items-center gap-4">
                     <span x-text="paginationSummary()"></span>
                     <div class="flex items-center gap-1">
-                        <button type="button" x-on:click="page = Math.max(1, page - 1)" :disabled="page === 1" class="flex size-9 items-center justify-center rounded-lg text-gray-700 transition hover:bg-gray-200 disabled:cursor-not-allowed disabled:opacity-40">
+                        <button type="button" x-on:click="page = Math.max(1, page - 1)" :disabled="page === 1" class="flex size-9 items-center justify-center rounded-lg text-neutral-700 transition hover:bg-neutral-200 disabled:cursor-not-allowed disabled:opacity-40">
                             <span class="material-symbols-rounded">chevron_left</span>
                         </button>
                         <template x-for="pageNumber in visiblePageNumbers()" :key="pageNumber">
-                            <button type="button" x-on:click="page = pageNumber" class="flex size-9 items-center justify-center rounded-lg text-gray-700 transition hover:bg-gray-200" :class="page === pageNumber ? 'bg-gray-100 font-semibold text-gray-950' : ''" x-text="pageNumber"></button>
+                            <button type="button" x-on:click="page = pageNumber" class="flex size-9 items-center justify-center rounded-lg text-neutral-700 transition hover:bg-neutral-200" :class="page === pageNumber ? 'bg-neutral-100 font-semibold text-neutral-950' : ''" x-text="pageNumber"></button>
                         </template>
-                        <button type="button" x-on:click="page = Math.min(totalPages(), page + 1)" :disabled="page === totalPages()" class="flex size-9 items-center justify-center rounded-lg text-gray-700 transition hover:bg-gray-200 disabled:cursor-not-allowed disabled:opacity-40">
+                        <button type="button" x-on:click="page = Math.min(totalPages(), page + 1)" :disabled="page === totalPages()" class="flex size-9 items-center justify-center rounded-lg text-neutral-700 transition hover:bg-neutral-200 disabled:cursor-not-allowed disabled:opacity-40">
                             <span class="material-symbols-rounded">chevron_right</span>
                         </button>
                     </div>
@@ -856,44 +856,44 @@ class OutreachPage extends Page
             </div>
         </section>
 
-        <section x-cloak x-show="activeTab === 'Outreach'" class="mx-6 mb-6 mt-5 overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm">
+        <section x-cloak x-show="activeTab === 'Outreach'" class="mx-6 mb-6 mt-5 overflow-hidden rounded-2xl border border-neutral-200 bg-white shadow-sm">
             <div class="grid min-h-[114px] grid-cols-[220px_1fr_230px] items-start gap-6 p-6">
                 <h1 class="pt-1 text-[19px] font-semibold tracking-normal">Outreach</h1>
 
                 <div class="relative" x-on:click.outside="searchOpen = false">
-                    <div class="rounded-xl border border-gray-200 bg-white shadow-sm">
+                    <div class="rounded-xl border border-neutral-200 bg-white shadow-sm">
                         <div class="flex min-h-10 items-center px-4">
                             <input
                                 x-model="query"
                                 x-on:focus="searchOpen = true"
                                 x-on:keydown.escape="searchOpen = false"
                                 x-on:keydown.enter.prevent="addFirstSuggestion()"
-                                class="w-full border-0 bg-transparent text-[15px] outline-none ring-0 placeholder:text-gray-400 focus:ring-0"
+                                class="w-full border-0 bg-transparent text-[15px] outline-none ring-0 placeholder:text-neutral-400 focus:ring-0"
                                 placeholder="Filter anything"
                             >
                         </div>
-                        <div x-show="filters.length > 0" x-transition class="flex min-h-10 items-center gap-2 border-t border-gray-200 px-4">
+                        <div x-show="filters.length > 0" x-transition class="flex min-h-10 items-center gap-2 border-t border-neutral-200 px-4">
                             <template x-for="tag in filters" :key="tag">
-                                <button x-on:click="removeFilter(tag)" class="inline-flex items-center gap-1 rounded-lg border border-gray-200 bg-gray-50 px-2 py-1 text-[15px] leading-none text-gray-600">
+                                <button x-on:click="removeFilter(tag)" class="inline-flex items-center gap-1 rounded-lg border border-neutral-200 bg-neutral-50 px-2 py-1 text-[15px] leading-none text-neutral-600">
                                     <span x-text="tag"></span>
-                                    <span class="text-gray-500">×</span>
+                                    <span class="text-neutral-500">×</span>
                                 </button>
                             </template>
                             <div class="ml-auto flex items-center gap-4">
-                                <button class="text-[14px] font-semibold text-gray-500 hover:text-gray-900" x-on:click="clearSearchTags()">Clear</button>
-                                <button class="text-[14px] font-semibold text-gray-600 hover:text-gray-900" x-on:click="savePreset()">Save preset</button>
+                                <button class="text-[14px] font-semibold text-neutral-500 hover:text-neutral-900" x-on:click="clearSearchTags()">Clear</button>
+                                <button class="text-[14px] font-semibold text-neutral-600 hover:text-neutral-900" x-on:click="savePreset()">Save preset</button>
                             </div>
                         </div>
                     </div>
 
-                    <div x-cloak x-show="searchOpen" x-transition class="absolute left-0 right-0 top-0 z-30 rounded-xl border border-gray-200 bg-white p-5 shadow-lg">
+                    <div x-cloak x-show="searchOpen" x-transition class="absolute left-0 right-0 top-0 z-30 rounded-xl border border-neutral-200 bg-white p-5 shadow-lg">
                         <input x-model="query" x-ref="overlayInput" x-init="$watch('searchOpen', value => value && activeTab === 'Outreach' && $nextTick(() => $refs.overlayInput.focus()))" class="w-full border-0 bg-transparent text-[17px] outline-none ring-0 focus:ring-0" placeholder="Filter anything">
                         <div class="filter-scroll mt-4 max-h-[215px] space-y-1 overflow-y-auto pr-2">
                             <template x-for="group in groupedSuggestions()" :key="group.column">
                                 <div>
                                     <div class="px-1 py-2 text-[15px] font-semibold" x-text="group.column"></div>
                                     <template x-for="value in group.values" :key="group.column + value">
-                                        <button x-on:click="addFilter(value)" class="block w-full rounded-lg px-1 py-2 text-left text-[15px] hover:bg-gray-200" x-text="value"></button>
+                                        <button x-on:click="addFilter(value)" class="block w-full rounded-lg px-1 py-2 text-left text-[15px] hover:bg-neutral-200" x-text="value"></button>
                                     </template>
                                 </div>
                             </template>
@@ -905,26 +905,26 @@ class OutreachPage extends Page
                     <button
                         type="button"
                         x-on:click="presetOpen = ! presetOpen"
-                        class="flex h-10 min-w-[190px] items-center justify-between gap-3 rounded-xl border border-gray-200 bg-white px-4 text-left text-[15px] text-gray-900 shadow-sm outline-none transition hover:bg-gray-200 focus:border-blue-400 focus:ring-2 focus:ring-blue-200"
+                        class="flex h-10 min-w-[190px] items-center justify-between gap-3 rounded-xl border border-neutral-200 bg-white px-4 text-left text-[15px] text-neutral-900 shadow-sm outline-none transition hover:bg-neutral-200 focus:border-blue-400 focus:ring-2 focus:ring-blue-200"
                     >
                         <span x-text="selectedPresetName"></span>
-                        <span class="material-symbols-rounded text-gray-600">keyboard_arrow_down</span>
+                        <span class="material-symbols-rounded text-neutral-600">keyboard_arrow_down</span>
                     </button>
                     <div
                         x-cloak
                         x-show="presetOpen"
                         x-transition
-                        class="absolute right-0 top-12 z-40 w-[230px] overflow-hidden rounded-xl border border-gray-200 bg-white p-1 text-[15px] text-gray-900 shadow-lg"
+                        class="absolute right-0 top-12 z-40 w-[230px] overflow-hidden rounded-xl border border-neutral-200 bg-white p-1 text-[15px] text-neutral-900 shadow-lg"
                     >
                         <button
                             type="button"
                             x-on:click="clearFilters()"
-                            class="block w-full rounded-lg px-3 py-2 text-left font-semibold hover:bg-gray-200"
+                            class="block w-full rounded-lg px-3 py-2 text-left font-semibold hover:bg-neutral-200"
                         >
                             Clear filters
                         </button>
                         <template x-for="preset in presets" :key="preset.name">
-                            <div class="group flex items-center rounded-lg hover:bg-gray-200">
+                            <div class="group flex items-center rounded-lg hover:bg-neutral-200">
                                 <button
                                     type="button"
                                     x-on:click="applyPreset(preset)"
@@ -936,7 +936,7 @@ class OutreachPage extends Page
                                 <button
                                     type="button"
                                     x-on:click.stop="deletePreset(preset)"
-                                    class="mr-2 flex size-8 shrink-0 items-center justify-center rounded-lg text-gray-400 opacity-0 transition hover:bg-red-50 hover:text-red-600 group-hover:opacity-100"
+                                    class="mr-2 flex size-8 shrink-0 items-center justify-center rounded-lg text-neutral-400 opacity-0 transition hover:bg-red-50 hover:text-red-600 group-hover:opacity-100"
                                     :aria-label="`Delete ${preset.name}`"
                                 >
                                     <span class="material-symbols-rounded !text-[18px]">delete</span>
@@ -950,7 +950,7 @@ class OutreachPage extends Page
             <div class="overflow-x-auto">
                 <table class="w-full min-w-[1180px] table-fixed border-collapse text-[15px]">
                     <thead>
-                        <tr class="border-y border-gray-200 bg-gray-50 text-left text-[14px] font-semibold text-gray-950">
+                        <tr class="border-y border-neutral-200 bg-neutral-50 text-left text-[14px] font-semibold text-neutral-950">
                             <th class="w-[160px] px-6 py-4">Name</th>
                             <th class="w-[155px] px-4 py-4">Phone</th>
                             <th class="w-[165px] px-4 py-4">Email</th>
@@ -960,7 +960,7 @@ class OutreachPage extends Page
                             <th class="w-[160px] px-4 py-4">Outcome</th>
                             <th class="w-[120px] px-4 py-4">Result</th>
                             <th class="w-[70px] px-4 py-4">
-                                <button type="button" x-on:click="toggleAgeSort()" class="flex items-center gap-1 rounded-md font-semibold hover:text-gray-600">
+                                <button type="button" x-on:click="toggleAgeSort()" class="flex items-center gap-1 rounded-md font-semibold hover:text-neutral-600">
                                     <span>Age</span>
                                     <span class="material-symbols-rounded !text-[16px]" x-text="ageSortDirection === 'asc' ? 'arrow_upward' : 'arrow_downward'"></span>
                                 </button>
@@ -970,68 +970,68 @@ class OutreachPage extends Page
                     </thead>
                     <tbody>
                         <template x-for="row in paginatedRows()" :key="row.name + row.email + row.age + row.result">
-                            <tr class="border-b border-gray-200">
+                            <tr class="border-b border-neutral-200">
                                 <td class="px-6 py-4">
                                     <span class="group relative inline-flex max-w-full">
                                         <span class="truncate" x-text="row.name"></span>
-                                        <span class="pointer-events-none absolute bottom-full left-1/2 z-50 mb-2 -translate-x-1/2 translate-y-1 whitespace-nowrap rounded-lg bg-gray-900 px-3 py-2 text-xs font-medium text-white opacity-0 shadow-sm transition group-hover:translate-y-0 group-hover:opacity-100">
+                                        <span class="pointer-events-none absolute bottom-full left-1/2 z-50 mb-2 -translate-x-1/2 translate-y-1 whitespace-nowrap rounded-lg bg-neutral-900 px-3 py-2 text-xs font-medium text-white opacity-0 shadow-sm transition group-hover:translate-y-0 group-hover:opacity-100">
                                             <span x-text="row.name"></span>
-                                            <span class="absolute left-1/2 top-full size-2 -translate-x-1/2 -translate-y-1 rotate-45 bg-gray-900"></span>
+                                            <span class="absolute left-1/2 top-full size-2 -translate-x-1/2 -translate-y-1 rotate-45 bg-neutral-900"></span>
                                         </span>
                                     </span>
                                 </td>
                                 <td class="px-4 py-4">
-                                    <span x-show="! row.phone" class="text-gray-300"></span>
+                                    <span x-show="! row.phone" class="text-neutral-300"></span>
                                     <span x-show="row.phone" class="group relative inline-flex">
                                         <span x-text="row.phone"></span>
-                                        <span class="pointer-events-none absolute bottom-full left-1/2 z-50 mb-2 -translate-x-1/2 translate-y-1 whitespace-nowrap rounded-lg bg-gray-900 px-3 py-2 text-xs font-medium text-white opacity-0 shadow-sm transition group-hover:translate-y-0 group-hover:opacity-100">
+                                        <span class="pointer-events-none absolute bottom-full left-1/2 z-50 mb-2 -translate-x-1/2 translate-y-1 whitespace-nowrap rounded-lg bg-neutral-900 px-3 py-2 text-xs font-medium text-white opacity-0 shadow-sm transition group-hover:translate-y-0 group-hover:opacity-100">
                                             <span class="mr-1" x-text="row.phoneFlag"></span>
                                             <span x-text="row.phoneCountry"></span>
-                                            <span class="absolute left-1/2 top-full size-2 -translate-x-1/2 -translate-y-1 rotate-45 bg-gray-900"></span>
+                                            <span class="absolute left-1/2 top-full size-2 -translate-x-1/2 -translate-y-1 rotate-45 bg-neutral-900"></span>
                                         </span>
                                     </span>
                                 </td>
                                 <td class="px-4 py-4">
-                                    <span x-show="! row.email" class="text-gray-300"></span>
+                                    <span x-show="! row.email" class="text-neutral-300"></span>
                                     <span x-show="row.email" class="group relative inline-flex max-w-full">
                                         <span class="truncate" x-text="shortEmail(row.email)"></span>
-                                        <span class="pointer-events-none absolute bottom-full left-1/2 z-50 mb-2 -translate-x-1/2 translate-y-1 whitespace-nowrap rounded-lg bg-gray-900 px-3 py-2 text-xs font-medium text-white opacity-0 shadow-sm transition group-hover:translate-y-0 group-hover:opacity-100">
+                                        <span class="pointer-events-none absolute bottom-full left-1/2 z-50 mb-2 -translate-x-1/2 translate-y-1 whitespace-nowrap rounded-lg bg-neutral-900 px-3 py-2 text-xs font-medium text-white opacity-0 shadow-sm transition group-hover:translate-y-0 group-hover:opacity-100">
                                             <span x-text="row.email"></span>
-                                            <span class="absolute left-1/2 top-full size-2 -translate-x-1/2 -translate-y-1 rotate-45 bg-gray-900"></span>
+                                            <span class="absolute left-1/2 top-full size-2 -translate-x-1/2 -translate-y-1 rotate-45 bg-neutral-900"></span>
                                         </span>
                                     </span>
                                 </td>
                                 <td class="px-4 py-4" x-text="row.channel"></td>
                                 <td class="px-4 py-4">
                                     <span x-show="row.content === 'View'" class="group relative inline-flex">
-                                        <span class="outcraft-label inline-flex max-w-[76px] cursor-pointer rounded-lg border border-gray-200 bg-gray-50 px-2 py-1 text-[13px] leading-none">
+                                        <span class="outcraft-label inline-flex max-w-[76px] cursor-pointer rounded-lg border border-neutral-200 bg-neutral-50 px-2 py-1 text-[13px] leading-none">
                                             <span class="truncate">View</span>
                                         </span>
-                                        <span class="pointer-events-none absolute bottom-full left-1/2 z-50 mb-2 w-[320px] -translate-x-1/2 translate-y-1 rounded-lg bg-gray-900 px-4 py-3 text-left text-xs font-medium leading-5 text-white opacity-0 shadow-sm transition group-hover:translate-y-0 group-hover:opacity-100">
+                                        <span class="pointer-events-none absolute bottom-full left-1/2 z-50 mb-2 w-[320px] -translate-x-1/2 translate-y-1 rounded-lg bg-neutral-900 px-4 py-3 text-left text-xs font-medium leading-5 text-white opacity-0 shadow-sm transition group-hover:translate-y-0 group-hover:opacity-100">
                                             <span x-text="row.contentPreview"></span>
-                                            <span class="absolute left-1/2 top-full size-2 -translate-x-1/2 -translate-y-1 rotate-45 bg-gray-900"></span>
+                                            <span class="absolute left-1/2 top-full size-2 -translate-x-1/2 -translate-y-1 rotate-45 bg-neutral-900"></span>
                                         </span>
                                     </span>
                                     <span x-show="row.content && row.content !== 'View'" class="group relative inline-flex">
-                                        <span class="outcraft-label inline-flex max-w-[76px] cursor-pointer items-center gap-1 rounded-lg border border-gray-200 bg-gray-50 px-2 py-1 text-[13px] leading-[18px] text-gray-900">
+                                        <span class="outcraft-label inline-flex max-w-[76px] cursor-pointer items-center gap-1 rounded-lg border border-neutral-200 bg-neutral-50 px-2 py-1 text-[13px] leading-[18px] text-neutral-900">
                                             <span class="material-symbols-rounded !text-[18px] !leading-[18px] [font-variation-settings:'FILL'_1,'wght'_400,'GRAD'_0,'opsz'_20]">play_circle</span>
                                             <span class="truncate leading-[18px]" x-text="row.content"></span>
                                         </span>
-                                        <span class="pointer-events-none absolute bottom-full left-1/2 z-50 mb-2 -translate-x-1/2 translate-y-1 whitespace-nowrap rounded-lg bg-gray-900 px-3 py-2 text-xs font-medium text-white opacity-0 shadow-sm transition group-hover:translate-y-0 group-hover:opacity-100">
+                                        <span class="pointer-events-none absolute bottom-full left-1/2 z-50 mb-2 -translate-x-1/2 translate-y-1 whitespace-nowrap rounded-lg bg-neutral-900 px-3 py-2 text-xs font-medium text-white opacity-0 shadow-sm transition group-hover:translate-y-0 group-hover:opacity-100">
                                             Listen
-                                            <span class="absolute left-1/2 top-full size-2 -translate-x-1/2 -translate-y-1 rotate-45 bg-gray-900"></span>
+                                            <span class="absolute left-1/2 top-full size-2 -translate-x-1/2 -translate-y-1 rotate-45 bg-neutral-900"></span>
                                         </span>
                                     </span>
                                 </td>
                                 <td class="px-4 py-4">
                                     <span class="group relative inline-flex">
-                                        <span class="outcraft-label inline-flex max-w-[112px] items-center gap-1 rounded-lg border border-gray-200 bg-gray-50 px-2 py-1 text-[13px] leading-none text-gray-600">
+                                        <span class="outcraft-label inline-flex max-w-[112px] items-center gap-1 rounded-lg border border-neutral-200 bg-neutral-50 px-2 py-1 text-[13px] leading-none text-neutral-600">
                                             <span class="material-symbols-rounded !text-[14px]" x-text="row.direction === 'Inbound' ? 'arrow_downward' : 'arrow_upward'"></span>
                                             <span class="truncate" x-text="row.direction"></span>
                                         </span>
-                                        <span class="pointer-events-none absolute bottom-full left-1/2 z-50 mb-2 -translate-x-1/2 translate-y-1 whitespace-nowrap rounded-lg bg-gray-900 px-3 py-2 text-xs font-medium text-white opacity-0 shadow-sm transition group-hover:translate-y-0 group-hover:opacity-100">
+                                        <span class="pointer-events-none absolute bottom-full left-1/2 z-50 mb-2 -translate-x-1/2 translate-y-1 whitespace-nowrap rounded-lg bg-neutral-900 px-3 py-2 text-xs font-medium text-white opacity-0 shadow-sm transition group-hover:translate-y-0 group-hover:opacity-100">
                                             <span x-text="row.direction"></span>
-                                            <span class="absolute left-1/2 top-full size-2 -translate-x-1/2 -translate-y-1 rotate-45 bg-gray-900"></span>
+                                            <span class="absolute left-1/2 top-full size-2 -translate-x-1/2 -translate-y-1 rotate-45 bg-neutral-900"></span>
                                         </span>
                                     </span>
                                 </td>
@@ -1041,9 +1041,9 @@ class OutreachPage extends Page
                                             <span class="material-symbols-rounded !text-[14px]" x-text="outcomeIcon(row.outcome)"></span>
                                             <span class="truncate" x-text="row.outcome"></span>
                                         </span>
-                                        <span class="pointer-events-none absolute bottom-full left-1/2 z-50 mb-2 -translate-x-1/2 translate-y-1 whitespace-nowrap rounded-lg bg-gray-900 px-3 py-2 text-xs font-medium text-white opacity-0 shadow-sm transition group-hover:translate-y-0 group-hover:opacity-100">
+                                        <span class="pointer-events-none absolute bottom-full left-1/2 z-50 mb-2 -translate-x-1/2 translate-y-1 whitespace-nowrap rounded-lg bg-neutral-900 px-3 py-2 text-xs font-medium text-white opacity-0 shadow-sm transition group-hover:translate-y-0 group-hover:opacity-100">
                                             <span x-text="row.outcome"></span>
-                                            <span class="absolute left-1/2 top-full size-2 -translate-x-1/2 -translate-y-1 rotate-45 bg-gray-900"></span>
+                                            <span class="absolute left-1/2 top-full size-2 -translate-x-1/2 -translate-y-1 rotate-45 bg-neutral-900"></span>
                                         </span>
                                     </span>
                                 </td>
@@ -1052,34 +1052,34 @@ class OutreachPage extends Page
                                         <span class="outcraft-label inline-flex max-w-[98px] rounded-lg border px-2 py-1 text-[13px] leading-none" :class="pillClass(row.result)">
                                             <span class="truncate" x-text="row.result"></span>
                                         </span>
-                                        <span class="pointer-events-none absolute bottom-full left-1/2 z-50 mb-2 -translate-x-1/2 translate-y-1 whitespace-nowrap rounded-lg bg-gray-900 px-3 py-2 text-xs font-medium text-white opacity-0 shadow-sm transition group-hover:translate-y-0 group-hover:opacity-100">
+                                        <span class="pointer-events-none absolute bottom-full left-1/2 z-50 mb-2 -translate-x-1/2 translate-y-1 whitespace-nowrap rounded-lg bg-neutral-900 px-3 py-2 text-xs font-medium text-white opacity-0 shadow-sm transition group-hover:translate-y-0 group-hover:opacity-100">
                                             <span x-text="row.result"></span>
-                                            <span class="absolute left-1/2 top-full size-2 -translate-x-1/2 -translate-y-1 rotate-45 bg-gray-900"></span>
+                                            <span class="absolute left-1/2 top-full size-2 -translate-x-1/2 -translate-y-1 rotate-45 bg-neutral-900"></span>
                                         </span>
                                     </span>
                                 </td>
                                 <td class="px-4 py-4">
                                     <span class="group relative inline-flex">
                                         <span x-text="row.age"></span>
-                                        <span class="pointer-events-none absolute bottom-full left-1/2 z-50 mb-2 -translate-x-1/2 translate-y-1 whitespace-nowrap rounded-lg bg-gray-900 px-3 py-2 text-xs font-medium text-white opacity-0 shadow-sm transition group-hover:translate-y-0 group-hover:opacity-100">
+                                        <span class="pointer-events-none absolute bottom-full left-1/2 z-50 mb-2 -translate-x-1/2 translate-y-1 whitespace-nowrap rounded-lg bg-neutral-900 px-3 py-2 text-xs font-medium text-white opacity-0 shadow-sm transition group-hover:translate-y-0 group-hover:opacity-100">
                                             <span x-text="row.ageTooltip"></span>
-                                            <span class="absolute left-1/2 top-full size-2 -translate-x-1/2 -translate-y-1 rotate-45 bg-gray-900"></span>
+                                            <span class="absolute left-1/2 top-full size-2 -translate-x-1/2 -translate-y-1 rotate-45 bg-neutral-900"></span>
                                         </span>
                                     </span>
                                 </td>
-                                <td class="cursor-pointer px-4 py-4 font-semibold text-gray-600 transition hover:text-gray-950">View</td>
+                                <td class="cursor-pointer px-4 py-4 font-semibold text-neutral-600 transition hover:text-neutral-950">View</td>
                             </tr>
                         </template>
                         <tr x-show="filteredRows().length === 0">
-                            <td colspan="10" class="px-8 py-16 text-center text-gray-500">No outreach records match these filters.</td>
+                            <td colspan="10" class="px-8 py-16 text-center text-neutral-500">No outreach records match these filters.</td>
                         </tr>
                     </tbody>
                 </table>
             </div>
-            <div class="flex items-center justify-between gap-4 border-t border-gray-200 px-6 py-4 text-[14px] text-gray-600">
+            <div class="flex items-center justify-between gap-4 border-t border-neutral-200 px-6 py-4 text-[14px] text-neutral-600">
                 <div class="flex items-center gap-3">
                     <span>Rows per page</span>
-                    <select x-model.number="perPage" x-on:change="page = 1" class="h-9 rounded-lg border border-gray-200 bg-white px-3 text-[14px] text-gray-900 outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-200">
+                    <select x-model.number="perPage" x-on:change="page = 1" class="h-9 rounded-lg border border-neutral-200 bg-white px-3 text-[14px] text-neutral-900 outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-200">
                         <template x-for="option in perPageOptions" :key="option">
                             <option :value="option" x-text="option"></option>
                         </template>
@@ -1088,13 +1088,13 @@ class OutreachPage extends Page
                 <div class="flex items-center gap-4">
                     <span x-text="paginationSummary()"></span>
                     <div class="flex items-center gap-1">
-                        <button type="button" x-on:click="page = Math.max(1, page - 1)" :disabled="page === 1" class="flex size-9 items-center justify-center rounded-lg text-gray-700 transition hover:bg-gray-200 disabled:cursor-not-allowed disabled:opacity-40">
+                        <button type="button" x-on:click="page = Math.max(1, page - 1)" :disabled="page === 1" class="flex size-9 items-center justify-center rounded-lg text-neutral-700 transition hover:bg-neutral-200 disabled:cursor-not-allowed disabled:opacity-40">
                             <span class="material-symbols-rounded">chevron_left</span>
                         </button>
                         <template x-for="pageNumber in visiblePageNumbers()" :key="pageNumber">
-                            <button type="button" x-on:click="page = pageNumber" class="flex size-9 items-center justify-center rounded-lg text-gray-700 transition hover:bg-gray-200" :class="page === pageNumber ? 'bg-gray-100 font-semibold text-gray-950' : ''" x-text="pageNumber"></button>
+                            <button type="button" x-on:click="page = pageNumber" class="flex size-9 items-center justify-center rounded-lg text-neutral-700 transition hover:bg-neutral-200" :class="page === pageNumber ? 'bg-neutral-100 font-semibold text-neutral-950' : ''" x-text="pageNumber"></button>
                         </template>
-                        <button type="button" x-on:click="page = Math.min(totalPages(), page + 1)" :disabled="page === totalPages()" class="flex size-9 items-center justify-center rounded-lg text-gray-700 transition hover:bg-gray-200 disabled:cursor-not-allowed disabled:opacity-40">
+                        <button type="button" x-on:click="page = Math.min(totalPages(), page + 1)" :disabled="page === totalPages()" class="flex size-9 items-center justify-center rounded-lg text-neutral-700 transition hover:bg-neutral-200 disabled:cursor-not-allowed disabled:opacity-40">
                             <span class="material-symbols-rounded">chevron_right</span>
                         </button>
                     </div>
@@ -1369,7 +1369,7 @@ class OutreachPage extends Page
                         return 'border-amber-200 bg-amber-50 text-amber-700';
                     }
 
-                    return 'border-gray-200 bg-gray-50 text-gray-600';
+                    return 'border-neutral-200 bg-neutral-50 text-neutral-600';
                 },
                 campaignBadgeClass(value) {
                     if (['Completed', 'Positive'].includes(value)) {
@@ -1384,7 +1384,7 @@ class OutreachPage extends Page
                         return 'border-amber-200 bg-amber-50 text-amber-700';
                     }
 
-                    return 'border-gray-200 bg-gray-50 text-gray-600';
+                    return 'border-neutral-200 bg-neutral-50 text-neutral-600';
                 },
                 outcomeIcon(value) {
                     return {
@@ -1411,7 +1411,7 @@ class OutreachPage extends Page
                         return 'border-red-200 bg-red-50 text-red-600';
                     }
 
-                    return 'border-gray-200 bg-gray-50 text-gray-600';
+                    return 'border-neutral-200 bg-neutral-50 text-neutral-600';
                 },
             };
         }

@@ -227,17 +227,17 @@ class OutreachPage extends Page
             </div>
         </div>
 
-        <nav class="space-y-3 pt-4 text-[15px] font-medium text-gray-600 transition-[padding] duration-300 ease-in-out" :class="sidebarOpen ? 'px-5' : 'px-3'">
+        <nav class="space-y-3 pt-4 text-[15px] font-medium text-gray-600 transition-[padding] duration-300 ease-in-out" :class="sidebarOpen ? 'px-4' : 'px-3'">
             <template x-for="item in nav" :key="item.label">
-                <button class="group flex h-10 w-full items-center overflow-hidden whitespace-nowrap rounded-xl text-left transition-all duration-300 ease-in-out hover:bg-gray-100 hover:text-gray-950" :class="sidebarOpen ? 'gap-4 px-3' : 'justify-center gap-0 px-0'" :title="item.label">
+                <button class="group flex h-10 w-full items-center overflow-hidden whitespace-nowrap rounded-xl text-left transition-all duration-300 ease-in-out hover:bg-gray-100 hover:text-gray-950" :class="sidebarOpen ? 'gap-3 px-2' : 'justify-center gap-0 px-0'" :title="item.label">
                     <span class="material-symbols-rounded shrink-0 text-gray-950" x-text="item.icon"></span>
-                    <span class="min-w-0 overflow-hidden text-ellipsis transition-[max-width,opacity] duration-200 ease-in-out" :class="sidebarOpen ? 'max-w-[160px] opacity-100 delay-100' : 'max-w-0 opacity-0'" x-text="item.label"></span>
+                    <span class="min-w-0 overflow-hidden transition-[max-width,opacity] duration-200 ease-in-out" :class="sidebarOpen ? 'max-w-[170px] opacity-100 delay-100' : 'max-w-0 opacity-0'" x-text="item.label"></span>
                 </button>
             </template>
         </nav>
 
-        <div class="mt-auto space-y-3 pb-6 text-[15px] font-medium text-gray-600 transition-[padding] duration-300 ease-in-out" :class="sidebarOpen ? 'px-5' : 'px-3'">
-            <button type="button" x-on:click="sidebarOpen = ! sidebarOpen" class="group flex h-10 w-full items-center overflow-hidden whitespace-nowrap rounded-xl text-left transition-all duration-300 ease-in-out hover:bg-gray-100 hover:text-gray-950" :class="sidebarOpen ? 'gap-4 px-3' : 'justify-center gap-0 px-0'" :title="sidebarOpen ? 'Collapse' : 'Expand'">
+        <div class="mt-auto space-y-3 pb-6 text-[15px] font-medium text-gray-600 transition-[padding] duration-300 ease-in-out" :class="sidebarOpen ? 'px-4' : 'px-3'">
+            <button type="button" x-on:click="sidebarOpen = ! sidebarOpen" class="group flex h-10 w-full items-center overflow-hidden whitespace-nowrap rounded-xl text-left transition-all duration-300 ease-in-out hover:bg-gray-100 hover:text-gray-950" :class="sidebarOpen ? 'gap-3 px-2' : 'justify-center gap-0 px-0'" :title="sidebarOpen ? 'Collapse' : 'Expand'">
                 <span class="material-symbols-rounded shrink-0 text-gray-950" x-text="sidebarOpen ? 'dock_to_left' : 'dock_to_right'"></span>
                 <span class="overflow-hidden transition-[max-width,opacity] duration-200 ease-in-out" :class="sidebarOpen ? 'max-w-[120px] opacity-100 delay-100' : 'max-w-0 opacity-0'" x-text="sidebarOpen ? 'Collapse' : 'Expand'"></span>
             </button>

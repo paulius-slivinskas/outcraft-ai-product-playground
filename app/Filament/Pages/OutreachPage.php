@@ -231,7 +231,7 @@ class OutreachPage extends Page
             <template x-for="item in nav" :key="item.label">
                 <button class="group flex h-10 w-full items-center overflow-hidden whitespace-nowrap rounded-xl text-left transition-all duration-300 ease-in-out hover:bg-gray-100 hover:text-gray-950" :class="sidebarOpen ? 'gap-4 px-3' : 'justify-center gap-0 px-0'" :title="item.label">
                     <span class="material-symbols-rounded shrink-0 text-gray-950" x-text="item.icon"></span>
-                    <span class="overflow-hidden transition-[max-width,opacity] duration-200 ease-in-out" :class="sidebarOpen ? 'max-w-[150px] opacity-100 delay-100' : 'max-w-0 opacity-0'" x-text="item.label"></span>
+                    <span class="min-w-0 overflow-hidden text-ellipsis transition-[max-width,opacity] duration-200 ease-in-out" :class="sidebarOpen ? 'max-w-[160px] opacity-100 delay-100' : 'max-w-0 opacity-0'" x-text="item.label"></span>
                 </button>
             </template>
         </nav>

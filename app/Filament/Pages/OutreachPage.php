@@ -1128,7 +1128,6 @@ class OutreachPage extends Page
                 handoffSearchableColumns: ['Country', 'Timezone', 'Name', 'Phone', 'Email'],
                 setActiveTab(tab) {
                     this.activeTab = tab;
-                    this.campaign = tab === 'Campaigns' ? 'Abandoned Cart' : 'All campaigns';
                     this.page = 1;
                     this.query = '';
                     this.filters = [];
@@ -1287,18 +1286,8 @@ class OutreachPage extends Page
                 },
                 filteredRows() {
                     const rows = this.rows.filter((row) => {
-                        if (this.activeTab === 'Campaigns' && this.campaign !== 'All campaigns' && row.campaignName !== this.campaign) {
+                        if (this.campaign !== 'All campaigns' && row.campaignName !== this.campaign) {
                             return false;
-                        }
-
-                        if (this.activeTab === 'Outreach') {
-                            if (this.campaign === 'Abandoned Cart' && !['Email', 'SMS'].includes(row.channel)) {
-                                return false;
-                            }
-
-                            if (this.campaign === 'Web Support' && !['Call', 'WhatsApp'].includes(row.channel)) {
-                                return false;
-                            }
                         }
 
                         return this.filters.every((filter) => Object.values(row).some((value) => this.matchesSearch(value, filter)));

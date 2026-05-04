@@ -585,7 +585,7 @@ class OutreachPage extends Page
                                         </span>
                                     </span>
                                 </td>
-                                <td class="px-4 py-4" x-text="row.phone || row.email"></td>
+                                <td class="px-4 py-4" x-text="row.phone"></td>
                                 <td class="px-4 py-4">
                                     <span x-show="! row.email" class="text-gray-300"></span>
                                     <span x-show="row.email" class="group relative inline-flex max-w-full">

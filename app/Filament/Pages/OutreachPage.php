@@ -656,6 +656,174 @@ class OutreachPage extends Page
             </div>
         </section>
 
+        <section x-cloak x-show="activeTab === 'Handoffs'" class="mx-6 mb-6 mt-5 overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm">
+            <div class="grid min-h-[112px] grid-cols-[250px_1fr_230px] items-start gap-6 p-6">
+                <div>
+                    <h1 class="text-[19px] font-semibold tracking-normal">Handoff requests</h1>
+                    <p class="mt-1 max-w-[230px] text-[15px] leading-6 text-gray-500">Leads that have requested a handoff from AI to a human support.</p>
+                </div>
+
+                <div class="relative" x-on:click.outside="searchOpen = false">
+                    <div class="rounded-xl border border-gray-200 bg-white shadow-sm">
+                        <div class="flex min-h-10 items-center px-4">
+                            <input
+                                x-model="query"
+                                x-on:focus="searchOpen = true"
+                                x-on:keydown.escape="searchOpen = false"
+                                x-on:keydown.enter.prevent="addFirstSuggestion()"
+                                class="w-full border-0 bg-transparent text-[15px] outline-none ring-0 placeholder:text-gray-400 focus:ring-0"
+                                placeholder="Filter anything"
+                            >
+                        </div>
+                        <div x-show="filters.length > 0" x-transition class="flex min-h-10 items-center gap-2 border-t border-gray-200 px-4">
+                            <template x-for="tag in filters" :key="tag">
+                                <button x-on:click="removeFilter(tag)" class="inline-flex items-center gap-1 rounded-lg border border-gray-200 bg-gray-50 px-2 py-1 text-[15px] leading-none text-gray-600">
+                                    <span x-text="tag"></span>
+                                    <span class="text-gray-500">×</span>
+                                </button>
+                            </template>
+                            <div class="ml-auto flex items-center gap-4">
+                                <button class="text-[14px] font-semibold text-gray-500 hover:text-gray-900" x-on:click="clearSearchTags()">Clear</button>
+                                <button class="text-[14px] font-semibold text-gray-600 hover:text-gray-900" x-on:click="savePreset()">Save preset</button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div x-cloak x-show="searchOpen" x-transition class="absolute left-0 right-0 top-0 z-30 rounded-xl border border-gray-200 bg-white p-5 shadow-lg">
+                        <input x-model="query" x-ref="handoffsOverlayInput" x-init="$watch('searchOpen', value => value && activeTab === 'Handoffs' && $nextTick(() => $refs.handoffsOverlayInput.focus()))" class="w-full border-0 bg-transparent text-[17px] outline-none ring-0 focus:ring-0" placeholder="Filter anything">
+                        <div class="filter-scroll mt-4 max-h-[215px] space-y-1 overflow-y-auto pr-2">
+                            <template x-for="group in groupedSuggestions()" :key="group.column">
+                                <div>
+                                    <div class="px-1 py-2 text-[15px] font-semibold" x-text="group.column"></div>
+                                    <template x-for="value in group.values" :key="group.column + value">
+                                        <button x-on:click="addFilter(value)" class="block w-full rounded-lg px-1 py-2 text-left text-[15px] hover:bg-gray-50" x-text="value"></button>
+                                    </template>
+                                </div>
+                            </template>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="relative ml-auto" x-on:click.outside="presetOpen = false">
+                    <button
+                        type="button"
+                        x-on:click="presetOpen = ! presetOpen"
+                        class="flex h-10 min-w-[175px] items-center justify-between gap-3 rounded-xl border border-gray-200 bg-white px-4 text-left text-[15px] text-gray-900 shadow-sm outline-none transition hover:bg-gray-50 focus:border-blue-400 focus:ring-2 focus:ring-blue-200"
+                    >
+                        <span x-text="selectedPresetName"></span>
+                        <span class="material-symbols-rounded text-gray-600">keyboard_arrow_down</span>
+                    </button>
+                    <div x-cloak x-show="presetOpen" x-transition class="absolute right-0 top-12 z-40 w-[230px] overflow-hidden rounded-xl border border-gray-200 bg-white p-1 text-[15px] text-gray-900 shadow-lg">
+                        <button type="button" x-on:click="clearFilters()" class="block w-full rounded-lg px-3 py-2 text-left font-semibold hover:bg-gray-50">Clear filters</button>
+                        <template x-for="preset in presets" :key="preset.name">
+                            <div class="group flex items-center rounded-lg hover:bg-gray-50">
+                                <button type="button" x-on:click="applyPreset(preset)" class="flex min-w-0 flex-1 items-center justify-between px-3 py-2 text-left">
+                                    <span class="truncate" x-text="preset.name"></span>
+                                    <span x-show="selectedPresetName === preset.name" class="material-symbols-rounded ml-3 shrink-0 text-blue-500">check</span>
+                                </button>
+                                <button type="button" x-on:click.stop="deletePreset(preset)" class="mr-2 flex size-8 shrink-0 items-center justify-center rounded-lg text-gray-400 opacity-0 transition hover:bg-red-50 hover:text-red-600 group-hover:opacity-100" :aria-label="`Delete ${preset.name}`">
+                                    <span class="material-symbols-rounded !text-[18px]">delete</span>
+                                </button>
+                            </div>
+                        </template>
+                    </div>
+                </div>
+            </div>
+
+            <div class="overflow-x-auto">
+                <table class="w-full min-w-[1080px] table-fixed border-collapse text-[15px]">
+                    <thead>
+                        <tr class="border-y border-gray-200 bg-gray-50 text-left text-[14px] font-semibold text-gray-950">
+                            <th class="w-[240px] px-6 py-4">Name</th>
+                            <th class="w-[240px] px-4 py-4">Phone</th>
+                            <th class="w-[240px] px-4 py-4">Email</th>
+                            <th class="w-[90px] px-4 py-4">Country</th>
+                            <th class="w-[170px] px-4 py-4">Timezone</th>
+                            <th class="w-[70px] px-4 py-4">Age</th>
+                            <th class="w-[70px] px-4 py-4"></th>
+                            <th class="w-[80px] px-4 py-4"></th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <template x-for="row in paginatedRows()" :key="'handoff-' + row.name + row.phone + row.email + row.age">
+                            <tr class="border-b border-gray-200">
+                                <td class="px-6 py-4">
+                                    <span class="group relative inline-flex max-w-full">
+                                        <span class="truncate" x-text="row.name"></span>
+                                        <span class="pointer-events-none absolute bottom-full left-1/2 z-50 mb-2 -translate-x-1/2 translate-y-1 whitespace-nowrap rounded-lg bg-gray-900 px-3 py-2 text-xs font-medium text-white opacity-0 shadow-sm transition group-hover:translate-y-0 group-hover:opacity-100">
+                                            <span x-text="row.name"></span>
+                                            <span class="absolute left-1/2 top-full size-2 -translate-x-1/2 -translate-y-1 rotate-45 bg-gray-900"></span>
+                                        </span>
+                                    </span>
+                                </td>
+                                <td class="px-4 py-4">
+                                    <span x-show="! row.phone" class="text-gray-300"></span>
+                                    <span x-show="row.phone" class="group relative inline-flex">
+                                        <span x-text="row.phone"></span>
+                                        <span class="pointer-events-none absolute bottom-full left-1/2 z-50 mb-2 -translate-x-1/2 translate-y-1 whitespace-nowrap rounded-lg bg-gray-900 px-3 py-2 text-xs font-medium text-white opacity-0 shadow-sm transition group-hover:translate-y-0 group-hover:opacity-100">
+                                            <span class="mr-1" x-text="row.phoneFlag"></span>
+                                            <span x-text="row.phoneCountry"></span>
+                                            <span class="absolute left-1/2 top-full size-2 -translate-x-1/2 -translate-y-1 rotate-45 bg-gray-900"></span>
+                                        </span>
+                                    </span>
+                                </td>
+                                <td class="px-4 py-4">
+                                    <span x-show="! row.email" class="text-gray-300"></span>
+                                    <span x-show="row.email" class="group relative inline-flex max-w-full">
+                                        <span class="truncate" x-text="shortLeadEmail(row.email)"></span>
+                                        <span class="pointer-events-none absolute bottom-full left-1/2 z-50 mb-2 -translate-x-1/2 translate-y-1 whitespace-nowrap rounded-lg bg-gray-900 px-3 py-2 text-xs font-medium text-white opacity-0 shadow-sm transition group-hover:translate-y-0 group-hover:opacity-100">
+                                            <span x-text="row.email"></span>
+                                            <span class="absolute left-1/2 top-full size-2 -translate-x-1/2 -translate-y-1 rotate-45 bg-gray-900"></span>
+                                        </span>
+                                    </span>
+                                </td>
+                                <td class="px-4 py-4"><span class="mr-1" x-text="row.countryFlag"></span><span x-text="row.country"></span></td>
+                                <td class="px-4 py-4" x-text="row.timezone"></td>
+                                <td class="px-4 py-4">
+                                    <span class="group relative inline-flex">
+                                        <span x-text="leadAge(row)"></span>
+                                        <span class="pointer-events-none absolute bottom-full left-1/2 z-50 mb-2 -translate-x-1/2 translate-y-1 whitespace-nowrap rounded-lg bg-gray-900 px-3 py-2 text-xs font-medium text-white opacity-0 shadow-sm transition group-hover:translate-y-0 group-hover:opacity-100">
+                                            <span x-text="row.ageTooltip"></span>
+                                            <span class="absolute left-1/2 top-full size-2 -translate-x-1/2 -translate-y-1 rotate-45 bg-gray-900"></span>
+                                        </span>
+                                    </span>
+                                </td>
+                                <td class="cursor-pointer px-4 py-4 font-semibold text-gray-600">View</td>
+                                <td class="cursor-pointer px-4 py-4 font-semibold text-gray-600">Resolve</td>
+                            </tr>
+                        </template>
+                        <tr x-show="filteredRows().length === 0">
+                            <td colspan="8" class="px-8 py-16 text-center text-gray-500">No handoff requests match these filters.</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+            <div class="flex items-center justify-between gap-4 border-t border-gray-200 px-6 py-4 text-[14px] text-gray-600">
+                <div class="flex items-center gap-3">
+                    <span>Rows per page</span>
+                    <select x-model.number="perPage" x-on:change="page = 1" class="h-9 rounded-lg border border-gray-200 bg-white px-3 text-[14px] text-gray-900 outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-200">
+                        <template x-for="option in perPageOptions" :key="option">
+                            <option :value="option" x-text="option"></option>
+                        </template>
+                    </select>
+                </div>
+                <div class="flex items-center gap-4">
+                    <span x-text="paginationSummary()"></span>
+                    <div class="flex items-center gap-1">
+                        <button type="button" x-on:click="page = Math.max(1, page - 1)" :disabled="page === 1" class="flex size-9 items-center justify-center rounded-lg text-gray-700 transition hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-40">
+                            <span class="material-symbols-rounded">chevron_left</span>
+                        </button>
+                        <template x-for="pageNumber in visiblePageNumbers()" :key="pageNumber">
+                            <button type="button" x-on:click="page = pageNumber" class="flex size-9 items-center justify-center rounded-lg text-gray-700 transition hover:bg-gray-50" :class="page === pageNumber ? 'bg-gray-100 font-semibold text-gray-950' : ''" x-text="pageNumber"></button>
+                        </template>
+                        <button type="button" x-on:click="page = Math.min(totalPages(), page + 1)" :disabled="page === totalPages()" class="flex size-9 items-center justify-center rounded-lg text-gray-700 transition hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-40">
+                            <span class="material-symbols-rounded">chevron_right</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </section>
+
         <section x-cloak x-show="activeTab === 'Outreach'" class="mx-6 mb-6 mt-5 overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm">
             <div class="grid min-h-[114px] grid-cols-[220px_1fr_230px] items-start gap-6 p-6">
                 <h1 class="pt-1 text-[19px] font-semibold tracking-normal">Outreach</h1>
@@ -908,7 +1076,7 @@ class OutreachPage extends Page
             return {
                 rows,
                 sidebarOpen: true,
-                activeTab: 'Campaigns',
+                activeTab: 'Handoffs',
                 campaignOpen: false,
                 presetOpen: false,
                 campaign: 'Abandoned Cart',
@@ -942,6 +1110,7 @@ class OutreachPage extends Page
                 searchableColumns: ['Channel', 'Direction', 'Outcome', 'Result', 'Name', 'Phone', 'Email'],
                 leadSearchableColumns: ['State', 'Country', 'Timezone', 'Name', 'Phone', 'Email'],
                 campaignSearchableColumns: ['Campaign', 'Status', 'First Interaction', 'Follow Up', 'Name', 'Lead', 'Email'],
+                handoffSearchableColumns: ['Country', 'Timezone', 'Name', 'Phone', 'Email'],
                 setActiveTab(tab) {
                     this.activeTab = tab;
                     this.page = 1;
@@ -958,6 +1127,10 @@ class OutreachPage extends Page
 
                     if (this.activeTab === 'Campaigns') {
                         return this.campaignSearchableColumns;
+                    }
+
+                    if (this.activeTab === 'Handoffs') {
+                        return this.handoffSearchableColumns;
                     }
 
                     return this.searchableColumns;

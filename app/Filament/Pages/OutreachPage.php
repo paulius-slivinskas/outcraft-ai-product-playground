@@ -562,7 +562,7 @@ class OutreachPage extends Page
                         <tr class="border-y border-gray-200 bg-gray-50 text-left text-[14px] font-semibold text-gray-950">
                             <th class="w-[150px] px-6 py-4">Campaign</th>
                             <th class="w-[150px] px-4 py-4">Name</th>
-                            <th class="w-[150px] px-4 py-4">Lead</th>
+                            <th class="w-[150px] px-4 py-4">Phone</th>
                             <th class="w-[150px] px-4 py-4">Email</th>
                             <th class="w-[120px] px-4 py-4">Status</th>
                             <th class="w-[140px] px-4 py-4">First Interaction</th>
@@ -1109,7 +1109,7 @@ class OutreachPage extends Page
                 ],
                 searchableColumns: ['Channel', 'Direction', 'Outcome', 'Result', 'Name', 'Phone', 'Email'],
                 leadSearchableColumns: ['State', 'Country', 'Timezone', 'Name', 'Phone', 'Email'],
-                campaignSearchableColumns: ['Campaign', 'Status', 'First Interaction', 'Follow Up', 'Name', 'Lead', 'Email'],
+                campaignSearchableColumns: ['Campaign', 'Status', 'First Interaction', 'Follow Up', 'Name', 'Phone', 'Email'],
                 handoffSearchableColumns: ['Country', 'Timezone', 'Name', 'Phone', 'Email'],
                 setActiveTab(tab) {
                     this.activeTab = tab;
@@ -1142,7 +1142,6 @@ class OutreachPage extends Page
                         Status: 'campaignStatus',
                         'First Interaction': 'firstInteraction',
                         'Follow Up': 'followUp',
-                        Lead: 'phone',
                     }[column] || column.toLowerCase();
                     const value = String(row[key] || '').trim();
 

@@ -70,7 +70,8 @@ class OutreachPage extends Page
                 : ($channel === 'Call' ? $contents[1 + ($index % 7)] : (($index % 3) === 0 ? '' : 'View'));
             $age = $this->ageForIndex($index);
             $ageDate = $now - $age['seconds'];
-            $name = "{$firstName} {$lastName}";
+            $name = ($index % 20) < 3 ? '' : "{$firstName} {$lastName}";
+            $contentName = $name !== '' ? $name : 'Customer';
             $result = $results[(($index * 7) + intdiv($index, 4)) % count($results)];
             $phone = $hasPhone ? sprintf('(%d) %03d-%04d', $areaCode, $prefix, $line) : '';
             $email = $hasEmail ? sprintf('%s.%s%d@%s', strtolower($firstName), strtolower($lastName), $index + 1, $domains[($index * 2) % count($domains)]) : '';
@@ -97,7 +98,7 @@ class OutreachPage extends Page
                 'content' => $content,
                 'contentPreview' => sprintf(
                     'Hi I would like an update on my order. It has been over a month. %s Order number PUL2##%06d.',
-                    $name,
+                    $contentName,
                     270000 + (($index * 1739) % 900000),
                 ),
                 'direction' => $directions[(($index * 3) + intdiv($index, 5)) % count($directions)],

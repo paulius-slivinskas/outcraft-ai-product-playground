@@ -327,7 +327,7 @@ class OutreachPage extends Page
         <section x-cloak x-show="activeTab === 'Leads'" class="mx-6 mb-6 mt-5 overflow-hidden rounded-2xl border border-neutral-200 bg-white shadow-sm">
             <div class="grid min-h-[92px] grid-cols-[250px_1fr_230px] items-start gap-6 p-6">
                 <div>
-                    <h1 class="text-[19px] font-semibold tracking-normal">Leads</h1>
+                    <h1 class="text-[19px] font-bold leading-tight tracking-normal">Leads</h1>
                     <p class="mt-1 text-[15px] text-neutral-500">Browse and manage all your leads</p>
                 </div>
 
@@ -522,7 +522,7 @@ class OutreachPage extends Page
         <section x-cloak x-show="activeTab === 'Campaigns'" class="mx-6 mb-6 mt-5 overflow-hidden rounded-2xl border border-neutral-200 bg-white shadow-sm">
             <div class="grid min-h-[112px] grid-cols-[250px_1fr_230px] items-start gap-6 p-6">
                 <div>
-                    <h1 class="text-[19px] font-semibold tracking-normal">Lead Campaigns</h1>
+                    <h1 class="text-[19px] font-bold leading-tight tracking-normal">Lead Campaigns</h1>
                     <p class="mt-1 max-w-[220px] text-[15px] leading-6 text-neutral-500">Browse and manage lead campaigns for the selected campaign</p>
                 </div>
 
@@ -696,7 +696,7 @@ class OutreachPage extends Page
         <section x-cloak x-show="activeTab === 'Handoffs'" class="mx-6 mb-6 mt-5 overflow-hidden rounded-2xl border border-neutral-200 bg-white shadow-sm">
             <div class="grid min-h-[112px] grid-cols-[250px_1fr_230px] items-start gap-6 p-6">
                 <div>
-                    <h1 class="text-[19px] font-semibold tracking-normal">Handoff requests</h1>
+                    <h1 class="text-[19px] font-bold leading-tight tracking-normal">Handoff requests</h1>
                     <p class="mt-1 max-w-[230px] text-[15px] leading-6 text-neutral-500">Leads that have requested a handoff from AI to a human support.</p>
                 </div>
 
@@ -871,7 +871,7 @@ class OutreachPage extends Page
 
         <section x-cloak x-show="activeTab === 'Outreach'" class="mx-6 mb-6 mt-5 overflow-hidden rounded-2xl border border-neutral-200 bg-white shadow-sm">
             <div class="grid min-h-[114px] grid-cols-[220px_1fr_230px] items-start gap-6 p-6">
-                <h1 class="pt-1 text-[19px] font-semibold tracking-normal">Outreach</h1>
+                <h1 class="pt-1 text-[19px] font-bold leading-tight tracking-normal">Outreach</h1>
 
                 <div class="relative" x-on:click.outside="searchOpen = false">
                     <div class="rounded-xl border border-neutral-200 bg-white shadow-sm">

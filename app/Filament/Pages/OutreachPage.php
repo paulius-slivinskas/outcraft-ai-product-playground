@@ -162,6 +162,33 @@ class OutreachPage extends Page
             background: #d4d4d4;
             color: #171717;
         }
+        .outcraft-page {
+            scrollbar-color: #d4d4d4 transparent;
+            scrollbar-width: thin;
+        }
+        .outcraft-page * {
+            scrollbar-color: #d4d4d4 transparent;
+            scrollbar-width: thin;
+        }
+        .outcraft-page::-webkit-scrollbar,
+        .outcraft-page *::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+        .outcraft-page::-webkit-scrollbar-track,
+        .outcraft-page *::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        .outcraft-page::-webkit-scrollbar-thumb,
+        .outcraft-page *::-webkit-scrollbar-thumb {
+            background-color: #d4d4d4;
+            border-radius: 9999px;
+            border: 2px solid #ffffff;
+        }
+        .outcraft-page::-webkit-scrollbar-thumb:hover,
+        .outcraft-page *::-webkit-scrollbar-thumb:hover {
+            background-color: #a3a3a3;
+        }
         .material-symbols-rounded {
             font-family: 'Material Symbols Rounded';
             font-weight: normal;
@@ -177,24 +204,6 @@ class OutreachPage extends Page
             -webkit-font-feature-settings: 'liga';
             -webkit-font-smoothing: antialiased;
             font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 20;
-        }
-        .filter-scroll {
-            scrollbar-color: #d1d5db transparent;
-            scrollbar-width: thin;
-        }
-        .filter-scroll::-webkit-scrollbar {
-            width: 8px;
-        }
-        .filter-scroll::-webkit-scrollbar-track {
-            background: transparent;
-        }
-        .filter-scroll::-webkit-scrollbar-thumb {
-            background-color: #d1d5db;
-            border-radius: 9999px;
-            border: 2px solid #ffffff;
-        }
-        .filter-scroll::-webkit-scrollbar-thumb:hover {
-            background-color: #9ca3af;
         }
         .outcraft-label {
             align-items: center;

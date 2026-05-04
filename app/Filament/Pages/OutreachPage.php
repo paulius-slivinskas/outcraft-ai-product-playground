@@ -195,7 +195,6 @@ class OutreachPage extends Page
         .outcraft-label {
             align-items: center;
             min-width: 0;
-            max-width: 100%;
             min-height: 26px;
             white-space: nowrap;
             overflow: hidden;
@@ -451,7 +450,9 @@ class OutreachPage extends Page
                                 <td class="px-4 py-4"><span class="mr-1" x-text="row.countryFlag"></span><span x-text="row.country"></span></td>
                                 <td class="px-4 py-4" x-text="row.timezone"></td>
                                 <td class="px-4 py-4">
-                                    <span class="outcraft-label inline-flex max-w-[120px] rounded-lg border border-gray-200 bg-gray-50 px-2 py-1 text-[13px] leading-none text-gray-600" x-text="row.state"></span>
+                                    <span class="outcraft-label inline-flex max-w-[120px] rounded-lg border border-gray-200 bg-gray-50 px-2 py-1 text-[13px] leading-none text-gray-600">
+                                        <span x-text="row.state"></span>
+                                    </span>
                                 </td>
                                 <td class="px-4 py-4">
                                     <span class="group relative inline-flex">

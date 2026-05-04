@@ -257,7 +257,7 @@ class OutreachPage extends Page
                     <button
                         type="button"
                         x-on:click="campaignOpen = ! campaignOpen"
-                        class="flex h-10 w-full items-center justify-between rounded-xl border border-gray-200 bg-white px-4 text-left text-[15px] text-gray-900 shadow-sm outline-none transition hover:bg-gray-50 focus:border-blue-400 focus:ring-2 focus:ring-blue-200"
+                        class="flex h-10 w-full items-center justify-between rounded-xl border border-gray-200 bg-white px-4 text-left text-[15px] text-gray-900 shadow-sm outline-none transition hover:bg-gray-100 focus:border-blue-400 focus:ring-2 focus:ring-blue-200"
                     >
                         <span x-text="campaign"></span>
                         <span class="material-symbols-rounded text-gray-600">keyboard_arrow_down</span>
@@ -272,7 +272,7 @@ class OutreachPage extends Page
                             <button
                                 type="button"
                                 x-on:click="campaign = option; campaignOpen = false; page = 1"
-                                class="flex w-full items-center justify-between rounded-lg px-3 py-2 text-left hover:bg-gray-50"
+                                class="flex w-full items-center justify-between rounded-lg px-3 py-2 text-left hover:bg-gray-100"
                             >
                                 <span x-text="option"></span>
                                 <span x-show="campaign === option" class="material-symbols-rounded text-blue-500">check</span>
@@ -351,7 +351,7 @@ class OutreachPage extends Page
                                 <div>
                                     <div class="px-1 py-2 text-[15px] font-semibold" x-text="group.column"></div>
                                     <template x-for="value in group.values" :key="group.column + value">
-                                        <button x-on:click="addFilter(value)" class="block w-full rounded-lg px-1 py-2 text-left text-[15px] hover:bg-gray-50" x-text="value"></button>
+                                        <button x-on:click="addFilter(value)" class="block w-full rounded-lg px-1 py-2 text-left text-[15px] hover:bg-gray-100" x-text="value"></button>
                                     </template>
                                 </div>
                             </template>
@@ -363,15 +363,15 @@ class OutreachPage extends Page
                     <button
                         type="button"
                         x-on:click="presetOpen = ! presetOpen"
-                        class="flex h-10 min-w-[175px] items-center justify-between gap-3 rounded-xl border border-gray-200 bg-white px-4 text-left text-[15px] text-gray-900 shadow-sm outline-none transition hover:bg-gray-50 focus:border-blue-400 focus:ring-2 focus:ring-blue-200"
+                        class="flex h-10 min-w-[175px] items-center justify-between gap-3 rounded-xl border border-gray-200 bg-white px-4 text-left text-[15px] text-gray-900 shadow-sm outline-none transition hover:bg-gray-100 focus:border-blue-400 focus:ring-2 focus:ring-blue-200"
                     >
                         <span x-text="selectedPresetName"></span>
                         <span class="material-symbols-rounded text-gray-600">keyboard_arrow_down</span>
                     </button>
                     <div x-cloak x-show="presetOpen" x-transition class="absolute right-0 top-12 z-40 w-[230px] overflow-hidden rounded-xl border border-gray-200 bg-white p-1 text-[15px] text-gray-900 shadow-lg">
-                        <button type="button" x-on:click="clearFilters()" class="block w-full rounded-lg px-3 py-2 text-left font-semibold hover:bg-gray-50">Clear filters</button>
+                        <button type="button" x-on:click="clearFilters()" class="block w-full rounded-lg px-3 py-2 text-left font-semibold hover:bg-gray-100">Clear filters</button>
                         <template x-for="preset in presets" :key="preset.name">
-                            <div class="group flex items-center rounded-lg hover:bg-gray-50">
+                            <div class="group flex items-center rounded-lg hover:bg-gray-100">
                                 <button type="button" x-on:click="applyPreset(preset)" class="flex min-w-0 flex-1 items-center justify-between px-3 py-2 text-left">
                                     <span class="truncate" x-text="preset.name"></span>
                                     <span x-show="selectedPresetName === preset.name" class="material-symbols-rounded ml-3 shrink-0 text-blue-500">check</span>
@@ -386,15 +386,15 @@ class OutreachPage extends Page
             </div>
 
             <div class="flex min-h-[74px] items-center justify-end gap-3 border-y border-gray-200 bg-white px-6">
-                <button type="button" x-on:click="addFilter('Review Required')" class="inline-flex h-9 items-center gap-2 rounded-lg border border-gray-200 bg-white px-3 text-[14px] font-semibold text-gray-800 shadow-sm transition hover:bg-gray-50">
+                <button type="button" x-on:click="addFilter('Review Required')" class="inline-flex h-9 items-center gap-2 rounded-lg border border-gray-200 bg-white px-3 text-[14px] font-semibold text-gray-800 shadow-sm transition hover:bg-gray-100">
                     <span class="material-symbols-rounded !text-[18px] text-gray-500">manage_search</span>
                     Review Required
                 </button>
-                <button type="button" class="inline-flex h-9 items-center gap-2 rounded-lg border border-gray-200 bg-white px-3 text-[14px] font-semibold text-gray-800 shadow-sm transition hover:bg-gray-50">
+                <button type="button" class="inline-flex h-9 items-center gap-2 rounded-lg border border-gray-200 bg-white px-3 text-[14px] font-semibold text-gray-800 shadow-sm transition hover:bg-gray-100">
                     <span class="material-symbols-rounded !text-[18px] text-gray-500">upload</span>
                     Import CSV
                 </button>
-                <button type="button" class="inline-flex h-9 items-center gap-2 rounded-lg border border-gray-200 bg-white px-3 text-[14px] font-semibold text-gray-800 shadow-sm transition hover:bg-gray-50">
+                <button type="button" class="inline-flex h-9 items-center gap-2 rounded-lg border border-gray-200 bg-white px-3 text-[14px] font-semibold text-gray-800 shadow-sm transition hover:bg-gray-100">
                     <span class="material-symbols-rounded !text-[18px] text-gray-500">add</span>
                     Add Lead
                 </button>
@@ -465,7 +465,7 @@ class OutreachPage extends Page
                                         </span>
                                     </span>
                                 </td>
-                                <td class="cursor-pointer px-4 py-4 font-semibold text-gray-600">View</td>
+                                <td class="cursor-pointer px-4 py-4 font-semibold text-gray-600 transition hover:text-gray-950">View</td>
                             </tr>
                         </template>
                         <tr x-show="filteredRows().length === 0">
@@ -486,13 +486,13 @@ class OutreachPage extends Page
                 <div class="flex items-center gap-4">
                     <span x-text="paginationSummary()"></span>
                     <div class="flex items-center gap-1">
-                        <button type="button" x-on:click="page = Math.max(1, page - 1)" :disabled="page === 1" class="flex size-9 items-center justify-center rounded-lg text-gray-700 transition hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-40">
+                        <button type="button" x-on:click="page = Math.max(1, page - 1)" :disabled="page === 1" class="flex size-9 items-center justify-center rounded-lg text-gray-700 transition hover:bg-gray-100 disabled:cursor-not-allowed disabled:opacity-40">
                             <span class="material-symbols-rounded">chevron_left</span>
                         </button>
                         <template x-for="pageNumber in visiblePageNumbers()" :key="pageNumber">
-                            <button type="button" x-on:click="page = pageNumber" class="flex size-9 items-center justify-center rounded-lg text-gray-700 transition hover:bg-gray-50" :class="page === pageNumber ? 'bg-gray-100 font-semibold text-gray-950' : ''" x-text="pageNumber"></button>
+                            <button type="button" x-on:click="page = pageNumber" class="flex size-9 items-center justify-center rounded-lg text-gray-700 transition hover:bg-gray-100" :class="page === pageNumber ? 'bg-gray-100 font-semibold text-gray-950' : ''" x-text="pageNumber"></button>
                         </template>
-                        <button type="button" x-on:click="page = Math.min(totalPages(), page + 1)" :disabled="page === totalPages()" class="flex size-9 items-center justify-center rounded-lg text-gray-700 transition hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-40">
+                        <button type="button" x-on:click="page = Math.min(totalPages(), page + 1)" :disabled="page === totalPages()" class="flex size-9 items-center justify-center rounded-lg text-gray-700 transition hover:bg-gray-100 disabled:cursor-not-allowed disabled:opacity-40">
                             <span class="material-symbols-rounded">chevron_right</span>
                         </button>
                     </div>
@@ -540,7 +540,7 @@ class OutreachPage extends Page
                                 <div>
                                     <div class="px-1 py-2 text-[15px] font-semibold" x-text="group.column"></div>
                                     <template x-for="value in group.values" :key="group.column + value">
-                                        <button x-on:click="addFilter(value)" class="block w-full rounded-lg px-1 py-2 text-left text-[15px] hover:bg-gray-50" x-text="value"></button>
+                                        <button x-on:click="addFilter(value)" class="block w-full rounded-lg px-1 py-2 text-left text-[15px] hover:bg-gray-100" x-text="value"></button>
                                     </template>
                                 </div>
                             </template>
@@ -552,15 +552,15 @@ class OutreachPage extends Page
                     <button
                         type="button"
                         x-on:click="presetOpen = ! presetOpen"
-                        class="flex h-10 min-w-[175px] items-center justify-between gap-3 rounded-xl border border-gray-200 bg-white px-4 text-left text-[15px] text-gray-900 shadow-sm outline-none transition hover:bg-gray-50 focus:border-blue-400 focus:ring-2 focus:ring-blue-200"
+                        class="flex h-10 min-w-[175px] items-center justify-between gap-3 rounded-xl border border-gray-200 bg-white px-4 text-left text-[15px] text-gray-900 shadow-sm outline-none transition hover:bg-gray-100 focus:border-blue-400 focus:ring-2 focus:ring-blue-200"
                     >
                         <span x-text="selectedPresetName"></span>
                         <span class="material-symbols-rounded text-gray-600">keyboard_arrow_down</span>
                     </button>
                     <div x-cloak x-show="presetOpen" x-transition class="absolute right-0 top-12 z-40 w-[230px] overflow-hidden rounded-xl border border-gray-200 bg-white p-1 text-[15px] text-gray-900 shadow-lg">
-                        <button type="button" x-on:click="clearFilters()" class="block w-full rounded-lg px-3 py-2 text-left font-semibold hover:bg-gray-50">Clear filters</button>
+                        <button type="button" x-on:click="clearFilters()" class="block w-full rounded-lg px-3 py-2 text-left font-semibold hover:bg-gray-100">Clear filters</button>
                         <template x-for="preset in presets" :key="preset.name">
-                            <div class="group flex items-center rounded-lg hover:bg-gray-50">
+                            <div class="group flex items-center rounded-lg hover:bg-gray-100">
                                 <button type="button" x-on:click="applyPreset(preset)" class="flex min-w-0 flex-1 items-center justify-between px-3 py-2 text-left">
                                     <span class="truncate" x-text="preset.name"></span>
                                     <span x-show="selectedPresetName === preset.name" class="material-symbols-rounded ml-3 shrink-0 text-blue-500">check</span>
@@ -638,8 +638,8 @@ class OutreachPage extends Page
                                         </span>
                                     </span>
                                 </td>
-                                <td class="cursor-pointer px-4 py-4 font-semibold text-gray-600">Flow</td>
-                                <td class="cursor-pointer px-4 py-4 font-semibold text-gray-600">View</td>
+                                <td class="cursor-pointer px-4 py-4 font-semibold text-gray-600 transition hover:text-gray-950">Flow</td>
+                                <td class="cursor-pointer px-4 py-4 font-semibold text-gray-600 transition hover:text-gray-950">View</td>
                             </tr>
                         </template>
                         <tr x-show="filteredRows().length === 0">
@@ -660,13 +660,13 @@ class OutreachPage extends Page
                 <div class="flex items-center gap-4">
                     <span x-text="paginationSummary()"></span>
                     <div class="flex items-center gap-1">
-                        <button type="button" x-on:click="page = Math.max(1, page - 1)" :disabled="page === 1" class="flex size-9 items-center justify-center rounded-lg text-gray-700 transition hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-40">
+                        <button type="button" x-on:click="page = Math.max(1, page - 1)" :disabled="page === 1" class="flex size-9 items-center justify-center rounded-lg text-gray-700 transition hover:bg-gray-100 disabled:cursor-not-allowed disabled:opacity-40">
                             <span class="material-symbols-rounded">chevron_left</span>
                         </button>
                         <template x-for="pageNumber in visiblePageNumbers()" :key="pageNumber">
-                            <button type="button" x-on:click="page = pageNumber" class="flex size-9 items-center justify-center rounded-lg text-gray-700 transition hover:bg-gray-50" :class="page === pageNumber ? 'bg-gray-100 font-semibold text-gray-950' : ''" x-text="pageNumber"></button>
+                            <button type="button" x-on:click="page = pageNumber" class="flex size-9 items-center justify-center rounded-lg text-gray-700 transition hover:bg-gray-100" :class="page === pageNumber ? 'bg-gray-100 font-semibold text-gray-950' : ''" x-text="pageNumber"></button>
                         </template>
-                        <button type="button" x-on:click="page = Math.min(totalPages(), page + 1)" :disabled="page === totalPages()" class="flex size-9 items-center justify-center rounded-lg text-gray-700 transition hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-40">
+                        <button type="button" x-on:click="page = Math.min(totalPages(), page + 1)" :disabled="page === totalPages()" class="flex size-9 items-center justify-center rounded-lg text-gray-700 transition hover:bg-gray-100 disabled:cursor-not-allowed disabled:opacity-40">
                             <span class="material-symbols-rounded">chevron_right</span>
                         </button>
                     </div>
@@ -714,7 +714,7 @@ class OutreachPage extends Page
                                 <div>
                                     <div class="px-1 py-2 text-[15px] font-semibold" x-text="group.column"></div>
                                     <template x-for="value in group.values" :key="group.column + value">
-                                        <button x-on:click="addFilter(value)" class="block w-full rounded-lg px-1 py-2 text-left text-[15px] hover:bg-gray-50" x-text="value"></button>
+                                        <button x-on:click="addFilter(value)" class="block w-full rounded-lg px-1 py-2 text-left text-[15px] hover:bg-gray-100" x-text="value"></button>
                                     </template>
                                 </div>
                             </template>
@@ -726,15 +726,15 @@ class OutreachPage extends Page
                     <button
                         type="button"
                         x-on:click="presetOpen = ! presetOpen"
-                        class="flex h-10 min-w-[175px] items-center justify-between gap-3 rounded-xl border border-gray-200 bg-white px-4 text-left text-[15px] text-gray-900 shadow-sm outline-none transition hover:bg-gray-50 focus:border-blue-400 focus:ring-2 focus:ring-blue-200"
+                        class="flex h-10 min-w-[175px] items-center justify-between gap-3 rounded-xl border border-gray-200 bg-white px-4 text-left text-[15px] text-gray-900 shadow-sm outline-none transition hover:bg-gray-100 focus:border-blue-400 focus:ring-2 focus:ring-blue-200"
                     >
                         <span x-text="selectedPresetName"></span>
                         <span class="material-symbols-rounded text-gray-600">keyboard_arrow_down</span>
                     </button>
                     <div x-cloak x-show="presetOpen" x-transition class="absolute right-0 top-12 z-40 w-[230px] overflow-hidden rounded-xl border border-gray-200 bg-white p-1 text-[15px] text-gray-900 shadow-lg">
-                        <button type="button" x-on:click="clearFilters()" class="block w-full rounded-lg px-3 py-2 text-left font-semibold hover:bg-gray-50">Clear filters</button>
+                        <button type="button" x-on:click="clearFilters()" class="block w-full rounded-lg px-3 py-2 text-left font-semibold hover:bg-gray-100">Clear filters</button>
                         <template x-for="preset in presets" :key="preset.name">
-                            <div class="group flex items-center rounded-lg hover:bg-gray-50">
+                            <div class="group flex items-center rounded-lg hover:bg-gray-100">
                                 <button type="button" x-on:click="applyPreset(preset)" class="flex min-w-0 flex-1 items-center justify-between px-3 py-2 text-left">
                                     <span class="truncate" x-text="preset.name"></span>
                                     <span x-show="selectedPresetName === preset.name" class="material-symbols-rounded ml-3 shrink-0 text-blue-500">check</span>
@@ -806,8 +806,8 @@ class OutreachPage extends Page
                                         </span>
                                     </span>
                                 </td>
-                                <td class="cursor-pointer px-4 py-4 font-semibold text-gray-600">View</td>
-                                <td class="cursor-pointer px-4 py-4 font-semibold text-gray-600">Resolve</td>
+                                <td class="cursor-pointer px-4 py-4 font-semibold text-gray-600 transition hover:text-gray-950">View</td>
+                                <td class="cursor-pointer px-4 py-4 font-semibold text-gray-600 transition hover:text-gray-950">Resolve</td>
                             </tr>
                         </template>
                         <tr x-show="filteredRows().length === 0">
@@ -828,13 +828,13 @@ class OutreachPage extends Page
                 <div class="flex items-center gap-4">
                     <span x-text="paginationSummary()"></span>
                     <div class="flex items-center gap-1">
-                        <button type="button" x-on:click="page = Math.max(1, page - 1)" :disabled="page === 1" class="flex size-9 items-center justify-center rounded-lg text-gray-700 transition hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-40">
+                        <button type="button" x-on:click="page = Math.max(1, page - 1)" :disabled="page === 1" class="flex size-9 items-center justify-center rounded-lg text-gray-700 transition hover:bg-gray-100 disabled:cursor-not-allowed disabled:opacity-40">
                             <span class="material-symbols-rounded">chevron_left</span>
                         </button>
                         <template x-for="pageNumber in visiblePageNumbers()" :key="pageNumber">
-                            <button type="button" x-on:click="page = pageNumber" class="flex size-9 items-center justify-center rounded-lg text-gray-700 transition hover:bg-gray-50" :class="page === pageNumber ? 'bg-gray-100 font-semibold text-gray-950' : ''" x-text="pageNumber"></button>
+                            <button type="button" x-on:click="page = pageNumber" class="flex size-9 items-center justify-center rounded-lg text-gray-700 transition hover:bg-gray-100" :class="page === pageNumber ? 'bg-gray-100 font-semibold text-gray-950' : ''" x-text="pageNumber"></button>
                         </template>
-                        <button type="button" x-on:click="page = Math.min(totalPages(), page + 1)" :disabled="page === totalPages()" class="flex size-9 items-center justify-center rounded-lg text-gray-700 transition hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-40">
+                        <button type="button" x-on:click="page = Math.min(totalPages(), page + 1)" :disabled="page === totalPages()" class="flex size-9 items-center justify-center rounded-lg text-gray-700 transition hover:bg-gray-100 disabled:cursor-not-allowed disabled:opacity-40">
                             <span class="material-symbols-rounded">chevron_right</span>
                         </button>
                     </div>
@@ -879,7 +879,7 @@ class OutreachPage extends Page
                                 <div>
                                     <div class="px-1 py-2 text-[15px] font-semibold" x-text="group.column"></div>
                                     <template x-for="value in group.values" :key="group.column + value">
-                                        <button x-on:click="addFilter(value)" class="block w-full rounded-lg px-1 py-2 text-left text-[15px] hover:bg-gray-50" x-text="value"></button>
+                                        <button x-on:click="addFilter(value)" class="block w-full rounded-lg px-1 py-2 text-left text-[15px] hover:bg-gray-100" x-text="value"></button>
                                     </template>
                                 </div>
                             </template>
@@ -891,7 +891,7 @@ class OutreachPage extends Page
                     <button
                         type="button"
                         x-on:click="presetOpen = ! presetOpen"
-                        class="flex h-10 min-w-[190px] items-center justify-between gap-3 rounded-xl border border-gray-200 bg-white px-4 text-left text-[15px] text-gray-900 shadow-sm outline-none transition hover:bg-gray-50 focus:border-blue-400 focus:ring-2 focus:ring-blue-200"
+                        class="flex h-10 min-w-[190px] items-center justify-between gap-3 rounded-xl border border-gray-200 bg-white px-4 text-left text-[15px] text-gray-900 shadow-sm outline-none transition hover:bg-gray-100 focus:border-blue-400 focus:ring-2 focus:ring-blue-200"
                     >
                         <span x-text="selectedPresetName"></span>
                         <span class="material-symbols-rounded text-gray-600">keyboard_arrow_down</span>
@@ -905,12 +905,12 @@ class OutreachPage extends Page
                         <button
                             type="button"
                             x-on:click="clearFilters()"
-                            class="block w-full rounded-lg px-3 py-2 text-left font-semibold hover:bg-gray-50"
+                            class="block w-full rounded-lg px-3 py-2 text-left font-semibold hover:bg-gray-100"
                         >
                             Clear filters
                         </button>
                         <template x-for="preset in presets" :key="preset.name">
-                            <div class="group flex items-center rounded-lg hover:bg-gray-50">
+                            <div class="group flex items-center rounded-lg hover:bg-gray-100">
                                 <button
                                     type="button"
                                     x-on:click="applyPreset(preset)"
@@ -1053,7 +1053,7 @@ class OutreachPage extends Page
                                         </span>
                                     </span>
                                 </td>
-                                <td class="cursor-pointer px-4 py-4 font-semibold text-gray-600">View</td>
+                                <td class="cursor-pointer px-4 py-4 font-semibold text-gray-600 transition hover:text-gray-950">View</td>
                             </tr>
                         </template>
                         <tr x-show="filteredRows().length === 0">
@@ -1074,13 +1074,13 @@ class OutreachPage extends Page
                 <div class="flex items-center gap-4">
                     <span x-text="paginationSummary()"></span>
                     <div class="flex items-center gap-1">
-                        <button type="button" x-on:click="page = Math.max(1, page - 1)" :disabled="page === 1" class="flex size-9 items-center justify-center rounded-lg text-gray-700 transition hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-40">
+                        <button type="button" x-on:click="page = Math.max(1, page - 1)" :disabled="page === 1" class="flex size-9 items-center justify-center rounded-lg text-gray-700 transition hover:bg-gray-100 disabled:cursor-not-allowed disabled:opacity-40">
                             <span class="material-symbols-rounded">chevron_left</span>
                         </button>
                         <template x-for="pageNumber in visiblePageNumbers()" :key="pageNumber">
-                            <button type="button" x-on:click="page = pageNumber" class="flex size-9 items-center justify-center rounded-lg text-gray-700 transition hover:bg-gray-50" :class="page === pageNumber ? 'bg-gray-100 font-semibold text-gray-950' : ''" x-text="pageNumber"></button>
+                            <button type="button" x-on:click="page = pageNumber" class="flex size-9 items-center justify-center rounded-lg text-gray-700 transition hover:bg-gray-100" :class="page === pageNumber ? 'bg-gray-100 font-semibold text-gray-950' : ''" x-text="pageNumber"></button>
                         </template>
-                        <button type="button" x-on:click="page = Math.min(totalPages(), page + 1)" :disabled="page === totalPages()" class="flex size-9 items-center justify-center rounded-lg text-gray-700 transition hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-40">
+                        <button type="button" x-on:click="page = Math.min(totalPages(), page + 1)" :disabled="page === totalPages()" class="flex size-9 items-center justify-center rounded-lg text-gray-700 transition hover:bg-gray-100 disabled:cursor-not-allowed disabled:opacity-40">
                             <span class="material-symbols-rounded">chevron_right</span>
                         </button>
                     </div>

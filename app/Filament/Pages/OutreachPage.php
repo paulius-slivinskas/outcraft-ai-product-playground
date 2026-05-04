@@ -205,6 +205,12 @@ class OutreachPage extends Page
             -webkit-font-smoothing: antialiased;
             font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 20;
         }
+        .dashboard-hero {
+            background:
+                radial-gradient(circle at 92% 18%, rgba(141, 118, 255, 0.74), transparent 34%),
+                radial-gradient(circle at 8% 20%, rgba(14, 47, 74, 0.98), transparent 42%),
+                linear-gradient(110deg, #18324f 0%, #0e3146 42%, #354c82 72%, #9c92ff 100%);
+        }
         .outcraft-label {
             align-items: center;
             min-width: 0;
@@ -242,8 +248,17 @@ class OutreachPage extends Page
 
         <nav class="space-y-3 pt-4 text-[15px] font-medium text-neutral-600 transition-[padding] duration-300 ease-in-out" :class="sidebarOpen ? 'px-4' : 'px-3'">
             <template x-for="item in nav" :key="item.label">
-                <button class="group flex h-10 w-full items-center overflow-hidden whitespace-nowrap rounded-xl text-left transition-all duration-300 ease-in-out hover:bg-neutral-200 hover:text-neutral-950" :class="sidebarOpen ? 'gap-3 px-2' : 'justify-center gap-0 px-0'" :title="item.label">
-                    <span class="material-symbols-rounded shrink-0 text-neutral-950" x-text="item.icon"></span>
+                <button
+                    type="button"
+                    x-on:click="setActiveNav(item.label)"
+                    class="group flex h-10 w-full items-center overflow-hidden whitespace-nowrap rounded-xl text-left transition-all duration-300 ease-in-out hover:bg-neutral-200 hover:text-neutral-950"
+                    :class="[
+                        sidebarOpen ? 'gap-3 px-2' : 'justify-center gap-0 px-0',
+                        activeNav === item.label ? 'bg-neutral-200 text-neutral-950' : ''
+                    ]"
+                    :title="item.label"
+                >
+                    <span class="material-symbols-rounded shrink-0" :class="activeNav === item.label ? 'text-neutral-950' : 'text-neutral-950'" x-text="item.icon"></span>
                     <span class="min-w-0 overflow-hidden transition-[max-width,opacity] duration-200 ease-in-out" :class="sidebarOpen ? 'max-w-[170px] opacity-100 delay-100' : 'max-w-0 opacity-0'" x-text="item.label"></span>
                 </button>
             </template>
@@ -260,12 +275,12 @@ class OutreachPage extends Page
     <main class="h-full overflow-auto transition-[margin-left] duration-300 ease-in-out" :class="sidebarOpen ? 'ml-[218px]' : 'ml-16'">
         <header class="relative flex h-[86px] items-center px-6">
             <div class="flex items-center gap-5 text-[15px] font-medium">
-                <span class="text-neutral-500">Operations</span>
-                <span class="material-symbols-rounded text-neutral-400">chevron_right</span>
-                <span class="text-neutral-950" x-text="activeTab"></span>
+                <span class="text-neutral-500" x-text="activeNav"></span>
+                <span x-show="activeNav === 'Operations'" class="material-symbols-rounded text-neutral-400">chevron_right</span>
+                <span x-show="activeNav === 'Operations'" class="text-neutral-950" x-text="activeTab"></span>
             </div>
 
-            <div class="absolute left-1/2 top-6 w-[600px] -translate-x-1/2">
+            <div x-cloak x-show="activeNav === 'Operations'" class="absolute left-1/2 top-6 w-[600px] -translate-x-1/2">
                 <div class="relative" x-on:click.outside="campaignOpen = false">
                     <button
                         type="button"
@@ -308,7 +323,110 @@ class OutreachPage extends Page
             </div>
         </header>
 
-        <section class="mx-6 rounded-2xl border border-neutral-200 bg-white p-2 shadow-sm">
+        <section x-cloak x-show="activeNav === 'Dashboard'" class="mx-6 mb-6">
+            <div class="dashboard-hero rounded-2xl px-6 py-12 text-white shadow-sm">
+                <h1 class="text-[36px] font-bold leading-tight tracking-normal">Welcome back!</h1>
+                <p class="mt-2 text-[15px] leading-6 text-white/90">Track your campaigns, review leads, or continue where you left off.</p>
+            </div>
+
+            <div class="mt-6 grid grid-cols-3 gap-5">
+                <div class="rounded-2xl border border-neutral-200 bg-white p-7 shadow-sm">
+                    <p class="text-[15px] font-medium text-neutral-500">Overall Monthly Engagement</p>
+                    <p class="mt-4 text-[34px] font-bold leading-none text-neutral-950">67.49%</p>
+                    <div class="mt-5 flex items-center gap-2 text-[15px]">
+                        <span class="material-symbols-rounded !text-[20px] text-green-600">arrow_outward</span>
+                        <span class="font-medium text-green-600">+4.23%</span>
+                        <span class="text-neutral-500">increase vs last month</span>
+                    </div>
+                </div>
+                <div class="rounded-2xl border border-neutral-200 bg-white p-7 shadow-sm">
+                    <p class="text-[15px] font-medium text-neutral-500">Conversion Potential</p>
+                    <p class="mt-4 text-[34px] font-bold leading-none text-neutral-950">51.25%</p>
+                    <div class="mt-5 flex items-center gap-2 text-[15px]">
+                        <span class="material-symbols-rounded !text-[20px] text-red-600">south_east</span>
+                        <span class="font-medium text-red-600">-0.74%</span>
+                        <span class="text-neutral-500">decrease vs last month</span>
+                    </div>
+                </div>
+                <div class="rounded-2xl border border-neutral-200 bg-white p-7 shadow-sm">
+                    <p class="text-[15px] font-medium text-neutral-500">Monthly Revenue</p>
+                    <p class="mt-4 text-[34px] font-bold leading-none text-neutral-950">$54,836.78</p>
+                    <div class="mt-5 flex items-center gap-2 text-[15px]">
+                        <span class="material-symbols-rounded !text-[20px] text-green-600">arrow_outward</span>
+                        <span class="font-medium text-green-600">+2.51%</span>
+                        <span class="text-neutral-500">increase vs last month</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="mt-5 grid grid-cols-2 gap-5">
+                <div class="rounded-2xl border border-neutral-200 bg-white p-7 shadow-sm">
+                    <p class="text-[15px] font-medium text-neutral-500">Monthly Revenue</p>
+                    <p class="mt-4 text-[34px] font-bold leading-none text-neutral-950">$54,836.78</p>
+                    <div class="mt-5 flex items-center gap-2 text-[15px]">
+                        <span class="material-symbols-rounded !text-[20px] text-green-600">arrow_outward</span>
+                        <span class="font-medium text-green-600">+2.51%</span>
+                        <span class="text-neutral-500">increase vs last month</span>
+                    </div>
+                </div>
+                <div class="rounded-2xl border border-neutral-200 bg-white p-7 shadow-sm">
+                    <p class="text-[15px] font-medium text-neutral-500">All Time Revenue</p>
+                    <p class="mt-4 text-[34px] font-bold leading-none text-neutral-950">$754,836.78</p>
+                    <div class="mt-5 flex items-center gap-2 text-[15px]">
+                        <span class="material-symbols-rounded !text-[20px] text-green-600">arrow_outward</span>
+                        <span class="font-medium text-green-600">+2.51%</span>
+                        <span class="text-neutral-500">increase vs last month</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="mt-6 overflow-hidden rounded-2xl border border-neutral-200 bg-white shadow-sm">
+                <div class="flex min-h-[78px] items-center justify-between border-b border-neutral-200 px-7">
+                    <h2 class="text-[21px] font-bold leading-tight text-neutral-950">Pinned Campaigns</h2>
+                    <button type="button" class="inline-flex h-10 items-center rounded-lg border border-neutral-200 bg-white px-4 text-[15px] font-semibold text-neutral-800 shadow-sm transition hover:bg-neutral-200 hover:text-neutral-950">View Campaigns</button>
+                </div>
+                <table class="w-full table-fixed border-collapse text-[15px]">
+                    <thead>
+                        <tr class="border-b border-neutral-200 bg-neutral-50 text-left text-[14px] font-semibold text-neutral-950">
+                            <th class="w-[32%] px-7 py-4">Name</th>
+                            <th class="w-[23%] px-4 py-4">Status</th>
+                            <th class="w-[23%] px-4 py-4">Changes</th>
+                            <th class="w-[13%] px-4 py-4">Modified</th>
+                            <th class="w-[6%] px-4 py-4"></th>
+                            <th class="w-[3%] px-4 py-4"></th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <template x-for="campaign in pinnedCampaigns" :key="campaign.name">
+                            <tr class="border-b border-neutral-200">
+                                <td class="px-7 py-4" x-text="campaign.name"></td>
+                                <td class="px-4 py-4">
+                                    <span class="outcraft-label inline-flex max-w-[92px] items-center gap-1 rounded-lg border px-2 py-1 text-[12px] font-medium leading-none" :class="campaign.status === 'Running' ? 'border-green-200 bg-green-50 text-green-600' : 'border-neutral-200 bg-neutral-50 text-neutral-600'">
+                                        <span class="material-symbols-rounded !text-[14px]" x-text="campaign.status === 'Running' ? 'play_arrow' : 'pause'"></span>
+                                        <span x-text="campaign.status"></span>
+                                    </span>
+                                </td>
+                                <td class="px-4 py-4">
+                                    <span x-show="campaign.change" class="outcraft-label inline-flex max-w-[120px] items-center gap-1 rounded-lg border border-neutral-200 bg-neutral-50 px-2 py-1 text-[12px] font-medium leading-none text-neutral-600">
+                                        <span class="material-symbols-rounded !text-[14px]">sync</span>
+                                        <span x-text="campaign.change"></span>
+                                    </span>
+                                </td>
+                                <td class="px-4 py-4" x-text="campaign.modified"></td>
+                                <td class="cursor-pointer px-4 py-4 font-semibold text-neutral-600 transition hover:text-neutral-950">Open</td>
+                                <td class="px-4 py-4 text-right">
+                                    <button type="button" class="inline-flex size-8 items-center justify-center rounded-lg text-neutral-500 transition hover:bg-neutral-200 hover:text-neutral-950" title="More">
+                                        <span class="material-symbols-rounded !text-[20px]">more_vert</span>
+                                    </button>
+                                </td>
+                            </tr>
+                        </template>
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
+        <section x-cloak x-show="activeNav === 'Operations'" class="mx-6 rounded-2xl border border-neutral-200 bg-white p-2 shadow-sm">
             <div class="flex h-11 items-center gap-2 text-[15px] font-medium text-neutral-600">
                 <template x-for="tab in tabs" :key="tab.label">
                     <button
@@ -324,7 +442,7 @@ class OutreachPage extends Page
             </div>
         </section>
 
-        <section x-cloak x-show="activeTab === 'Leads'" class="mx-6 mb-6 mt-5 overflow-hidden rounded-2xl border border-neutral-200 bg-white shadow-sm">
+        <section x-cloak x-show="activeNav === 'Operations' && activeTab === 'Leads'" class="mx-6 mb-6 mt-5 overflow-hidden rounded-2xl border border-neutral-200 bg-white shadow-sm">
             <div class="grid min-h-[92px] grid-cols-[250px_1fr_230px] items-start gap-6 p-6">
                 <div>
                     <h1 class="text-[19px] font-bold leading-tight tracking-normal">Leads</h1>
@@ -519,7 +637,7 @@ class OutreachPage extends Page
             </div>
         </section>
 
-        <section x-cloak x-show="activeTab === 'Campaigns'" class="mx-6 mb-6 mt-5 overflow-hidden rounded-2xl border border-neutral-200 bg-white shadow-sm">
+        <section x-cloak x-show="activeNav === 'Operations' && activeTab === 'Campaigns'" class="mx-6 mb-6 mt-5 overflow-hidden rounded-2xl border border-neutral-200 bg-white shadow-sm">
             <div class="grid min-h-[112px] grid-cols-[250px_1fr_230px] items-start gap-6 p-6">
                 <div>
                     <h1 class="text-[19px] font-bold leading-tight tracking-normal">Lead Campaigns</h1>
@@ -693,7 +811,7 @@ class OutreachPage extends Page
             </div>
         </section>
 
-        <section x-cloak x-show="activeTab === 'Handoffs'" class="mx-6 mb-6 mt-5 overflow-hidden rounded-2xl border border-neutral-200 bg-white shadow-sm">
+        <section x-cloak x-show="activeNav === 'Operations' && activeTab === 'Handoffs'" class="mx-6 mb-6 mt-5 overflow-hidden rounded-2xl border border-neutral-200 bg-white shadow-sm">
             <div class="grid min-h-[112px] grid-cols-[250px_1fr_230px] items-start gap-6 p-6">
                 <div>
                     <h1 class="text-[19px] font-bold leading-tight tracking-normal">Handoff requests</h1>
@@ -869,7 +987,7 @@ class OutreachPage extends Page
             </div>
         </section>
 
-        <section x-cloak x-show="activeTab === 'Outreach'" class="mx-6 mb-6 mt-5 overflow-hidden rounded-2xl border border-neutral-200 bg-white shadow-sm">
+        <section x-cloak x-show="activeNav === 'Operations' && activeTab === 'Outreach'" class="mx-6 mb-6 mt-5 overflow-hidden rounded-2xl border border-neutral-200 bg-white shadow-sm">
             <div class="grid min-h-[114px] grid-cols-[220px_1fr_230px] items-start gap-6 p-6">
                 <h1 class="pt-1 text-[19px] font-bold leading-tight tracking-normal">Outreach</h1>
 
@@ -1121,6 +1239,7 @@ class OutreachPage extends Page
             return {
                 rows,
                 sidebarOpen: true,
+                activeNav: 'Dashboard',
                 activeTab: 'Handoffs',
                 campaignOpen: false,
                 presetOpen: false,
@@ -1141,6 +1260,13 @@ class OutreachPage extends Page
                     { label: 'Insights', icon: 'monitoring' },
                     { label: 'Knowledge Base', icon: 'library_books' },
                 ],
+                pinnedCampaigns: [
+                    { name: 'Abandoned cart', status: 'Running', change: 'Unpublished', modified: '2 hours ago' },
+                    { name: 'Late Shipping Notification', status: 'Running', change: '', modified: '4 days ago' },
+                    { name: 'Web Support', status: 'Running', change: '', modified: '4 days ago' },
+                    { name: 'Onboarding Test Calls Batch', status: 'Paused', change: '', modified: '4 days ago' },
+                    { name: 'Onboarding Calls Test Batch', status: 'Paused', change: '', modified: '4 days ago' },
+                ],
                 tabs: [
                     { label: 'Leads', icon: 'group' },
                     { label: 'Campaigns', icon: 'account_tree' },
@@ -1156,6 +1282,15 @@ class OutreachPage extends Page
                 leadSearchableColumns: ['State', 'Country', 'Timezone', 'Name', 'Phone', 'Email'],
                 campaignSearchableColumns: ['Campaign', 'Status', 'First Interaction', 'Follow Up', 'Name', 'Phone', 'Email'],
                 handoffSearchableColumns: ['Country', 'Timezone', 'Name', 'Phone', 'Email'],
+                setActiveNav(section) {
+                    this.activeNav = section;
+                    this.page = 1;
+                    this.query = '';
+                    this.filters = [];
+                    this.searchOpen = false;
+                    this.presetOpen = false;
+                    this.selectedPresetName = 'Filter presets';
+                },
                 setActiveTab(tab) {
                     this.activeTab = tab;
                     this.page = 1;

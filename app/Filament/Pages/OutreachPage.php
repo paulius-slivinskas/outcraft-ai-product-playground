@@ -426,6 +426,70 @@ class OutreachPage extends Page
             </div>
         </section>
 
+        <section x-cloak x-show="activeNav === 'Campaigns'" class="mx-6 rounded-2xl border border-neutral-200 bg-white p-2 shadow-sm">
+            <div class="flex h-11 items-center gap-2 text-[15px] font-medium text-neutral-600">
+                <template x-for="tab in campaignPageTabs" :key="tab.label">
+                    <button
+                        type="button"
+                        x-on:click="setCampaignPageTab(tab.label)"
+                        class="flex h-9 items-center gap-2 rounded-xl px-4 transition hover:bg-neutral-200"
+                        :class="activeCampaignPageTab === tab.label ? 'bg-[#26262b] text-white shadow hover:bg-[#26262b]' : 'text-neutral-600 hover:text-neutral-950'"
+                    >
+                        <span class="material-symbols-rounded" x-text="tab.icon"></span>
+                        <span x-text="tab.label"></span>
+                    </button>
+                </template>
+            </div>
+        </section>
+
+        <section x-cloak x-show="activeNav === 'Campaigns'" class="mx-6 mb-6 mt-5 overflow-hidden rounded-2xl border border-neutral-200 bg-white shadow-sm">
+            <div class="flex min-h-[78px] items-center justify-between border-b border-neutral-200 px-7">
+                <h1 class="text-[21px] font-bold leading-tight text-neutral-950" x-text="activeCampaignPageTab"></h1>
+                <button type="button" class="inline-flex h-10 items-center gap-2 rounded-lg border border-neutral-200 bg-white px-4 text-[15px] font-semibold text-neutral-800 shadow-sm transition hover:bg-neutral-200 hover:text-neutral-950">
+                    <span class="material-symbols-rounded !text-[18px] text-neutral-500">add</span>
+                    Create New
+                </button>
+            </div>
+            <table class="w-full table-fixed border-collapse text-[15px]">
+                <thead>
+                    <tr class="border-b border-neutral-200 bg-neutral-50 text-left text-[14px] font-semibold text-neutral-950">
+                        <th class="w-[32%] px-7 py-4">Name</th>
+                        <th class="w-[23%] px-4 py-4">Status</th>
+                        <th class="w-[23%] px-4 py-4">Changes</th>
+                        <th class="w-[13%] px-4 py-4">Modified</th>
+                        <th class="w-[6%] px-4 py-4"></th>
+                        <th class="w-[3%] px-4 py-4"></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <template x-for="campaign in campaignsPageRows()" :key="activeCampaignPageTab + campaign.name">
+                        <tr class="border-b border-neutral-200">
+                            <td class="px-7 py-4" x-text="campaign.name"></td>
+                            <td class="px-4 py-4">
+                                <span class="outcraft-label inline-flex max-w-[92px] items-center gap-1 rounded-lg border px-2 py-1 text-[12px] font-medium leading-none" :class="campaign.status === 'Running' ? 'border-green-200 bg-green-50 text-green-600' : 'border-neutral-200 bg-neutral-50 text-neutral-600'">
+                                    <span class="material-symbols-rounded !text-[14px]" x-text="campaign.status === 'Running' ? 'play_arrow' : 'pause'"></span>
+                                    <span x-text="campaign.status"></span>
+                                </span>
+                            </td>
+                            <td class="px-4 py-4">
+                                <span x-show="campaign.change" class="outcraft-label inline-flex max-w-[120px] items-center gap-1 rounded-lg border border-neutral-200 bg-neutral-50 px-2 py-1 text-[12px] font-medium leading-none text-neutral-600">
+                                    <span class="material-symbols-rounded !text-[14px]">sync</span>
+                                    <span x-text="campaign.change"></span>
+                                </span>
+                            </td>
+                            <td class="px-4 py-4" x-text="campaign.modified"></td>
+                            <td class="cursor-pointer px-4 py-4 font-semibold text-neutral-600 transition hover:text-neutral-950">Open</td>
+                            <td class="px-4 py-4 text-right">
+                                <button type="button" class="inline-flex size-8 items-center justify-center rounded-lg text-neutral-500 transition hover:bg-neutral-200 hover:text-neutral-950" title="More">
+                                    <span class="material-symbols-rounded !text-[20px]">more_vert</span>
+                                </button>
+                            </td>
+                        </tr>
+                    </template>
+                </tbody>
+            </table>
+        </section>
+
         <section x-cloak x-show="activeNav === 'Operations'" class="mx-6 rounded-2xl border border-neutral-200 bg-white p-2 shadow-sm">
             <div class="flex h-11 items-center gap-2 text-[15px] font-medium text-neutral-600">
                 <template x-for="tab in tabs" :key="tab.label">
@@ -1241,6 +1305,7 @@ class OutreachPage extends Page
                 sidebarOpen: true,
                 activeNav: 'Dashboard',
                 activeTab: 'Handoffs',
+                activeCampaignPageTab: 'Campaigns',
                 campaignOpen: false,
                 presetOpen: false,
                 campaign: 'Abandoned Cart',
@@ -1267,6 +1332,21 @@ class OutreachPage extends Page
                     { name: 'Onboarding Test Calls Batch', status: 'Paused', change: '', modified: '4 days ago' },
                     { name: 'Onboarding Calls Test Batch', status: 'Paused', change: '', modified: '4 days ago' },
                 ],
+                abTestCampaigns: [
+                    { name: 'Checkout Follow-up Variant Test', status: 'Running', change: 'Draft', modified: '1 day ago' },
+                    { name: 'Web Support Greeting Test', status: 'Running', change: 'Unpublished', modified: '3 days ago' },
+                    { name: 'Shipping Delay Tone Test', status: 'Paused', change: '', modified: '5 days ago' },
+                ],
+                archivedCampaigns: [
+                    { name: 'Holiday Winback 2025', status: 'Paused', change: '', modified: '2 months ago' },
+                    { name: 'Spring Onboarding Batch', status: 'Paused', change: '', modified: '4 months ago' },
+                    { name: 'Legacy Support Routing', status: 'Paused', change: '', modified: '7 months ago' },
+                ],
+                campaignPageTabs: [
+                    { label: 'Campaigns', icon: 'format_list_bulleted' },
+                    { label: 'A/B Tests', icon: 'science' },
+                    { label: 'Archived', icon: 'archive' },
+                ],
                 tabs: [
                     { label: 'Leads', icon: 'group' },
                     { label: 'Campaigns', icon: 'account_tree' },
@@ -1284,12 +1364,30 @@ class OutreachPage extends Page
                 handoffSearchableColumns: ['Country', 'Timezone', 'Name', 'Phone', 'Email'],
                 setActiveNav(section) {
                     this.activeNav = section;
+                    if (section === 'Campaigns') {
+                        this.activeCampaignPageTab = 'Campaigns';
+                    }
+
                     this.page = 1;
                     this.query = '';
                     this.filters = [];
                     this.searchOpen = false;
                     this.presetOpen = false;
                     this.selectedPresetName = 'Filter presets';
+                },
+                setCampaignPageTab(tab) {
+                    this.activeCampaignPageTab = tab;
+                },
+                campaignsPageRows() {
+                    if (this.activeCampaignPageTab === 'A/B Tests') {
+                        return this.abTestCampaigns;
+                    }
+
+                    if (this.activeCampaignPageTab === 'Archived') {
+                        return this.archivedCampaigns;
+                    }
+
+                    return this.pinnedCampaigns;
                 },
                 setActiveTab(tab) {
                     this.activeTab = tab;

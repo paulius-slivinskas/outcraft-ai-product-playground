@@ -229,7 +229,7 @@ class OutreachPage extends Page
 
         <nav class="space-y-3 pt-4 text-[15px] font-medium text-gray-600 transition-[padding] duration-300 ease-in-out" :class="sidebarOpen ? 'px-5' : 'px-3'">
             <template x-for="item in nav" :key="item.label">
-                <button class="flex h-10 w-full items-center overflow-hidden whitespace-nowrap rounded-xl text-left transition-all duration-300 ease-in-out hover:bg-gray-50 hover:text-gray-950" :class="sidebarOpen ? 'gap-4 px-3' : 'justify-center gap-0 px-0'" :title="item.label">
+                <button class="group flex h-10 w-full items-center overflow-hidden whitespace-nowrap rounded-xl text-left transition-all duration-300 ease-in-out hover:bg-gray-100 hover:text-gray-950" :class="sidebarOpen ? 'gap-4 px-3' : 'justify-center gap-0 px-0'" :title="item.label">
                     <span class="material-symbols-rounded shrink-0 text-gray-950" x-text="item.icon"></span>
                     <span class="overflow-hidden transition-[max-width,opacity] duration-200 ease-in-out" :class="sidebarOpen ? 'max-w-[150px] opacity-100 delay-100' : 'max-w-0 opacity-0'" x-text="item.label"></span>
                 </button>
@@ -237,7 +237,7 @@ class OutreachPage extends Page
         </nav>
 
         <div class="mt-auto space-y-3 pb-6 text-[15px] font-medium text-gray-600 transition-[padding] duration-300 ease-in-out" :class="sidebarOpen ? 'px-5' : 'px-3'">
-            <button type="button" x-on:click="sidebarOpen = ! sidebarOpen" class="flex h-10 w-full items-center overflow-hidden whitespace-nowrap rounded-xl text-left transition-all duration-300 ease-in-out hover:bg-gray-50 hover:text-gray-950" :class="sidebarOpen ? 'gap-4 px-3' : 'justify-center gap-0 px-0'" :title="sidebarOpen ? 'Collapse' : 'Expand'">
+            <button type="button" x-on:click="sidebarOpen = ! sidebarOpen" class="group flex h-10 w-full items-center overflow-hidden whitespace-nowrap rounded-xl text-left transition-all duration-300 ease-in-out hover:bg-gray-100 hover:text-gray-950" :class="sidebarOpen ? 'gap-4 px-3' : 'justify-center gap-0 px-0'" :title="sidebarOpen ? 'Collapse' : 'Expand'">
                 <span class="material-symbols-rounded shrink-0 text-gray-950" x-text="sidebarOpen ? 'dock_to_left' : 'dock_to_right'"></span>
                 <span class="overflow-hidden transition-[max-width,opacity] duration-200 ease-in-out" :class="sidebarOpen ? 'max-w-[120px] opacity-100 delay-100' : 'max-w-0 opacity-0'" x-text="sidebarOpen ? 'Collapse' : 'Expand'"></span>
             </button>
@@ -283,11 +283,11 @@ class OutreachPage extends Page
             </div>
 
             <div class="ml-auto flex items-center gap-3">
-                <button class="relative flex h-10 items-center justify-center rounded-xl px-3 text-gray-700 transition hover:bg-gray-50" title="Notifications">
+                <button class="relative flex h-10 items-center justify-center rounded-xl px-3 text-gray-700 transition hover:bg-gray-100 hover:text-gray-950" title="Notifications">
                     <span class="material-symbols-rounded">notifications</span>
                     <span class="absolute right-0.5 top-0.5 flex min-w-4 items-center justify-center rounded-full bg-gray-900 px-1 text-[10px] font-semibold leading-4 text-white">23</span>
                 </button>
-                <button class="flex h-10 items-center gap-2 rounded-xl px-3 text-[14px] font-medium text-gray-700 transition hover:bg-gray-50" title="Pulsetto.tech">
+                <button class="flex h-10 items-center gap-2 rounded-xl px-3 text-[14px] font-medium text-gray-700 transition hover:bg-gray-100 hover:text-gray-950" title="Pulsetto.tech">
                     <span class="material-symbols-rounded">account_circle</span>
                     <span>Pulsetto.tech</span>
                     <span class="material-symbols-rounded text-gray-500">keyboard_arrow_down</span>
@@ -301,8 +301,8 @@ class OutreachPage extends Page
                     <button
                         type="button"
                         x-on:click="setActiveTab(tab.label)"
-                        class="flex h-9 items-center gap-2 rounded-xl px-4 transition"
-                        :class="activeTab === tab.label ? 'bg-[#26262b] text-white shadow' : 'hover:bg-gray-50'"
+                        class="flex h-9 items-center gap-2 rounded-xl px-4 transition hover:bg-gray-100"
+                        :class="activeTab === tab.label ? 'bg-[#26262b] text-white shadow hover:bg-[#26262b]' : 'text-gray-600 hover:text-gray-950'"
                     >
                         <span class="material-symbols-rounded" x-text="tab.icon"></span>
                         <span x-text="tab.label"></span>

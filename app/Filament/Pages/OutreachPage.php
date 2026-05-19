@@ -1621,7 +1621,7 @@ class OutreachPage extends Page
                                                 <div
                                                     class="flex w-full items-center justify-between gap-4 px-4 py-3 transition hover:bg-gray-50"
                                                     :class="[
-                                                        campaignSetup.activeLanguage === language.code ? 'bg-indigo-50/60' : 'bg-white',
+                                                        'bg-white',
                                                         campaignSetup.languages[0]?.code === language.code ? 'rounded-t-lg' : '',
                                                     ]"
                                                 >
@@ -1636,10 +1636,7 @@ class OutreachPage extends Page
                                                             <span class="block text-sm leading-5 text-gray-500" x-text="language.label"></span>
                                                         </span>
                                                     </button>
-                                                    <span class="flex shrink-0 items-center gap-2">
-                                                        <span x-show="campaignSetup.defaultLanguage === language.code" class="inline-flex rounded-md bg-gray-50 px-2 py-1 text-xs font-medium text-gray-700 ring-1 ring-inset ring-gray-200">Default</span>
-                                                        <button x-show="campaignSetup.defaultLanguage !== language.code" type="button" x-on:click="setCampaignSetupDefaultLanguage(language.code)" class="inline-flex h-8 items-center rounded-md bg-white px-2.5 text-xs font-semibold text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 transition hover:bg-gray-50 focus:outline-none focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-indigo-600">Set as Default</button>
-                                                    </span>
+                                                    <span x-show="campaignSetup.defaultLanguage === language.code" class="shrink-0 rounded-md bg-indigo-50 px-2 py-1 text-xs font-medium text-indigo-700 ring-1 ring-inset ring-indigo-200">Default</span>
                                                 </div>
                                             </template>
 
@@ -1689,15 +1686,13 @@ class OutreachPage extends Page
                                 </div>
 
                                 <div class="space-y-6">
-                                <div class="flex items-center justify-between gap-4 rounded-lg bg-indigo-50/50 px-4 py-3 ring-1 ring-inset ring-indigo-100">
+                                <div class="flex items-center justify-between gap-4">
                                     <div class="flex min-w-0 items-center gap-3">
                                         <span class="text-lg leading-none" x-text="campaignSetupActiveLanguage().flag"></span>
-                                        <span class="min-w-0">
-                                            <span class="block truncate text-sm font-semibold text-gray-950" x-text="`Editing ${campaignSetupActiveLanguage().name || campaignSetupActiveLanguage().label} Agent`"></span>
-                                            <span class="block text-sm text-gray-600" x-text="campaignSetupActiveLanguage().label"></span>
-                                        </span>
+                                        <span class="min-w-0 truncate text-base font-semibold leading-6 text-gray-950" x-text="`Editing ${campaignSetupActiveLanguage().name || campaignSetupActiveLanguage().label} Agent`"></span>
                                     </div>
-                                    <span x-show="campaignSetup.defaultLanguage === campaignSetup.activeLanguage" class="shrink-0 rounded-md bg-white px-2 py-1 text-xs font-medium text-indigo-700 ring-1 ring-inset ring-indigo-200">Default Language</span>
+                                    <span x-show="campaignSetup.defaultLanguage === campaignSetup.activeLanguage" class="shrink-0 rounded-md bg-indigo-50 px-2 py-1 text-xs font-medium text-indigo-700 ring-1 ring-inset ring-indigo-200">Default</span>
+                                    <button x-show="campaignSetup.defaultLanguage !== campaignSetup.activeLanguage" type="button" x-on:click="setCampaignSetupDefaultLanguage(campaignSetup.activeLanguage)" class="shrink-0 text-sm font-semibold text-indigo-600 transition hover:text-indigo-500 focus:outline-none focus-visible:rounded focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600">Set as Default</button>
                                 </div>
                                 <div class="grid gap-6 lg:grid-cols-2">
                                     <label class="block">

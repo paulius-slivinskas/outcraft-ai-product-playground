@@ -814,7 +814,7 @@ class OutreachPage extends Page
                                 <li class="relative flex gap-4">
                                     <span
                                         x-show="index !== companySetupSteps.length - 1"
-                                        class="absolute left-4 top-8 h-10 w-px"
+                                        class="absolute left-4 top-8 -bottom-6 w-px"
                                         :class="campaignBuilderMaxStep > index ? 'bg-indigo-600' : 'bg-gray-200'"
                                     ></span>
                                     <button type="button" x-on:click="goToCampaignBuilderStep(index)" :disabled="index > campaignBuilderMaxStep" class="group flex min-w-0 items-start gap-4 text-left disabled:cursor-not-allowed">
@@ -842,7 +842,7 @@ class OutreachPage extends Page
                         <ol role="list" class="space-y-4">
                             <template x-for="(step, index) in campaignSetupPrimaryTimelineSteps()" :key="step.id">
                                 <li class="relative flex gap-4">
-                                    <span x-show="index !== campaignSetupPrimaryTimelineSteps().length - 1" class="absolute left-4 top-8 h-8 w-px" :class="campaignSetupStatus(step.id) === 'done' ? 'bg-indigo-600' : 'bg-gray-200'"></span>
+                                    <span x-show="index !== campaignSetupPrimaryTimelineSteps().length - 1" class="absolute left-4 top-8 -bottom-4 w-px" :class="campaignSetupStatus(step.id) === 'done' ? 'bg-indigo-600' : 'bg-gray-200'"></span>
                                     <button type="button" x-on:click="setCampaignSetupStep(step.id)" class="group flex min-w-0 items-start gap-4 text-left">
                                         <span class="flex h-9 items-center" x-html="campaignSetupStatusIcon(step.id, campaignSetupStepNumber(step.id))"></span>
                                         <span class="min-w-0 pt-1">
@@ -857,7 +857,7 @@ class OutreachPage extends Page
                         <ol x-show="campaignSetupSecondaryTimelineSteps().length > 0" role="list" class="mt-8 space-y-4 border-t border-gray-200 pt-6">
                             <template x-for="(step, index) in campaignSetupSecondaryTimelineSteps()" :key="step.id">
                                 <li class="relative flex gap-4">
-                                    <span x-show="index !== campaignSetupSecondaryTimelineSteps().length - 1" class="absolute left-4 top-8 h-8 w-px" :class="campaignSetupStatus(step.id) === 'done' ? 'bg-indigo-600' : 'bg-gray-200'"></span>
+                                    <span x-show="index !== campaignSetupSecondaryTimelineSteps().length - 1" class="absolute left-4 top-8 -bottom-4 w-px" :class="campaignSetupStatus(step.id) === 'done' ? 'bg-indigo-600' : 'bg-gray-200'"></span>
                                     <button type="button" x-on:click="setCampaignSetupStep(step.id)" class="group flex min-w-0 items-start gap-4 text-left">
                                         <span class="flex h-9 items-center" x-html="campaignSetupStatusIcon(step.id, campaignSetupStepNumber(step.id))"></span>
                                         <span class="min-w-0 pt-1">
@@ -1616,13 +1616,14 @@ class OutreachPage extends Page
                                     <p class="mt-2 max-w-3xl text-sm leading-6 text-gray-600" x-text="campaignSetupDescription('agent')"></p>
 
                                     <div class="mt-10 overflow-visible rounded-lg border border-gray-200 bg-white">
-                                        <div class="divide-y divide-gray-200">
+                                        <div>
                                             <template x-for="language in campaignSetup.languages" :key="language.code">
                                                 <div
                                                     class="flex w-full items-center justify-between gap-4 px-4 py-3 transition hover:bg-gray-50"
                                                     :class="[
                                                         'bg-white',
                                                         campaignSetup.languages[0]?.code === language.code ? 'rounded-t-lg' : '',
+                                                        campaignSetup.languages[0]?.code !== language.code ? 'border-t border-gray-200' : '',
                                                     ]"
                                                 >
                                                     <button
@@ -1630,7 +1631,9 @@ class OutreachPage extends Page
                                                         x-on:click="selectCampaignSetupLanguage(language.code)"
                                                         class="flex min-w-0 flex-1 items-center gap-3 text-left focus:outline-none"
                                                     >
-                                                        <span class="text-base leading-none" x-text="language.flag"></span>
+                                                        <span class="inline-flex size-5 shrink-0 overflow-hidden rounded-full ring-1 ring-gray-200">
+                                                            <img :src="campaignSetupFlagUrl(language)" :alt="`${language.name || language.label} flag`" class="size-full object-cover" loading="lazy">
+                                                        </span>
                                                         <span class="min-w-0">
                                                             <span class="block truncate text-sm font-semibold leading-6 text-gray-950" x-text="language.name || language.label"></span>
                                                             <span class="block text-sm leading-5 text-gray-500" x-text="language.label"></span>
@@ -1640,7 +1643,7 @@ class OutreachPage extends Page
                                                 </div>
                                             </template>
 
-                                            <div class="relative" x-on:click.outside="campaignSetup.languageMenuOpen = false">
+                                            <div class="relative border-t border-gray-200" x-on:click.outside="campaignSetup.languageMenuOpen = false">
                                                 <button
                                                     type="button"
                                                     x-on:click="campaignSetup.languageMenuOpen = ! campaignSetup.languageMenuOpen; campaignSetup.languageSearch = ''; $nextTick(() => $refs.campaignLanguageSearch?.focus())"
@@ -1670,7 +1673,9 @@ class OutreachPage extends Page
                                                     <div class="max-h-60 overflow-y-auto py-1">
                                                         <template x-for="language in filteredCampaignSetupLanguageOptions()" :key="language.code">
                                                             <button type="button" x-on:click="addCampaignSetupLanguage(language.code)" class="flex w-full items-center gap-3 px-3 py-2 text-left transition hover:bg-indigo-50">
-                                                                <span class="text-base leading-none" x-text="language.flag"></span>
+                                                                <span class="inline-flex size-5 shrink-0 overflow-hidden rounded-full ring-1 ring-gray-200">
+                                                                    <img :src="campaignSetupFlagUrl(language)" :alt="`${language.name} flag`" class="size-full object-cover" loading="lazy">
+                                                                </span>
                                                                 <span class="min-w-0">
                                                                     <span class="block truncate text-sm font-semibold leading-6 text-gray-950" x-text="language.name"></span>
                                                                     <span class="block text-sm leading-5 text-gray-500" x-text="language.label"></span>
@@ -1688,7 +1693,9 @@ class OutreachPage extends Page
                                 <div class="space-y-6">
                                 <div class="flex items-center justify-between gap-4">
                                     <div class="flex min-w-0 items-center gap-3">
-                                        <span class="text-lg leading-none" x-text="campaignSetupActiveLanguage().flag"></span>
+                                        <span class="inline-flex size-5 shrink-0 overflow-hidden rounded-full ring-1 ring-gray-200">
+                                            <img :src="campaignSetupFlagUrl(campaignSetupActiveLanguage())" :alt="`${campaignSetupActiveLanguage().name || campaignSetupActiveLanguage().label} flag`" class="size-full object-cover" loading="lazy">
+                                        </span>
                                         <span class="min-w-0 truncate text-base font-semibold leading-6 text-gray-950" x-text="`Editing ${campaignSetupActiveLanguage().name || campaignSetupActiveLanguage().label} Agent`"></span>
                                     </div>
                                     <span x-show="campaignSetup.defaultLanguage === campaignSetup.activeLanguage" class="shrink-0 rounded-md bg-indigo-50 px-2 py-1 text-xs font-medium text-indigo-700 ring-1 ring-inset ring-indigo-200">Default</span>
@@ -5480,9 +5487,9 @@ class OutreachPage extends Page
 	                campaignSetupModeSelected: false,
 	                campaignSetupIntroStep: 'type',
 	                campaignSetupFastSteps: [
-	                    { id: 'brief', label: 'Campaign Context', description: 'Describe goal and context.' },
-	                    { id: 'channels', label: 'Outreach Channels', description: 'Calls, SMS, email, WhatsApp.' },
 	                    { id: 'agent', label: 'AI Agent', description: 'Identity, voice, work time, handoff and other settings.' },
+	                    { id: 'channels', label: 'Outreach Channels', description: 'Calls, SMS, email, WhatsApp.' },
+	                    { id: 'brief', label: 'Campaign Context', description: 'Describe goal and context.' },
 	                    { id: 'review', label: 'Review & Test', description: 'Test the draft campaign.' },
 	                ],
                 campaignSetupAdvancedSteps: [
@@ -5497,15 +5504,15 @@ class OutreachPage extends Page
                     { id: 'review', label: 'Review & Launch', description: 'Validate and launch.', group: 'Finish' },
                 ],
                 campaignSetupLanguageOptions: [
-                    { code: 'US', label: 'US', name: 'United States', flag: '🇺🇸' },
-                    { code: 'GB', label: 'UK', name: 'United Kingdom', flag: '🇬🇧' },
-                    { code: 'ES', label: 'ES', name: 'Spanish', flag: '🇪🇸' },
-                    { code: 'DE', label: 'DE', name: 'German', flag: '🇩🇪' },
-                    { code: 'FR', label: 'FR', name: 'French', flag: '🇫🇷' },
-                    { code: 'NL', label: 'NL', name: 'Dutch', flag: '🇳🇱' },
-                    { code: 'IT', label: 'IT', name: 'Italian', flag: '🇮🇹' },
-                    { code: 'PL', label: 'PL', name: 'Polish', flag: '🇵🇱' },
-                    { code: 'LT', label: 'LT', name: 'Lithuanian', flag: '🇱🇹' },
+                    { code: 'US', label: 'US', name: 'United States', flagCode: 'us' },
+                    { code: 'GB', label: 'UK', name: 'United Kingdom', flagCode: 'gb' },
+                    { code: 'ES', label: 'ES', name: 'Spanish', flagCode: 'es' },
+                    { code: 'DE', label: 'DE', name: 'German', flagCode: 'de' },
+                    { code: 'FR', label: 'FR', name: 'French', flagCode: 'fr' },
+                    { code: 'NL', label: 'NL', name: 'Dutch', flagCode: 'nl' },
+                    { code: 'IT', label: 'IT', name: 'Italian', flagCode: 'it' },
+                    { code: 'PL', label: 'PL', name: 'Polish', flagCode: 'pl' },
+                    { code: 'LT', label: 'LT', name: 'Lithuanian', flagCode: 'lt' },
                 ],
                 campaignSetup: {
                     current: 'type',
@@ -5520,7 +5527,7 @@ class OutreachPage extends Page
 	                    defaultLanguage: 'US',
 	                    languageMenuOpen: false,
                     languageSearch: '',
-                    languages: [{ code: 'US', label: 'US', name: 'United States', flag: '🇺🇸' }],
+                    languages: [{ code: 'US', label: 'US', name: 'United States', flagCode: 'us' }],
                     agentName: 'Bridget',
                     voice: 'Bridget (Ultra-realistic)',
                     emailSignature: "Best,\nBridget from Outcraft AI",
@@ -7182,7 +7189,12 @@ class OutreachPage extends Page
                 campaignSetupActiveLanguage() {
                     return this.campaignSetup.languages.find((language) => language.code === this.campaignSetup.activeLanguage)
                         || this.campaignSetup.languages[0]
-                        || { code: '', label: '', name: '', flag: '' };
+                        || { code: '', label: '', name: '', flagCode: '' };
+                },
+                campaignSetupFlagUrl(language) {
+                    const code = String(language?.flagCode || language?.code || '').toLowerCase();
+
+                    return code ? `https://cdn.jsdelivr.net/npm/flag-icons/flags/1x1/${code}.svg` : '';
                 },
                 filteredCampaignSetupLanguageOptions() {
                     const selectedCodes = new Set(this.campaignSetup.languages.map((language) => language.code));

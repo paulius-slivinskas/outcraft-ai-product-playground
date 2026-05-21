@@ -3,7 +3,9 @@
 namespace App\Filament\Pages;
 
 use BackedEnum;
+use Filament\Actions\Action;
 use Filament\Pages\Page;
+use Filament\Support\Icons\Heroicon;
 use Illuminate\Support\HtmlString;
 use Illuminate\Support\Facades\Blade;
 
@@ -24,6 +26,59 @@ class OutreachPage extends Page
         return new HtmlString(Blade::render($this->template(), [
             'rows' => $this->rows(),
         ]));
+    }
+
+    public function deleteSelectedLeadsAction(): Action
+    {
+        return Action::make('deleteSelectedLeads')
+            ->label('Delete')
+            ->color('danger')
+            ->modalIcon(Heroicon::OutlinedTrash)
+            ->modalIconColor('danger')
+            ->modalHeading(function (array $arguments): string {
+                return $this->selectedLeadsActionCount($arguments) === 1
+                    ? 'Delete Selected Lead'
+                    : 'Delete Selected Leads';
+            })
+            ->modalDescription(function (array $arguments): string {
+                $count = $this->selectedLeadsActionCount($arguments);
+                $leadLabel = match (true) {
+                    $count === 1 => 'this selected lead',
+                    $count > 1 => "{$count} selected leads",
+                    default => 'the selected leads',
+                };
+
+                return "You are about to delete {$leadLabel}. This action cannot be undone.";
+            })
+            ->modalSubmitActionLabel(function (array $arguments): string {
+                return $this->selectedLeadsActionCount($arguments) === 1
+                    ? 'Delete Lead'
+                    : 'Delete Selected Leads';
+            })
+            ->modalCancelActionLabel('Cancel')
+            ->requiresConfirmation()
+            ->action(function (array $arguments): void {
+                $this->dispatch(
+                    'outreach-delete-selected-leads',
+                    ids: array_values(array_map('intval', $arguments['ids'] ?? [])),
+                );
+            });
+    }
+
+    private function selectedLeadsActionCount(array $arguments): int
+    {
+        return count(array_filter($arguments['ids'] ?? [], static fn (mixed $id): bool => is_numeric($id)));
+    }
+
+    public function reorderFindOutQuestionsAction(): Action
+    {
+        return Action::make('reorderFindOutQuestions')
+            ->action(function (array $arguments): void {
+                $this->dispatch(
+                    'outreach-reorder-find-out-questions',
+                    ids: array_values(array_map('strval', $arguments['items'] ?? [])),
+                );
+            });
     }
 
     private function rows(): array
@@ -85,9 +140,9 @@ class OutreachPage extends Page
                 'name' => $name,
                 'phone' => $phone,
                 'phoneCountry' => in_array($areaCode, $canadianAreaCodes, true) ? 'Canada' : 'United States',
-                'phoneFlag' => in_array($areaCode, $canadianAreaCodes, true) ? '🇨🇦' : '🇺🇸',
+                'phoneFlagCode' => in_array($areaCode, $canadianAreaCodes, true) ? 'ca' : 'us',
                 'country' => in_array($areaCode, $canadianAreaCodes, true) ? 'CA' : 'US',
-                'countryFlag' => in_array($areaCode, $canadianAreaCodes, true) ? '🇨🇦' : '🇺🇸',
+                'countryFlagCode' => in_array($areaCode, $canadianAreaCodes, true) ? 'ca' : 'us',
                 'timezone' => $timezones[(($index * 3) + intdiv($index, 9)) % count($timezones)],
                 'state' => $leadStates[(($index * 5) + intdiv($index, 11)) % count($leadStates)],
                 'campaignName' => $campaignNames[(($index * 2) + intdiv($index, 12)) % count($campaignNames)],
@@ -150,21 +205,44 @@ class OutreachPage extends Page
 <div
     x-data="outreachPage(@js($rows))"
     x-init="initializeFromUrl()"
+    x-on:outreach-delete-selected-leads.window="deleteSelectedLeadsByIds($event.detail.ids)"
+    x-on:outreach-reorder-find-out-questions.window="reorderFindOutQuestionsByIds($event.detail.ids)"
     class="outcraft-page fixed inset-0 z-50 overflow-hidden bg-white text-[#1f2024]"
     style="font-family: 'Inter Variable', Inter, ui-sans-serif, system-ui, sans-serif;"
 >
     <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://unpkg.com/lucide@latest"></script>
+    <script src="/js/lucide.js"></script>
 
     <div
         x-cloak
         x-show="floatingTooltip.visible"
-        x-transition.opacity.duration.100ms
-        class="outcraft-floating-tooltip rounded-lg bg-gray-900 px-4 py-3 text-left text-xs font-medium leading-5 text-white shadow-sm"
-        :style="`left: ${floatingTooltip.left}px; top: ${floatingTooltip.top}px; width: ${floatingTooltip.width}px;`"
+        class="outcraft-floating-tooltip rounded-lg bg-gray-900 px-3 py-2 text-center text-xs font-medium leading-4 text-white shadow-sm"
+        :style="`left: ${floatingTooltip.left}px; top: ${floatingTooltip.top}px; width: ${floatingTooltip.width}px; --outcraft-tooltip-arrow-left: ${floatingTooltip.arrowLeft}px;`"
     >
         <span x-text="floatingTooltip.text"></span>
-        <span class="absolute left-1/2 top-full size-2 -translate-x-1/2 -translate-y-1 rotate-45 bg-gray-900"></span>
+        <span class="absolute top-full size-2 -translate-x-1/2 -translate-y-1 rotate-45 bg-gray-900" style="left: var(--outcraft-tooltip-arrow-left, 50%);"></span>
+    </div>
+
+    <div
+        x-cloak
+        x-show="captureToast.visible"
+        x-transition:enter="transition ease-out duration-200"
+        x-transition:enter-start="opacity-0 translate-y-2"
+        x-transition:enter-end="opacity-100 translate-y-0"
+        x-transition:leave="transition ease-in duration-150"
+        x-transition:leave-start="opacity-100 translate-y-0"
+        x-transition:leave-end="opacity-0 translate-y-2"
+        class="fixed right-4 top-4 z-[100] w-[22rem] max-w-[calc(100vw-2rem)] rounded-lg bg-white p-4 shadow-lg ring-1 ring-gray-900/10"
+    >
+        <div class="flex items-start gap-3">
+            <span class="flex size-8 shrink-0 items-center justify-center rounded-full bg-emerald-50 text-emerald-600">
+                <span class="outcraft-icon !text-[18px]">fact_check</span>
+            </span>
+            <div class="min-w-0">
+                <p class="text-sm font-semibold leading-6 text-gray-950" x-text="captureToast.title"></p>
+                <p class="text-sm leading-6 text-gray-600" x-text="captureToast.message"></p>
+            </div>
+        </div>
     </div>
 
     <style>
@@ -230,6 +308,24 @@ class OutreachPage extends Page
             height: 1em;
             stroke: currentColor;
         }
+        .outcraft-source-logo {
+            display: inline-flex;
+            width: 1.75rem;
+            height: 1.75rem;
+            align-items: center;
+            justify-content: center;
+        }
+        .outcraft-source-logo svg {
+            display: block;
+            width: auto;
+            height: auto;
+            max-width: 100%;
+            max-height: 100%;
+        }
+        .outcraft-source-logo-lg {
+            width: 2.625rem;
+            height: 2.625rem;
+        }
         .dashboard-hero {
             background:
                 radial-gradient(circle at 92% 18%, rgba(141, 118, 255, 0.74), transparent 34%),
@@ -282,6 +378,84 @@ class OutreachPage extends Page
             stroke-dasharray: 1;
             animation: outcraft-loader-draw 1s ease-in-out infinite;
         }
+        @property --outcraft-ai-border-angle {
+            syntax: '<angle>';
+            inherits: false;
+            initial-value: 0deg;
+        }
+        @keyframes outcraft-ai-border-spin {
+            to {
+                --outcraft-ai-border-angle: 360deg;
+            }
+        }
+        .outcraft-ai-button {
+            position: relative;
+            overflow: hidden;
+            background:
+                linear-gradient(#ffffff, #ffffff) padding-box,
+                conic-gradient(
+                    from var(--outcraft-ai-border-angle),
+                    rgba(79, 70, 229, 0.2),
+                    rgba(236, 72, 153, 0.95),
+                    rgba(79, 70, 229, 0.95),
+                    rgba(244, 114, 182, 0.95),
+                    rgba(79, 70, 229, 0.2)
+                ) border-box;
+            animation: outcraft-ai-border-spin 2.6s linear infinite;
+        }
+        .outcraft-ai-button:hover:not(:disabled) {
+            background:
+                linear-gradient(#f9fafb, #f9fafb) padding-box,
+                conic-gradient(
+                    from var(--outcraft-ai-border-angle),
+                    rgba(79, 70, 229, 0.28),
+                    rgba(236, 72, 153, 1),
+                    rgba(79, 70, 229, 1),
+                    rgba(244, 114, 182, 1),
+                    rgba(79, 70, 229, 0.28)
+                ) border-box;
+        }
+        .outcraft-ai-button:disabled {
+            animation: none;
+            background:
+                linear-gradient(#ffffff, #ffffff) padding-box,
+                linear-gradient(#d1d5db, #d1d5db) border-box;
+        }
+        .outcraft-ai-sparkles {
+            width: 1.125rem;
+            height: 1.125rem;
+            flex-shrink: 0;
+        }
+        .outcraft-ai-sparkles path {
+            fill: currentColor;
+            transition: fill 150ms ease;
+        }
+        .outcraft-ai-sparkles path:first-child {
+            animation: outcraft-ai-sparkle-primary 4.8s ease-in-out infinite;
+        }
+        .outcraft-ai-sparkles path:last-child {
+            animation: outcraft-ai-sparkle-secondary 4.8s ease-in-out infinite;
+        }
+        @keyframes outcraft-ai-sparkle-primary {
+            0%, 100% {
+                fill: #1f2937;
+            }
+            50% {
+                fill: #9ca3af;
+            }
+        }
+        @keyframes outcraft-ai-sparkle-secondary {
+            0%, 100% {
+                fill: #9ca3af;
+            }
+            50% {
+                fill: #1f2937;
+            }
+        }
+        .outcraft-ai-button:disabled .outcraft-ai-sparkles path {
+            animation: none;
+            fill: currentColor;
+        }
         .outcraft-page [data-campaign-setup-step] {
             display: grid;
             gap: 2.5rem;
@@ -330,6 +504,26 @@ class OutreachPage extends Page
             .outcraft-page .mt-6.grid,
             .outcraft-page .mt-5.grid {
                 grid-template-columns: 1fr !important;
+            }
+            .outcraft-page [data-campaign-setup-step],
+            .outcraft-page [data-company-details-step-layout] {
+                grid-template-columns: minmax(0, 1fr) !important;
+                gap: 1.5rem !important;
+            }
+            .outcraft-page [data-campaign-setup-step] > :first-child,
+            .outcraft-page [data-campaign-setup-step] > :not(:first-child),
+            .outcraft-page [data-company-details-step-layout] > :first-child,
+            .outcraft-page [data-company-details-step-layout] > form {
+                grid-column: 1 / -1 !important;
+                min-width: 0;
+            }
+            .outcraft-page [data-campaign-setup-step] > :first-child > p:nth-of-type(2),
+            .outcraft-page [data-company-details-step-layout] > :first-child > p {
+                max-width: none !important;
+            }
+            .outcraft-page [data-company-details-step-layout] form fieldset > .grid,
+            .outcraft-page [data-campaign-setup-step] form fieldset > .grid {
+                max-width: none !important;
             }
             .outcraft-page main > section > .grid {
                 gap: 1rem !important;
@@ -695,7 +889,7 @@ class OutreachPage extends Page
                 </button>
                 <button
                     type="button"
-                    class="group/notification relative inline-flex size-9 shrink-0 items-center justify-center rounded-md text-gray-400 transition-colors duration-200 ease-in-out group-hover/profile-row:text-indigo-600 hover:bg-gray-200 hover:text-indigo-600"
+                    class="group/notification relative inline-flex size-9 shrink-0 items-center justify-center rounded-md text-gray-400 transition-colors duration-200 ease-in-out group-hover/profile-row:text-indigo-600 hover:bg-gray-50 hover:text-indigo-600"
                     :class="sidebarOpen ? 'order-2' : 'order-1 mx-auto'"
                     title="Notifications"
                 >
@@ -732,7 +926,7 @@ class OutreachPage extends Page
                 </div>
             </div>
 
-            <nav x-show="campaignBuilderStep < 3" aria-label="Progress" class="sticky top-0 z-30 -mx-6 mb-6 border-b border-gray-200 bg-white/95 px-4 py-4 backdrop-blur lg:hidden">
+            <nav x-show="campaignBuilderStep < companySetupStartStep()" aria-label="Progress" class="sticky top-0 z-30 -mx-6 mb-6 border-b border-gray-200 bg-white/95 px-4 py-4 backdrop-blur lg:hidden">
                 <ol role="list" class="flex items-center justify-center">
                     <template x-for="(step, index) in companySetupSteps" :key="step.label">
                         <li class="relative" :class="index === companySetupSteps.length - 1 ? '' : 'flex-1'">
@@ -763,7 +957,7 @@ class OutreachPage extends Page
 
             <div x-ref="campaignBuilderScrollScene" :style="campaignBuilderScrollSceneStyle()" class="relative mx-auto flex max-w-7xl items-start gap-12 xl:gap-16">
                 <button
-                    x-show="campaignBuilderStep >= 3 && ! campaignSetupModeSelected"
+                    x-show="campaignBuilderStep >= companySetupStartStep() && ! campaignSetupModeSelected"
                     type="button"
                     x-on:click="handleCampaignBuilderBack()"
                     class="absolute left-0 top-0 z-10 hidden h-9 w-fit items-center gap-2 rounded-md px-2 text-sm font-semibold text-gray-600 transition hover:bg-gray-50 hover:text-gray-950 lg:inline-flex"
@@ -772,7 +966,7 @@ class OutreachPage extends Page
                     <span x-text="campaignBuilderBackLabel()"></span>
                 </button>
                 <div
-                    x-show="campaignBuilderStep >= 3 && campaignSetupModeSelected"
+                    x-show="campaignBuilderStep >= companySetupStartStep() && campaignSetupModeSelected"
                     class="absolute right-0 top-0 z-10 hidden items-center gap-2 lg:flex"
                 >
                     <button type="button" class="inline-flex h-9 items-center gap-2 rounded-md bg-white px-3 text-sm font-semibold text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 transition hover:bg-gray-50">
@@ -783,7 +977,7 @@ class OutreachPage extends Page
                         <button type="button" x-on:click="setupModeMenuOpen = ! setupModeMenuOpen" class="inline-flex size-9 items-center justify-center rounded-md text-gray-500 transition hover:bg-gray-100 hover:text-gray-900" aria-label="Setup Mode Options">
                             <span class="outcraft-icon !text-[18px]">more_vert</span>
                         </button>
-                        <div x-cloak x-show="setupModeMenuOpen" x-transition:enter="transition ease-out duration-200" x-transition:enter-start="opacity-0 translate-y-2" x-transition:enter-end="opacity-100 translate-y-0" x-transition:leave="transition ease-in duration-150" x-transition:leave-start="opacity-100 translate-y-0" x-transition:leave-end="opacity-0 translate-y-1" class="absolute right-0 z-40 mt-2 w-52 rounded-md bg-white py-1 shadow-lg ring-1 ring-black/5" role="menu">
+                        <div x-cloak x-show="setupModeMenuOpen" x-transition:enter="transition ease-out duration-200" x-transition:enter-start="opacity-0 translate-y-2" x-transition:enter-end="opacity-100 translate-y-0" x-transition:leave="transition ease-in duration-150" x-transition:leave-start="opacity-100 translate-y-0" x-transition:leave-end="opacity-0 translate-y-1" class="absolute right-0 z-40 mt-2 w-60 rounded-md bg-white py-1 shadow-lg ring-1 ring-black/5" role="menu">
                             <p class="px-2 py-1 text-xs font-semibold uppercase tracking-wide text-gray-400">Setup Mode</p>
                             <button type="button" x-on:click="setCampaignSetupMode('fast'); setupModeMenuOpen = false" class="flex w-full items-center justify-between px-3 py-2 text-left text-sm font-medium transition" :class="campaignSetupMode === 'fast' ? 'text-gray-950' : 'text-gray-600 hover:bg-gray-50 hover:text-gray-950'" role="menuitem">
                                 <span>Fast</span>
@@ -793,10 +987,25 @@ class OutreachPage extends Page
                                 <span>Advanced</span>
                                 <span x-show="campaignSetupMode === 'advanced'" class="outcraft-icon !text-[16px] text-indigo-600">check</span>
                             </button>
+                            <div x-show="campaignSetup.current === 'brief'" class="mt-1 border-t border-gray-100 pt-1">
+                                <p class="px-2 py-1 text-xs font-semibold uppercase tracking-wide text-gray-400">Campaign Context</p>
+                                <button type="button" x-on:click="campaignSetup.briefTab = 'builder'; setupModeMenuOpen = false; scheduleCampaignBuilderLayoutUpdate()" class="flex w-full items-center justify-between px-3 py-2 text-left text-sm font-medium transition" :class="campaignSetup.briefTab === 'builder' ? 'text-gray-950' : 'text-gray-600 hover:bg-gray-50 hover:text-gray-950'" role="menuitem">
+                                    <span>Option Three</span>
+                                    <span x-show="campaignSetup.briefTab === 'builder'" class="outcraft-icon !text-[16px] text-indigo-600">check</span>
+                                </button>
+                                <button type="button" x-on:click="campaignSetup.briefTab = 'context'; setupModeMenuOpen = false; scheduleCampaignBuilderLayoutUpdate()" class="flex w-full items-center justify-between px-3 py-2 text-left text-sm font-medium transition" :class="campaignSetup.briefTab === 'context' ? 'text-gray-950' : 'text-gray-600 hover:bg-gray-50 hover:text-gray-950'" role="menuitem">
+                                    <span>Original</span>
+                                    <span x-show="campaignSetup.briefTab === 'context'" class="outcraft-icon !text-[16px] text-indigo-600">check</span>
+                                </button>
+                                <button type="button" x-on:click="campaignSetup.briefTab = 'discovery'; setupModeMenuOpen = false; scheduleCampaignBuilderLayoutUpdate()" class="flex w-full items-center justify-between px-3 py-2 text-left text-sm font-medium transition" :class="campaignSetup.briefTab === 'discovery' ? 'text-gray-950' : 'text-gray-600 hover:bg-gray-50 hover:text-gray-950'" role="menuitem">
+                                    <span>Option Two</span>
+                                    <span x-show="campaignSetup.briefTab === 'discovery'" class="outcraft-icon !text-[16px] text-indigo-600">check</span>
+                                </button>
+                            </div>
                         </div>
                     </div>
                 </div>
-                <aside x-show="campaignBuilderStep < 3 || campaignSetupModeSelected" class="hidden w-72 shrink-0 lg:block" :style="campaignBuilderProgressStickyStyle()">
+                <aside x-show="campaignBuilderStep < companySetupStartStep() || campaignSetupModeSelected" class="hidden w-72 shrink-0 lg:block" :style="campaignBuilderProgressStickyStyle()">
                     <div>
                     <div x-ref="campaignBuilderProgressColumn">
                     <button
@@ -808,7 +1017,7 @@ class OutreachPage extends Page
                         <span x-text="campaignBuilderBackLabel()"></span>
                     </button>
 
-                    <nav x-show="campaignBuilderStep < 3" x-ref="companySetupProgressNav" aria-label="Company setup progress">
+                    <nav x-show="campaignBuilderStep < companySetupStartStep()" x-ref="companySetupProgressNav" aria-label="Company setup progress">
                         <ol role="list" class="space-y-6">
                             <template x-for="(step, index) in companySetupSteps" :key="step.label">
                                 <li class="relative flex gap-4">
@@ -838,7 +1047,7 @@ class OutreachPage extends Page
                         </ol>
                     </nav>
 
-                    <nav x-show="campaignBuilderStep >= 3 && campaignSetupModeSelected" aria-label="Campaign setup progress" class="space-y-5">
+                    <nav x-show="campaignBuilderStep >= companySetupStartStep() && campaignSetupModeSelected" aria-label="Campaign setup progress" class="space-y-5">
                         <ol role="list" class="space-y-4">
                             <template x-for="(step, index) in campaignSetupPrimaryTimelineSteps()" :key="step.id">
                                 <li class="relative flex gap-4">
@@ -873,47 +1082,74 @@ class OutreachPage extends Page
                     </div>
                 </aside>
 
-                <div class="min-w-0 flex-1" :class="campaignBuilderStep >= 3 && ! campaignSetupModeSelected ? 'w-full' : ''">
+                <div class="min-w-0 flex-1" :class="campaignBuilderStep >= companySetupStartStep() && ! campaignSetupModeSelected ? 'w-full' : ''">
                 <div x-ref="campaignBuilderContentScroll" class="lg:pt-[78px]">
-                    <div x-show="campaignBuilderStep < 3" x-ref="companyDetailsFormStage" x-effect="campaignBuilderStep; companyForm.pronunciationEnabled; updateCampaignBuilderStickyLayout(); updateCampaignBuilderBottomPadding()" class="relative [overflow-anchor:none] lg:flex lg:flex-col" :style="`padding-bottom: ${campaignBuilderBottomPadding}px;`">
+                    <div x-show="campaignBuilderStep < companySetupStartStep()" x-ref="companyDetailsFormStage" x-effect="campaignBuilderStep; companyForm.pronunciationEnabled; updateCampaignBuilderStickyLayout(); updateCampaignBuilderBottomPadding()" class="relative [overflow-anchor:none] lg:flex lg:flex-col" :style="`padding-bottom: ${campaignBuilderBottomPadding}px;`">
                         <section
                             x-cloak
                             x-show="campaignBuilderStep === 0 || campaignBuilderScrollFromStep === 0"
-                            x-ref="companyIdentitySection"
+                            x-ref="companyChooseSection"
                             :style="campaignBuilderCompanyStepStyle(0)"
                             class="space-y-7 pr-2 pb-14"
                         >
-                            <div class="flex items-start justify-between gap-4">
+                            <div data-company-details-step-layout class="grid grid-cols-1 gap-x-8 gap-y-10 md:grid-cols-3">
                                 <div>
-                                    <h1 class="text-[24px] font-bold leading-8 text-gray-950">Company Details</h1>
-                                    <p class="mt-3 max-w-3xl text-sm leading-6 text-gray-600">Before creating your first campaign, please complete your company details. This helps our AI understand your business, adapt to your context, and prepare for more accurate conversations with your leads.</p>
+                                    <h2 class="text-base/7 font-semibold text-gray-900">Create or Choose Company</h2>
+                                    <p class="mt-1 text-sm/6 text-gray-500">Choose an existing company profile or create a new one before setting up campaigns.</p>
                                 </div>
-                                <button type="button" x-on:click="exitCampaignBuilder()" class="inline-flex size-9 items-center justify-center rounded-md text-gray-400 transition hover:bg-gray-50 hover:text-gray-950 lg:hidden" aria-label="Close builder">
-                                    <span class="outcraft-icon !text-[22px]">close</span>
-                                </button>
-                            </div>
 
-                            <div class="grid grid-cols-1 gap-x-8 gap-y-10 md:grid-cols-3">
+                                <div class="md:col-span-2">
+                                    <div class="space-y-3">
+                                        <template x-for="company in companySetupDemoCompanies" :key="company.id">
+                                            <button
+                                                type="button"
+                                                x-on:click="chooseExistingCompanyForSetup(company.id)"
+                                                class="flex w-full items-center gap-4 rounded-lg bg-white p-4 text-left shadow-sm outline outline-1 -outline-offset-1 outline-gray-300 transition hover:outline-2 hover:-outline-offset-2 hover:outline-indigo-600 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600"
+                                            >
+                                                <span class="flex size-10 shrink-0 items-center justify-center rounded-md bg-indigo-50 text-sm font-bold text-indigo-600" x-text="company.name.slice(0, 1)"></span>
+                                                <span class="min-w-0">
+                                                    <span class="block text-sm font-semibold leading-6 text-gray-950" x-text="company.name"></span>
+                                                    <span class="block text-sm leading-6 text-gray-500" x-text="company.website"></span>
+                                                </span>
+                                            </button>
+                                        </template>
+
+                                        <button
+                                            type="button"
+                                            x-on:click="chooseNewCompanyForSetup()"
+                                            class="inline-flex h-9 w-fit items-center rounded-md bg-indigo-600 px-3 text-sm font-semibold text-white shadow-sm transition hover:bg-indigo-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600"
+                                        >
+                                            Create New Company
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </section>
+
+                        <section
+                            x-cloak
+                            x-show="campaignBuilderStep === 1 || campaignBuilderScrollFromStep === 1"
+                            x-ref="companyIdentitySection"
+                            :style="campaignBuilderCompanyStepStyle(1)"
+                            class="space-y-7 pr-2 pb-14"
+                        >
+                            <div data-company-details-step-layout class="grid grid-cols-1 gap-x-8 gap-y-10 md:grid-cols-3">
                                 <div>
                                     <h2 class="text-base/7 font-semibold text-gray-900">Company Identity</h2>
-                                    <p class="mt-1 text-sm/6 text-gray-500">Basic brand details the agent will use when introducing the company.</p>
-                                    <button type="button" :disabled="campaignBuilderStep !== 0" class="mt-4 inline-flex h-9 items-center gap-2 rounded-md bg-white px-3 text-sm font-semibold text-green-700 shadow-sm ring-1 ring-inset ring-green-600 transition hover:bg-green-50 disabled:cursor-not-allowed disabled:opacity-50">
-                                        <span class="outcraft-icon !text-[18px]">astroid</span>
-                                        Fill with AI
-                                    </button>
+                                    <p class="mt-1 text-sm/6 text-gray-500">Please complete your company details. This helps our AI understand your business, adapt to your context, and prepare for more accurate conversations with your leads.</p>
                                 </div>
 
-                                <form x-on:submit.prevent="submitCampaignBuilderStep(0)" novalidate class="md:col-span-2">
-                                    <fieldset :disabled="campaignBuilderStep !== 0">
+                                <form x-on:submit.prevent="submitCampaignBuilderStep(1)" novalidate class="md:col-span-2">
+                                    <fieldset :disabled="campaignBuilderStep !== 1">
                                         <div class="grid grid-cols-1 gap-x-6 gap-y-8 sm:max-w-xl sm:grid-cols-6">
                                         <div class="sm:col-span-3">
-                                            <label class="block text-sm/6 font-medium text-gray-900">Company Name<span class="text-indigo-600">*</span></label>
+                                            <label class="block text-sm/6 font-medium text-gray-900">Company Name<span class="text-indigo-400">*</span></label>
                                             <input data-campaign-field="name" x-model="companyForm.name" x-on:input="clearCampaignBuilderError('name')" :aria-invalid="Boolean(campaignBuilderErrors.name)" required type="text" placeholder="Enter your company legal name" class="mt-2 block w-full rounded-md bg-white px-3 py-1.5 text-base text-gray-900 outline outline-1 -outline-offset-1 placeholder:text-gray-400 focus:outline-2 focus:-outline-offset-2 focus:outline-indigo-600 disabled:bg-gray-50 disabled:text-gray-500 sm:text-sm/6" :class="campaignBuilderErrors.name ? 'outline-red-300 focus:outline-red-600' : 'outline-gray-300'">
                                             <p x-show="campaignBuilderErrors.name" x-text="campaignBuilderErrors.name" class="mt-2 text-sm/6 text-red-600"></p>
                                         </div>
 
                                         <div class="sm:col-span-3">
-                                            <label class="block text-sm/6 font-medium text-gray-900">Company Website<span class="text-indigo-600">*</span></label>
+                                            <label class="block text-sm/6 font-medium text-gray-900">Company Website<span class="text-indigo-400">*</span></label>
                                             <input data-campaign-field="website" x-model="companyForm.website" x-on:input="clearCampaignBuilderError('website')" :aria-invalid="Boolean(campaignBuilderErrors.website)" required type="text" placeholder="example.com" class="mt-2 block w-full rounded-md bg-white px-3 py-1.5 text-base text-gray-900 outline outline-1 -outline-offset-1 placeholder:text-gray-400 focus:outline-2 focus:-outline-offset-2 focus:outline-indigo-600 disabled:bg-gray-50 disabled:text-gray-500 sm:text-sm/6" :class="campaignBuilderErrors.website ? 'outline-red-300 focus:outline-red-600' : 'outline-gray-300'">
                                             <p x-show="campaignBuilderErrors.website" x-text="campaignBuilderErrors.website" class="mt-2 text-sm/6 text-red-600"></p>
                                         </div>
@@ -950,11 +1186,7 @@ class OutreachPage extends Page
                                         </div>
                                         </div>
                                     </fieldset>
-                                    <div x-show="campaignBuilderStep === 0" data-campaign-step-actions class="hidden">
-                                        <button type="button" class="inline-flex h-9 items-center gap-2 rounded-md bg-white px-3 text-sm font-semibold text-green-700 shadow-sm ring-1 ring-inset ring-green-600 transition hover:bg-green-50">
-                                            <span class="outcraft-icon !text-[18px]">astroid</span>
-                                            Fill with AI
-                                        </button>
+                                    <div x-show="campaignBuilderStep === 1" data-campaign-step-actions class="hidden">
                                         <button type="submit" class="inline-flex items-center gap-2 rounded-md bg-indigo-600 px-3 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-indigo-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600">Continue Manually<span class="outcraft-icon !text-[18px]">arrow_downward</span></button>
                                     </div>
                                 </form>
@@ -963,25 +1195,29 @@ class OutreachPage extends Page
 
                         <section
                             x-cloak
-                            x-show="campaignBuilderStep === 1 || campaignBuilderScrollFromStep === 1"
+                            x-show="campaignBuilderStep === 2 || campaignBuilderScrollFromStep === 2"
                             x-ref="industryMarketSection"
-                            :style="campaignBuilderCompanyStepStyle(1)"
+                            :style="campaignBuilderCompanyStepStyle(2)"
+                            data-company-details-step-layout
                             class="grid grid-cols-1 gap-x-8 gap-y-10 pr-2 pb-14 md:grid-cols-3"
                         >
                             <div>
                                 <h2 class="text-base/7 font-semibold text-gray-900">Industry & Market</h2>
                                 <p class="mt-1 text-sm/6 text-gray-500">Market context, customer profile, differentiators, and FAQs for campaign reasoning.</p>
-                                <button type="button" :disabled="campaignBuilderStep !== 1" class="mt-4 inline-flex h-9 items-center gap-2 rounded-md bg-white px-3 text-sm font-semibold text-green-700 shadow-sm ring-1 ring-inset ring-green-600 transition hover:bg-green-50 disabled:cursor-not-allowed disabled:opacity-50">
-                                    <span class="outcraft-icon !text-[18px]">astroid</span>
-                                    Fill Details with AI
+                                <button type="button" :disabled="campaignBuilderStep !== 2" class="outcraft-ai-button mt-4 inline-flex h-9 items-center gap-2 rounded-md border-2 border-transparent px-3 text-sm font-semibold text-gray-900 shadow-sm transition hover:text-gray-900 disabled:cursor-not-allowed disabled:text-gray-500 disabled:opacity-50">
+                                    <svg class="outcraft-ai-sparkles" viewBox="0 0 105 103" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+                                        <path d="M31.6876 33.3482C33.0533 28.4835 39.9496 28.4835 41.3154 33.3482L44.4257 44.4273C46.3112 51.1432 51.5595 56.3915 58.2754 58.277L69.3545 61.3873C74.2192 62.7531 74.2192 69.6494 69.3545 71.0151L58.2754 74.1255C51.5595 76.0109 46.3112 81.2593 44.4257 87.9752L41.3154 99.0543C39.9496 103.919 33.0533 103.919 31.6876 99.0543L28.5772 87.9752C26.6918 81.2593 21.4434 76.0109 14.7275 74.1255L3.64844 71.0151C-1.21627 69.6494 -1.21627 62.7531 3.64844 61.3873L14.7275 58.277C21.4434 56.3915 26.6918 51.1432 28.5772 44.4273L31.6876 33.3482Z"/>
+                                        <path d="M77.1504 2.91881C78.2429 -0.972965 83.76 -0.972956 84.8526 2.91881L87.046 10.7318C87.9887 14.0898 90.6129 16.714 93.9709 17.6567L101.784 19.8501C105.676 20.9427 105.676 26.4598 101.784 27.5523L93.9709 29.7458C90.6129 30.6885 87.9887 33.3127 87.046 36.6706L84.8526 44.4837C83.76 48.3754 78.2429 48.3754 77.1504 44.4837L74.9569 36.6706C74.0142 33.3127 71.39 30.6885 68.0321 29.7458L60.219 27.5523C56.3273 26.4598 56.3273 20.9427 60.219 19.8501L68.0321 17.6567C71.39 16.714 74.0142 14.0898 74.9569 10.7318L77.1504 2.91881Z"/>
+                                    </svg>
+                                    Fill with AI
                                 </button>
                             </div>
 
-                            <form x-on:submit.prevent="submitCampaignBuilderStep(1)" novalidate class="md:col-span-2">
-                                <fieldset :disabled="campaignBuilderStep !== 1">
+                            <form x-on:submit.prevent="submitCampaignBuilderStep(2)" novalidate class="md:col-span-2">
+                                <fieldset :disabled="campaignBuilderStep !== 2">
                                     <div class="grid grid-cols-1 gap-x-6 gap-y-8 sm:max-w-xl sm:grid-cols-6">
                                         <div class="sm:col-span-3" x-data="{ industryOpen: false, industries: ['SaaS', 'Ecommerce', 'Healthcare', 'Financial Services', 'Consumer Services'] }" x-on:keydown.escape.window="industryOpen = false" x-on:click.outside="industryOpen = false">
-                                            <label class="block text-sm/6 font-medium text-gray-900">Industry Vertical<span class="text-indigo-600">*</span></label>
+                                            <label class="block text-sm/6 font-medium text-gray-900">Industry Vertical<span class="text-indigo-400">*</span></label>
                                             <div class="relative mt-2">
                                                 <button
                                                     type="button"
@@ -1023,7 +1259,7 @@ class OutreachPage extends Page
                                         </div>
 
                                         <div class="col-span-full">
-                                            <label class="block text-sm/6 font-medium text-gray-900">Company Description<span class="text-indigo-600">*</span></label>
+                                            <label class="block text-sm/6 font-medium text-gray-900">Company Description<span class="text-indigo-400">*</span></label>
                                             <textarea data-campaign-field="description" x-model="companyForm.description" x-on:input="clearCampaignBuilderError('description')" :aria-invalid="Boolean(campaignBuilderErrors.description)" required rows="4" class="mt-2 block w-full rounded-md bg-white px-3 py-1.5 text-base text-gray-900 outline outline-1 -outline-offset-1 placeholder:text-gray-400 focus:outline-2 focus:-outline-offset-2 focus:outline-indigo-600 disabled:bg-gray-50 disabled:text-gray-500 sm:text-sm/6" :class="campaignBuilderErrors.description ? 'outline-red-300 focus:outline-red-600' : 'outline-gray-300'" placeholder="Describe what your company does, who you serve, and the main value your product or service creates."></textarea>
                                             <p x-show="campaignBuilderErrors.description" x-text="campaignBuilderErrors.description" class="mt-2 text-sm/6 text-red-600"></p>
                                         </div>
@@ -1049,7 +1285,7 @@ class OutreachPage extends Page
                                         </div>
                                     </div>
                                 </fieldset>
-                                <div x-show="campaignBuilderStep === 1" data-campaign-step-actions class="hidden">
+                                <div x-show="campaignBuilderStep === 2" data-campaign-step-actions class="hidden">
                                     <button type="button" x-on:click="previousCampaignBuilderStep()" class="inline-flex items-center gap-2 text-sm font-semibold leading-6 text-gray-900"><span class="outcraft-icon !text-[18px]">arrow_upward</span>Back</button>
                                     <button type="submit" class="inline-flex items-center gap-2 rounded-md bg-indigo-600 px-3 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-indigo-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600">Continue<span class="outcraft-icon !text-[18px]">arrow_downward</span></button>
                                 </div>
@@ -1058,22 +1294,26 @@ class OutreachPage extends Page
 
                         <section
                             x-cloak
-                            x-show="campaignBuilderStep === 2 || campaignBuilderScrollFromStep === 2"
+                            x-show="campaignBuilderStep === 3 || campaignBuilderScrollFromStep === 3"
                             x-ref="complianceLegalSection"
-                            :style="campaignBuilderCompanyStepStyle(2)"
+                            :style="campaignBuilderCompanyStepStyle(3)"
+                            data-company-details-step-layout
                             class="grid grid-cols-1 gap-x-8 gap-y-10 pr-2 pb-14 md:grid-cols-3"
                         >
                             <div>
                                 <h2 class="text-base/7 font-semibold text-gray-900">Compliance & Legal</h2>
                                 <p class="mt-1 text-sm/6 text-gray-500">Support and policy details the agent can reference or route to.</p>
-                                <button type="button" :disabled="campaignBuilderStep !== 2" class="mt-4 inline-flex h-9 items-center gap-2 rounded-md bg-white px-3 text-sm font-semibold text-green-700 shadow-sm ring-1 ring-inset ring-green-600 transition hover:bg-green-50 disabled:cursor-not-allowed disabled:opacity-50">
-                                    <span class="outcraft-icon !text-[18px]">astroid</span>
-                                    Fill Details with AI
+                                <button type="button" :disabled="campaignBuilderStep !== 3" class="outcraft-ai-button mt-4 inline-flex h-9 items-center gap-2 rounded-md border-2 border-transparent px-3 text-sm font-semibold text-gray-900 shadow-sm transition hover:text-gray-900 disabled:cursor-not-allowed disabled:text-gray-500 disabled:opacity-50">
+                                    <svg class="outcraft-ai-sparkles" viewBox="0 0 105 103" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+                                        <path d="M31.6876 33.3482C33.0533 28.4835 39.9496 28.4835 41.3154 33.3482L44.4257 44.4273C46.3112 51.1432 51.5595 56.3915 58.2754 58.277L69.3545 61.3873C74.2192 62.7531 74.2192 69.6494 69.3545 71.0151L58.2754 74.1255C51.5595 76.0109 46.3112 81.2593 44.4257 87.9752L41.3154 99.0543C39.9496 103.919 33.0533 103.919 31.6876 99.0543L28.5772 87.9752C26.6918 81.2593 21.4434 76.0109 14.7275 74.1255L3.64844 71.0151C-1.21627 69.6494 -1.21627 62.7531 3.64844 61.3873L14.7275 58.277C21.4434 56.3915 26.6918 51.1432 28.5772 44.4273L31.6876 33.3482Z"/>
+                                        <path d="M77.1504 2.91881C78.2429 -0.972965 83.76 -0.972956 84.8526 2.91881L87.046 10.7318C87.9887 14.0898 90.6129 16.714 93.9709 17.6567L101.784 19.8501C105.676 20.9427 105.676 26.4598 101.784 27.5523L93.9709 29.7458C90.6129 30.6885 87.9887 33.3127 87.046 36.6706L84.8526 44.4837C83.76 48.3754 78.2429 48.3754 77.1504 44.4837L74.9569 36.6706C74.0142 33.3127 71.39 30.6885 68.0321 29.7458L60.219 27.5523C56.3273 26.4598 56.3273 20.9427 60.219 19.8501L68.0321 17.6567C71.39 16.714 74.0142 14.0898 74.9569 10.7318L77.1504 2.91881Z"/>
+                                    </svg>
+                                    Fill with AI
                                 </button>
                             </div>
 
-                            <form x-on:submit.prevent="submitCampaignBuilderStep(2)" novalidate class="md:col-span-2">
-                                <fieldset :disabled="campaignBuilderStep !== 2">
+                            <form x-on:submit.prevent="submitCampaignBuilderStep(3)" novalidate class="md:col-span-2">
+                                <fieldset :disabled="campaignBuilderStep !== 3">
                                     <div class="grid grid-cols-1 gap-x-6 gap-y-8 sm:max-w-xl sm:grid-cols-6">
                                         <div class="sm:col-span-4">
                                             <label class="block text-sm/6 font-medium text-gray-900">Support Email</label>
@@ -1114,14 +1354,14 @@ class OutreachPage extends Page
                                         </div>
                                     </div>
                                 </fieldset>
-                                <div x-show="campaignBuilderStep === 2" data-campaign-step-actions class="hidden">
+                                <div x-show="campaignBuilderStep === 3" data-campaign-step-actions class="hidden">
                                     <button type="button" x-on:click="previousCampaignBuilderStep()" class="inline-flex items-center gap-2 text-sm font-semibold leading-6 text-gray-900"><span class="outcraft-icon !text-[18px]">arrow_upward</span>Back</button>
                                     <button type="submit" class="inline-flex items-center gap-2 rounded-md bg-indigo-600 px-3 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-indigo-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600">Continue to Campaign<span class="outcraft-icon !text-[18px]">arrow_forward</span></button>
                                 </div>
                             </form>
                         </section>
 
-                        <div x-show="campaignBuilderStep < 3" class="fixed inset-x-0 bottom-0 z-40 mt-auto hidden border-t border-gray-200 bg-white/95 py-4 backdrop-blur lg:flex" :style="campaignBuilderActionBarStyle">
+                        <div x-show="campaignBuilderStep > 0 && campaignBuilderStep < companySetupStartStep()" class="fixed inset-x-0 bottom-0 z-40 mt-auto hidden border-t border-gray-200 bg-white/95 py-4 backdrop-blur lg:flex" :style="campaignBuilderActionBarStyle">
                             <div class="flex w-full items-center justify-between gap-3" :style="campaignBuilderActionBarContentStyle">
                                 <button
                                     type="button"
@@ -1137,11 +1377,11 @@ class OutreachPage extends Page
                                     class="inline-flex h-9 items-center gap-2 rounded-md bg-indigo-600 px-3 text-sm font-semibold text-white shadow-sm transition hover:bg-indigo-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600"
                                 >
                                     <span x-text="campaignBuilderContinueLabel()"></span>
-                                    <span class="outcraft-icon !text-[18px]" x-text="campaignBuilderStep === 2 ? 'arrow_forward' : 'arrow_downward'"></span>
+                                    <span class="outcraft-icon !text-[18px]" x-text="campaignBuilderStep === companySetupFinalStepIndex() ? 'arrow_forward' : 'arrow_downward'"></span>
                                 </button>
                             </div>
                         </div>
-                        <div x-show="campaignBuilderStep < 3" class="fixed inset-x-0 bottom-0 z-40 flex items-center justify-between gap-3 border-t border-gray-200 bg-white/95 px-4 py-3 backdrop-blur lg:hidden">
+                        <div x-show="campaignBuilderStep > 0 && campaignBuilderStep < companySetupStartStep()" class="fixed inset-x-0 bottom-0 z-40 flex items-center justify-between gap-3 border-t border-gray-200 bg-white/95 px-4 py-3 backdrop-blur lg:hidden">
                             <button
                                 type="button"
                                 x-on:click="campaignBuilderRailBack()"
@@ -1156,12 +1396,12 @@ class OutreachPage extends Page
                                 class="inline-flex h-10 min-w-0 items-center gap-2 rounded-md bg-indigo-600 px-3 text-sm font-semibold text-white shadow-sm transition hover:bg-indigo-500"
                             >
                                 <span class="truncate" x-text="campaignBuilderMobileContinueLabel()"></span>
-                                <span class="outcraft-icon !text-[18px]" x-text="campaignBuilderStep === 2 ? 'arrow_forward' : 'arrow_downward'"></span>
+                                <span class="outcraft-icon !text-[18px]" x-text="campaignBuilderStep === companySetupFinalStepIndex() ? 'arrow_forward' : 'arrow_downward'"></span>
                             </button>
                         </div>
                     </div>
 
-		                    <div x-show="campaignBuilderStep >= 3" x-ref="campaignAgentSection" class="space-y-6" :style="`padding-bottom: ${campaignSetupBottomPadding}px;`">
+		                    <div x-show="campaignBuilderStep >= companySetupStartStep()" x-ref="campaignAgentSection" class="space-y-6" :style="`padding-bottom: ${campaignSetupBottomPadding}px;`">
 		                        <div x-show="! campaignSetupModeSelected" class="relative mx-auto flex min-h-[calc(100vh-96px)] w-full max-w-7xl flex-col items-center justify-center px-4">
 		                            <button type="button" x-on:click="handleCampaignBuilderBack()" class="absolute left-0 top-0 inline-flex h-9 w-fit items-center gap-2 rounded-md px-2 text-sm font-semibold text-gray-600 transition hover:bg-gray-50 hover:text-gray-950 lg:hidden">
 		                                <span class="outcraft-icon !text-[18px]">arrow_back</span>
@@ -1178,13 +1418,12 @@ class OutreachPage extends Page
                                         <div class="mt-4 grid auto-rows-fr items-stretch gap-4 md:grid-cols-3">
                                             <template x-for="type in group.items" :key="type.name">
                                                 <button type="button" x-on:click="selectCampaignType(type.name)" class="flex h-full flex-col items-start rounded-lg bg-white p-5 text-left shadow-sm outline outline-1 -outline-offset-1 transition hover:outline-2 hover:-outline-offset-2 hover:outline-indigo-600 hover:shadow-sm focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600" :class="campaignSetup.type === type.name ? 'outline-2 -outline-offset-2 outline-indigo-600' : 'outline-gray-300'">
-                                                    <div class="flex items-start gap-4">
-                                                        <span class="flex size-10 shrink-0 items-center justify-center rounded-md bg-indigo-50 text-indigo-600"><span class="outcraft-icon !text-[21px]" x-text="type.icon"></span></span>
-                                                        <span>
-                                                            <span class="block text-sm font-bold text-gray-950" x-text="type.name"></span>
-                                                            <span class="mt-1 block text-sm leading-6 text-gray-500" x-text="type.description"></span>
-                                                        </span>
-                                                    </div>
+                                                    <span class="mb-4 flex size-10 shrink-0 items-center justify-center rounded-md bg-indigo-50 text-indigo-600">
+                                                        <span class="outcraft-icon !text-[21px]" x-text="type.icon"></span>
+                                                    </span>
+                                                    <span class="block text-sm font-bold text-gray-950" x-text="type.name"></span>
+                                                    <span class="mt-1 block text-sm leading-6 text-gray-500" x-text="type.description"></span>
+                                                    <span class="mt-3 inline-flex rounded-md bg-gray-50 px-2 py-1 text-xs font-medium text-gray-700 ring-1 ring-inset ring-gray-600/10" x-text="campaignTypeDirection(type.name)"></span>
                                                 </button>
                                             </template>
                                         </div>
@@ -1203,9 +1442,12 @@ class OutreachPage extends Page
                                         <div class="mt-4 grid auto-rows-fr items-stretch gap-4 md:grid-cols-3">
                                             <template x-for="source in group.items" :key="source.name">
                                                 <button type="button" x-on:click="selectLeadSource(source.name)" class="flex h-full flex-col items-start rounded-lg bg-white p-5 text-left shadow-sm outline outline-1 -outline-offset-1 transition hover:outline-2 hover:-outline-offset-2 hover:outline-indigo-600 hover:shadow-sm focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600" :class="campaignSetup.source === source.name ? 'outline-2 -outline-offset-2 outline-indigo-600' : 'outline-gray-300'">
+                                                    <span class="mb-4 flex size-10 shrink-0 items-center justify-center rounded-md" :class="leadSourceLogos[source.name] ? 'bg-gray-100 text-gray-700' : 'bg-indigo-50 text-indigo-600'">
+                                                        <span x-show="leadSourceLogos[source.name]" class="outcraft-source-logo" x-html="leadSourceLogos[source.name]"></span>
+                                                        <span x-show="! leadSourceLogos[source.name]" class="outcraft-icon !text-[21px]" x-text="source.icon"></span>
+                                                    </span>
                                                     <span class="block text-sm font-bold text-gray-950" x-text="source.name"></span>
                                                     <span class="mt-2 block text-sm leading-6 text-gray-500" x-text="source.description"></span>
-                                                    <span x-show="source.requiresIntegration" class="mt-4 inline-flex rounded-md bg-blue-50 px-2 py-1 text-xs font-medium text-blue-700 ring-1 ring-inset ring-blue-700/10">Integration Needed for Launch</span>
                                                 </button>
                                             </template>
                                         </div>
@@ -1220,20 +1462,21 @@ class OutreachPage extends Page
                                 </div>
                                 <div class="mx-auto max-w-2xl rounded-lg bg-white p-6 shadow-sm outline outline-1 -outline-offset-1 outline-gray-300">
                                     <div class="flex items-start gap-4">
-                                        <span class="flex size-10 shrink-0 items-center justify-center rounded-md bg-indigo-50 text-indigo-600">
-                                            <span class="outcraft-icon !text-[21px]">hub</span>
+                                        <span class="flex size-[60px] shrink-0 items-center justify-center rounded-md" :class="leadSourceLogoContainerClass(campaignSetup.source)">
+                                            <span x-show="leadSourceLogos[campaignSetup.source]" class="outcraft-source-logo outcraft-source-logo-lg" x-html="leadSourceLogos[campaignSetup.source]"></span>
+                                            <span x-show="! leadSourceLogos[campaignSetup.source]" class="outcraft-icon !text-[32px]" x-text="leadSourceIcon(campaignSetup.source)"></span>
                                         </span>
                                         <div class="min-w-0">
+                                            <p class="text-xs font-semibold uppercase tracking-wide text-gray-400">Selected Lead Source</p>
                                             <h3 class="text-sm font-bold text-gray-950" x-text="campaignSetup.source || 'Lead Source'"></h3>
-                                            <p class="mt-1 text-sm leading-6 text-gray-600">Connect your lead source now to use its customer fields, events, and merge tags while building this campaign.</p>
+                                            <p class="mt-2 text-sm leading-6 text-gray-600">Connect your source to use real customer data, merge tags, and event triggers. You can skip this step, but AI will have less context to personalize conversations.</p>
                                         </div>
                                     </div>
                                     <div class="mt-6 flex flex-wrap gap-3">
                                         <button type="button" x-on:click="connectCampaignSource()" class="inline-flex h-9 items-center rounded-md bg-indigo-600 px-3 text-sm font-semibold text-white shadow-sm transition hover:bg-indigo-500" x-text="`Connect ${campaignSetup.source || 'Lead Source'}`"></button>
-                                        <button type="button" x-on:click="skipCampaignIntegration()" class="inline-flex h-9 items-center rounded-md bg-white px-3 text-sm font-semibold text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 transition hover:bg-gray-50">Setup Later</button>
+                                        <button type="button" x-on:click="requestSkipCampaignIntegration()" class="inline-flex h-9 items-center rounded-md bg-white px-3 text-sm font-semibold text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 transition hover:bg-gray-50">Setup Later</button>
                                     </div>
                                 </div>
-                                <p class="mx-auto max-w-2xl text-center text-sm leading-6 text-gray-500">If you choose Setup later, campaign setup will not have access to custom fields or merge tags coming from the lead source. Those fields help the AI agent personalize the conversation more effectively.</p>
                             </div>
 
 	                            <div x-show="campaignSetupIntroStep === 'mode'" class="mx-auto w-full space-y-8 lg:max-w-[calc(80rem-18rem-3rem)] xl:max-w-[calc(80rem-18rem-4rem)]">
@@ -1241,7 +1484,7 @@ class OutreachPage extends Page
                                     <h2 class="text-2xl font-bold leading-8 tracking-tight text-gray-950">Choose How You Want to Set Up Your Campaign</h2>
                                     <p class="mx-auto mt-2 max-w-2xl text-sm leading-6 text-gray-600">Pick a guided path. You can move faster with recommended defaults or configure every campaign setting manually.</p>
                                 </div>
-                                <div class="mx-auto grid w-full max-w-5xl auto-rows-fr items-stretch gap-4 md:grid-cols-3">
+                                <div class="mx-auto grid w-full max-w-5xl auto-rows-fr items-stretch gap-4 md:grid-cols-2">
                                 <button type="button" x-on:click="chooseCampaignSetupPath('fast')" class="flex h-full flex-col items-start rounded-lg bg-white p-5 text-left shadow-sm outline outline-1 -outline-offset-1 outline-gray-300 transition hover:outline-2 hover:-outline-offset-2 hover:outline-indigo-600 hover:shadow-sm focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600">
                                     <div class="flex items-start gap-4">
                                         <span class="flex size-10 shrink-0 items-center justify-center rounded-md bg-indigo-50 text-indigo-600">
@@ -1276,6 +1519,9 @@ class OutreachPage extends Page
                                 class="space-y-6 pr-2 pb-4">
                                 <div class="mb-1">
                                     <p class="text-sm font-semibold text-indigo-600" x-text="`${campaignSetupMode === 'fast' ? 'Fast Setup' : 'Advanced Setup'} · Step ${campaignSetupStepIndex('start') + 1} of ${campaignSetupStepsForMode().length}`"></p>
+                                    <span class="mb-4 flex size-10 items-center justify-center rounded-md bg-indigo-50 text-indigo-600">
+                                        <span class="outcraft-icon !text-[21px]" x-text="campaignSetupStepIcon('start')"></span>
+                                    </span>
                                     <h2 class="mt-2 text-2xl font-bold leading-8 tracking-tight text-gray-950" x-text="campaignSetupHeading('start')"></h2>
                                     <p class="mt-2 max-w-3xl text-sm leading-6 text-gray-600" x-text="campaignSetupDescription('start')"></p>
                                 </div>
@@ -1293,6 +1539,9 @@ class OutreachPage extends Page
                                 class="space-y-7 pr-2 pb-4">
                                 <div class="mb-1">
                                     <p class="text-sm font-semibold text-indigo-600" x-text="`${campaignSetupMode === 'fast' ? 'Fast Setup' : 'Advanced Setup'} · Step ${campaignSetupStepIndex('type') + 1} of ${campaignSetupStepsForMode().length}`"></p>
+                                    <span class="mb-4 flex size-10 items-center justify-center rounded-md bg-indigo-50 text-indigo-600">
+                                        <span class="outcraft-icon !text-[21px]" x-text="campaignSetupStepIcon('type')"></span>
+                                    </span>
                                     <h2 class="mt-2 text-2xl font-bold leading-8 tracking-tight text-gray-950" x-text="campaignSetupHeading('type')"></h2>
                                     <p class="mt-2 max-w-3xl text-sm leading-6 text-gray-600" x-text="campaignSetupDescription('type')"></p>
                                 </div>
@@ -1302,13 +1551,12 @@ class OutreachPage extends Page
                                         <div class="mt-4 grid gap-4 md:grid-cols-2">
                                             <template x-for="type in group.items" :key="type.name">
                                                 <button type="button" x-on:click="selectCampaignType(type.name)" class="flex h-full flex-col items-start rounded-lg bg-white p-5 text-left shadow-sm outline outline-1 -outline-offset-1 transition hover:outline-2 hover:-outline-offset-2 hover:outline-indigo-600 hover:shadow-sm focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600" :class="campaignSetup.type === type.name ? 'outline-2 -outline-offset-2 outline-indigo-600' : 'outline-gray-300'">
-                                                    <div class="flex items-start gap-4">
-                                                        <span class="flex size-10 shrink-0 items-center justify-center rounded-md bg-indigo-50 text-indigo-600"><span class="outcraft-icon !text-[21px]" x-text="type.icon"></span></span>
-                                                        <span>
-                                                            <span class="block text-sm font-bold text-gray-950" x-text="type.name"></span>
-                                                            <span class="mt-1 block text-sm leading-6 text-gray-500" x-text="type.description"></span>
-                                                        </span>
-                                                    </div>
+                                                    <span class="mb-4 flex size-10 shrink-0 items-center justify-center rounded-md bg-indigo-50 text-indigo-600">
+                                                        <span class="outcraft-icon !text-[21px]" x-text="type.icon"></span>
+                                                    </span>
+                                                    <span class="block text-sm font-bold text-gray-950" x-text="type.name"></span>
+                                                    <span class="mt-1 block text-sm leading-6 text-gray-500" x-text="type.description"></span>
+                                                    <span class="mt-3 inline-flex rounded-md bg-gray-50 px-2 py-1 text-xs font-medium text-gray-700 ring-1 ring-inset ring-gray-600/10" x-text="campaignTypeDirection(type.name)"></span>
                                                     <p class="mt-4 rounded-md bg-gray-50 p-3 text-xs leading-5 text-gray-500" x-text="type.example"></p>
                                                 </button>
                                             </template>
@@ -1323,6 +1571,9 @@ class OutreachPage extends Page
                                 class="space-y-7 pr-2 pb-4">
                                 <div class="mb-1">
                                     <p class="text-sm font-semibold text-indigo-600" x-text="`${campaignSetupMode === 'fast' ? 'Fast Setup' : 'Advanced Setup'} · Step ${campaignSetupStepIndex('source') + 1} of ${campaignSetupStepsForMode().length}`"></p>
+                                    <span class="mb-4 flex size-10 items-center justify-center rounded-md bg-indigo-50 text-indigo-600">
+                                        <span class="outcraft-icon !text-[21px]" x-text="campaignSetupStepIcon('source')"></span>
+                                    </span>
                                     <h2 class="mt-2 text-2xl font-bold leading-8 tracking-tight text-gray-950" x-text="campaignSetupHeading('source')"></h2>
                                     <p class="mt-2 max-w-3xl text-sm leading-6 text-gray-600" x-text="campaignSetupDescription('source')"></p>
                                 </div>
@@ -1332,9 +1583,12 @@ class OutreachPage extends Page
                                         <div class="mt-4 grid gap-4 md:grid-cols-2">
                                             <template x-for="source in group.items" :key="source.name">
                                                 <button type="button" x-on:click="selectLeadSource(source.name)" class="flex h-full flex-col items-start rounded-lg bg-white p-5 text-left shadow-sm outline outline-1 -outline-offset-1 transition hover:outline-2 hover:-outline-offset-2 hover:outline-indigo-600 hover:shadow-sm focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600" :class="campaignSetup.source === source.name ? 'outline-2 -outline-offset-2 outline-indigo-600' : 'outline-gray-300'">
+                                                    <span class="mb-4 flex size-10 shrink-0 items-center justify-center rounded-md" :class="leadSourceLogos[source.name] ? 'bg-gray-100 text-gray-700' : 'bg-indigo-50 text-indigo-600'">
+                                                        <span x-show="leadSourceLogos[source.name]" class="outcraft-source-logo" x-html="leadSourceLogos[source.name]"></span>
+                                                        <span x-show="! leadSourceLogos[source.name]" class="outcraft-icon !text-[21px]" x-text="source.icon"></span>
+                                                    </span>
                                                     <span class="block text-sm font-bold text-gray-950" x-text="source.name"></span>
                                                     <span class="mt-2 block text-sm leading-6 text-gray-500" x-text="source.description"></span>
-                                                    <span x-show="source.requiresIntegration" class="mt-4 inline-flex rounded-md bg-blue-50 px-2 py-1 text-xs font-medium text-blue-700 ring-1 ring-inset ring-blue-700/10">Integration Needed for Launch</span>
                                                 </button>
                                             </template>
                                         </div>
@@ -1348,6 +1602,9 @@ class OutreachPage extends Page
                                 class="space-y-6 pr-2 pb-4">
                                 <div class="mb-1">
                                     <p class="text-sm font-semibold text-indigo-600" x-text="`${campaignSetupMode === 'fast' ? 'Fast Setup' : 'Advanced Setup'} · Step ${campaignSetupStepIndex('integration') + 1} of ${campaignSetupStepsForMode().length}`"></p>
+                                    <span class="mb-4 flex size-10 items-center justify-center rounded-md bg-indigo-50 text-indigo-600">
+                                        <span class="outcraft-icon !text-[21px]" x-text="campaignSetupStepIcon('integration')"></span>
+                                    </span>
                                     <h2 class="mt-2 text-2xl font-bold leading-8 tracking-tight text-gray-950" x-text="campaignSetupHeading('integration')"></h2>
                                     <p class="mt-2 max-w-3xl text-sm leading-6 text-gray-600" x-text="campaignSetupDescription('integration')"></p>
                                 </div>
@@ -1364,17 +1621,23 @@ class OutreachPage extends Page
                                 <template x-if="campaignSetup.source !== 'CSV File / Manual'">
                                     <div class="rounded-lg border border-gray-200 p-5">
                                         <div class="flex flex-wrap items-start justify-between gap-4">
-                                            <div>
-                                                <h3 class="text-base font-bold text-gray-950" x-text="`Connect ${campaignSetup.source || 'Lead Source'} Account`"></h3>
-                                                <p class="mt-2 max-w-2xl text-sm leading-6 text-gray-500" x-text="`Connect ${campaignSetup.source || 'your source'} to use contacts, events, customer properties, and merge tags.`"></p>
+                                            <div class="flex items-start gap-4">
+                                                <span class="flex size-[60px] shrink-0 items-center justify-center rounded-md" :class="leadSourceLogoContainerClass(campaignSetup.source)">
+                                                    <span x-show="leadSourceLogos[campaignSetup.source]" class="outcraft-source-logo outcraft-source-logo-lg" x-html="leadSourceLogos[campaignSetup.source]"></span>
+                                                    <span x-show="! leadSourceLogos[campaignSetup.source]" class="outcraft-icon !text-[32px]" x-text="leadSourceIcon(campaignSetup.source)"></span>
+                                                </span>
+                                                <div class="min-w-0">
+                                                    <p class="text-xs font-semibold uppercase tracking-wide text-gray-400">Selected Lead Source</p>
+                                                    <h3 class="text-base font-bold text-gray-950" x-text="campaignSetup.source || 'Lead Source'"></h3>
+                                                    <p class="mt-2 max-w-2xl text-sm leading-6 text-gray-600">Connect your source to use real customer data, merge tags, and event triggers. You can skip this step, but AI will have less context to personalize conversations.</p>
+                                                </div>
                                             </div>
                                         <span class="inline-flex rounded-md px-2 py-1 text-xs font-medium ring-1 ring-inset" :class="campaignSetup.integrationStatus === 'Connected' ? 'bg-green-50 text-green-700 ring-green-600/20' : campaignSetup.integrationStatus === 'Skipped for Now' ? 'bg-amber-50 text-amber-700 ring-amber-600/20' : 'bg-gray-50 text-gray-700 ring-gray-600/20'" x-text="campaignSetup.integrationStatus"></span>
                                         </div>
                                         <div class="mt-6 flex flex-wrap gap-3">
                                             <button type="button" x-on:click="connectCampaignSource()" class="inline-flex h-9 items-center rounded-md bg-indigo-600 px-3 text-sm font-semibold text-white shadow-sm transition hover:bg-indigo-500" x-text="`Connect ${campaignSetup.source || 'Source'}`"></button>
-                                            <button type="button" x-on:click="skipCampaignIntegration()" class="inline-flex h-9 items-center rounded-md bg-white px-3 text-sm font-semibold text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 transition hover:bg-gray-50">Setup Later</button>
+                                            <button type="button" x-on:click="requestSkipCampaignIntegration()" class="inline-flex h-9 items-center rounded-md bg-white px-3 text-sm font-semibold text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 transition hover:bg-gray-50">Setup Later</button>
                                         </div>
-                                        <p class="mt-4 text-sm leading-6 text-gray-500">If you choose Setup later, campaign setup will not have access to custom fields or merge tags coming from the lead source. Those fields help the AI agent personalize the conversation more effectively.</p>
                                     </div>
                                 </template>
                             </section>
@@ -1385,19 +1648,16 @@ class OutreachPage extends Page
                                 class="pr-2 pb-4">
                                 <div class="mb-1">
                                     <p class="text-sm font-semibold text-indigo-600" x-text="`${campaignSetupMode === 'fast' ? 'Fast Setup' : 'Advanced Setup'} · Step ${campaignSetupStepIndex('brief') + 1} of ${campaignSetupStepsForMode().length}`"></p>
+                                    <span class="mb-4 flex size-10 items-center justify-center rounded-md bg-indigo-50 text-indigo-600">
+                                        <span class="outcraft-icon !text-[21px]" x-text="campaignSetupStepIcon('brief')"></span>
+                                    </span>
                                     <h2 class="mt-2 text-2xl font-bold leading-8 tracking-tight text-gray-950" x-text="campaignSetupHeading('brief')"></h2>
                                     <p class="mt-2 max-w-3xl text-sm leading-6 text-gray-600" x-text="campaignSetupDescription('brief')"></p>
                                 </div>
-                                <div class="mb-6 border-b border-gray-200">
-                                    <nav class="-mb-px flex gap-6" aria-label="Campaign context tabs">
-                                        <button type="button" x-on:click="campaignSetup.briefTab = 'context'; scheduleCampaignBuilderLayoutUpdate()" class="border-b-2 px-1 pb-3 text-sm font-semibold transition" :class="campaignSetup.briefTab === 'context' ? 'border-indigo-600 text-indigo-600' : 'border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700'">Original</button>
-                                        <button type="button" x-on:click="campaignSetup.briefTab = 'discovery'; scheduleCampaignBuilderLayoutUpdate()" class="border-b-2 px-1 pb-3 text-sm font-semibold transition" :class="campaignSetup.briefTab === 'discovery' ? 'border-indigo-600 text-indigo-600' : 'border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700'">Option Two</button>
-                                    </nav>
-                                </div>
-                                <div x-show="campaignSetup.briefTab === 'context'" class="space-y-7">
+                                <div x-show="campaignSetup.briefTab === 'context'" class="mt-6 space-y-7">
                                         <div>
                                             <div class="mb-2 flex items-center justify-between gap-3">
-                                                <label class="block text-sm/6 font-semibold text-gray-900">Campaign Context & Instructions<span class="text-indigo-600">*</span></label>
+                                                <label class="block text-sm/6 font-semibold text-gray-900">Campaign Context & Instructions<span class="text-indigo-400">*</span></label>
                                                 <div class="flex items-center gap-1">
                                                     <div class="relative" x-data="{ contextActionsOpen: false }" x-on:click.outside="contextActionsOpen = false">
                                                         <button type="button" x-on:click="contextActionsOpen = ! contextActionsOpen" class="inline-flex size-7 items-center justify-center rounded-md text-gray-400 transition hover:bg-gray-50 hover:text-gray-700" aria-label="Campaign context actions">
@@ -1458,7 +1718,7 @@ class OutreachPage extends Page
 
                                         <div>
                                             <div class="mb-2 flex items-center justify-between gap-3">
-                                                <label class="block text-sm/6 font-semibold text-gray-900">Qualification Questions<span class="text-indigo-600">*</span></label>
+                                                <label class="block text-sm/6 font-semibold text-gray-900">Qualification Questions<span class="text-indigo-400">*</span></label>
                                             </div>
                                             <textarea x-model="campaignSetup.brief.qualificationQuestions" rows="4" class="block w-full rounded-md bg-white px-3 py-2 text-sm/6 text-gray-700 shadow-sm outline outline-1 -outline-offset-1 outline-gray-300 placeholder:text-gray-400 focus:outline-2 focus:-outline-offset-2 focus:outline-indigo-600"></textarea>
                                             <p class="mt-2 text-sm leading-6 text-gray-500">List the key questions the AI should ask to determine whether the lead is a good fit for the offer.</p>
@@ -1466,13 +1726,13 @@ class OutreachPage extends Page
 
                                         <div>
                                             <div class="mb-2 flex items-center justify-between gap-3">
-                                                <label class="block text-sm/6 font-semibold text-gray-900">What Answers Confirm Qualification?<span class="text-indigo-600">*</span></label>
+                                                <label class="block text-sm/6 font-semibold text-gray-900">What Answers Confirm Qualification?<span class="text-indigo-400">*</span></label>
                                             </div>
                                             <textarea x-model="campaignSetup.brief.qualifiedAnswers" rows="4" class="block w-full rounded-md bg-white px-3 py-2 text-sm/6 text-gray-700 shadow-sm outline outline-1 -outline-offset-1 outline-gray-300 placeholder:text-gray-400 focus:outline-2 focus:-outline-offset-2 focus:outline-indigo-600"></textarea>
-                                            <p class="mt-2 text-sm leading-6 text-gray-500">If the lead meets these answers, they are considered qualified.</p>
+                                            <p class="mt-2 text-sm leading-6 text-gray-500">Enter one qualifying answer per line. If the lead meets these answers, they are considered qualified.</p>
                                         </div>
                                 </div>
-                                <div x-show="campaignSetup.briefTab === 'discovery'" x-transition:enter="transition ease-out duration-200" x-transition:enter-start="opacity-0 translate-y-3" x-transition:enter-end="opacity-100 translate-y-0" x-transition:leave="transition ease-in duration-150" x-transition:leave-start="opacity-100 translate-y-0" x-transition:leave-end="opacity-0 translate-y-2" class="space-y-7">
+                                <div x-show="campaignSetup.briefTab === 'discovery'" x-transition:enter="transition ease-out duration-200" x-transition:enter-start="opacity-0 translate-y-3" x-transition:enter-end="opacity-100 translate-y-0" x-transition:leave="transition ease-in duration-150" x-transition:leave-start="opacity-100 translate-y-0" x-transition:leave-end="opacity-0 translate-y-2" class="mt-6 space-y-7">
                                     <div>
                                         <div class="mb-2 flex items-center justify-between gap-3">
                                             <label class="block text-sm/6 font-semibold text-gray-900">Campaign Goal</label>
@@ -1495,7 +1755,7 @@ class OutreachPage extends Page
                                                 </aside>
                                             </div>
                                         </div>
-                                        <p class="mt-2 text-sm leading-6 text-gray-500">What should this campaign achieve?</p>
+	                                        <p class="mt-2 text-sm leading-6 text-gray-500">Define what the AI should accomplish and when the conversation is considered successful.</p>
                                     </div>
 
                                     <div>
@@ -1518,22 +1778,72 @@ class OutreachPage extends Page
                                                 </aside>
                                             </div>
                                         </div>
-                                        <p class="mt-2 text-sm leading-6 text-gray-500">Who are these leads and why are we contacting them?</p>
+	                                        <p class="mt-2 text-sm leading-6 text-gray-500">Describe who the person is, why this conversation is happening, and what the AI must not assume.</p>
                                     </div>
 
-                                    <label class="block">
-                                        <span class="block text-sm/6 font-semibold text-gray-900">What Should AI Find Out?</span>
-                                        <textarea x-model="campaignSetup.brief.findOut" rows="4" class="mt-2 block w-full rounded-md bg-white px-3 py-2 text-sm/6 text-gray-700 shadow-sm outline outline-1 -outline-offset-1 outline-gray-300 placeholder:text-gray-400 focus:outline-2 focus:-outline-offset-2 focus:outline-indigo-600"></textarea>
+                                    <div>
+                                        <span class="block text-sm/6 font-semibold text-gray-900">Discovery Questions</span>
                                         <span class="mt-2 block text-sm leading-6 text-gray-500">List the key questions or information AI should collect.</span>
-                                    </label>
-                                    <label class="block">
-                                        <span class="block text-sm/6 font-semibold text-gray-900">What Should AI Offer or Do Next?</span>
-                                        <textarea x-model="campaignSetup.brief.nextStep" rows="4" class="mt-2 block w-full rounded-md bg-white px-3 py-2 text-sm/6 text-gray-700 shadow-sm outline outline-1 -outline-offset-1 outline-gray-300 placeholder:text-gray-400 focus:outline-2 focus:-outline-offset-2 focus:outline-indigo-600"></textarea>
-                                        <span class="mt-2 block text-sm leading-6 text-gray-500">Describe the desired next step, handoff, resource, or action.</span>
-                                    </label>
-                                    <label class="block">
-                                        <span class="block text-sm/6 font-semibold text-gray-900">Important Rules</span>
-                                        <textarea x-model="campaignSetup.brief.importantRules" rows="4" class="mt-2 block w-full rounded-md bg-white px-3 py-2 text-sm/6 text-gray-700 shadow-sm outline outline-1 -outline-offset-1 outline-gray-300 placeholder:text-gray-400 focus:outline-2 focus:-outline-offset-2 focus:outline-indigo-600"></textarea>
+
+                                        <div class="mt-4 overflow-hidden rounded-lg border border-gray-200 bg-white">
+                                            <div
+                                                x-sortable
+                                                data-sortable-animation-duration="150"
+                                                x-on:end.stop="reorderFindOutQuestionsByIds($event.target.sortable.toArray())"
+                                            >
+                                                <template x-for="(question, index) in campaignSetup.brief.findOutQuestions" :key="question.id">
+                                                    <div
+                                                        x-bind:x-sortable-item="question.id"
+                                                        class="flex items-center gap-3 border-b border-gray-200 px-4 py-3"
+                                                    >
+                                                        <button type="button" x-sortable-handle class="inline-flex size-8 cursor-grab items-center justify-center rounded-md text-gray-400 transition hover:bg-gray-50 hover:text-gray-700 active:cursor-grabbing" aria-label="Reorder Question">
+                                                            <span class="outcraft-icon !text-[18px]">drag_indicator</span>
+                                                        </button>
+                                                        <span class="min-w-0 flex-1 text-sm leading-6 text-gray-900" x-text="question.text"></span>
+                                                        <div class="relative shrink-0" x-on:click.outside="campaignSetup.brief.findOutAnswerFormatOpen === question.id && (campaignSetup.brief.findOutAnswerFormatOpen = null)">
+                                                            <button type="button" x-on:click="campaignSetup.brief.findOutAnswerFormatOpen = campaignSetup.brief.findOutAnswerFormatOpen === question.id ? null : question.id" class="inline-flex items-center gap-1 rounded-md text-sm font-semibold transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600" :class="question.addToIntelligence ? 'text-indigo-600 hover:text-indigo-500' : 'text-gray-500 hover:text-gray-900'">
+                                                                <span>Collect Answer</span>
+                                                                <span class="outcraft-icon !text-[18px]">keyboard_arrow_down</span>
+                                                            </button>
+                                                            <div x-cloak x-show="campaignSetup.brief.findOutAnswerFormatOpen === question.id" x-transition:enter="transition ease-out duration-100" x-transition:enter-start="opacity-0 translate-y-1" x-transition:enter-end="opacity-100 translate-y-0" x-transition:leave="transition ease-in duration-75" x-transition:leave-start="opacity-100 translate-y-0" x-transition:leave-end="opacity-0 translate-y-1" class="absolute right-0 z-30 mt-2 w-48 rounded-md bg-white py-1 shadow-lg ring-1 ring-gray-900/10">
+                                                                <template x-for="format in campaignSetup.brief.findOutAnswerFormats" :key="format">
+                                                                    <button type="button" x-on:click="selectFindOutQuestionAnswerFormat(index, format)" class="flex w-full items-center justify-between gap-3 px-3 py-2 text-left text-sm text-gray-700 transition hover:bg-gray-50 hover:text-gray-900">
+                                                                        <span x-text="format"></span>
+                                                                        <span x-show="question.answerFormat === format" class="outcraft-icon !text-[18px] text-indigo-600">check</span>
+                                                                    </button>
+                                                                </template>
+                                                            </div>
+                                                        </div>
+                                                        <span x-show="question.addToIntelligence && question.answerFormat" class="inline-flex shrink-0 rounded-md bg-emerald-50 px-2 py-1 text-xs font-medium text-emerald-700 ring-1 ring-inset ring-emerald-600/20">Captured</span>
+                                                        <button x-show="! (question.addToIntelligence && question.answerFormat)" type="button" x-on:click="captureFindOutQuestion(index); hideFloatingTooltip()" x-on:mouseenter="showFloatingTooltip($event, 'Capture for Conversation Intelligence', 240)" x-on:mouseleave="hideFloatingTooltip()" x-on:focus="showFloatingTooltip($event, 'Capture for Conversation Intelligence', 240)" x-on:blur="hideFloatingTooltip()" class="inline-flex size-8 shrink-0 items-center justify-center rounded-md text-gray-400 transition hover:bg-gray-50 hover:text-indigo-600 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600" aria-label="Capture for Conversation Intelligence">
+                                                            <span class="outcraft-icon !text-[18px]">fact_check</span>
+                                                        </button>
+                                                        <button type="button" x-on:click="removeFindOutQuestion(index)" class="inline-flex size-8 shrink-0 items-center justify-center rounded-md text-gray-400 transition hover:bg-gray-50 hover:text-red-600 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-red-500" aria-label="Remove Question">
+                                                            <span class="outcraft-icon !text-[18px]">delete</span>
+                                                        </button>
+                                                    </div>
+                                                </template>
+                                            </div>
+                                            <div x-show="campaignSetup.brief.findOutQuestions.length === 0" class="border-b border-gray-200 px-4 py-4 text-sm text-gray-500">No Questions Added.</div>
+
+                                            <form x-on:submit.prevent="addFindOutQuestion()" class="bg-white p-4 sm:flex sm:items-center sm:gap-3">
+                                                <label class="block min-w-0 flex-1">
+                                                    <span class="sr-only">Question</span>
+                                                    <input x-model="campaignSetup.brief.newFindOutQuestion" type="text" placeholder="e.g. What problem are they trying to solve?" class="block w-full rounded-md bg-white px-3 py-1.5 text-sm/6 text-gray-900 shadow-sm outline outline-1 -outline-offset-1 outline-gray-300 placeholder:text-gray-400 focus:outline-2 focus:-outline-offset-2 focus:outline-indigo-600">
+                                                </label>
+                                                <button type="submit" :disabled="! String(campaignSetup.brief.newFindOutQuestion || '').trim()" class="mt-3 inline-flex h-9 items-center justify-center rounded-md bg-indigo-600 px-3 text-sm font-semibold text-white shadow-sm transition hover:bg-indigo-500 disabled:cursor-not-allowed disabled:opacity-40 sm:mt-0">Add Question</button>
+                                            </form>
+                                        </div>
+                                    </div>
+	                                    <label class="block">
+	                                        <span class="block text-sm/6 font-semibold text-gray-900">What Should AI Offer or Do Next?</span>
+	                                        <textarea x-model="campaignSetup.brief.nextStep" rows="4" class="mt-2 block w-full rounded-md bg-white px-3 py-2 text-sm/6 text-gray-700 shadow-sm outline outline-1 -outline-offset-1 outline-gray-300 placeholder:text-gray-400 focus:outline-2 focus:-outline-offset-2 focus:outline-indigo-600"></textarea>
+	                                        <span class="mt-2 block text-sm leading-6 text-gray-500">Describe the desired next step, handoff, resource, or action.</span>
+	                                    </label>
+
+	                                    <label class="block">
+	                                        <span class="block text-sm/6 font-semibold text-gray-900">Important Rules</span>
+	                                        <textarea x-model="campaignSetup.brief.importantRules" rows="4" class="mt-2 block w-full rounded-md bg-white px-3 py-2 text-sm/6 text-gray-700 shadow-sm outline outline-1 -outline-offset-1 outline-gray-300 placeholder:text-gray-400 focus:outline-2 focus:-outline-offset-2 focus:outline-indigo-600"></textarea>
                                         <span class="mt-2 block text-sm leading-6 text-gray-500">Add anything AI must avoid, skip, disclose, or handle carefully.</span>
                                     </label>
 
@@ -1544,10 +1854,320 @@ class OutreachPage extends Page
                                         </button>
                                         <div x-show="campaignSetup.needsQualification" x-transition:enter="transition ease-out duration-200" x-transition:enter-start="opacity-0 translate-y-3" x-transition:enter-end="opacity-100 translate-y-0" x-transition:leave="transition ease-in duration-150" x-transition:leave-start="opacity-100 translate-y-0" x-transition:leave-end="opacity-0 translate-y-2" class="mt-6 space-y-6">
                                             <label class="block"><span class="block text-sm/6 font-semibold text-gray-900">Qualification Questions</span><textarea x-model="campaignSetup.brief.qualificationQuestions" rows="4" class="mt-2 block w-full rounded-md bg-white px-3 py-2 text-sm/6 text-gray-700 shadow-sm outline outline-1 -outline-offset-1 outline-gray-300 placeholder:text-gray-400 focus:outline-2 focus:-outline-offset-2 focus:outline-indigo-600"></textarea></label>
-                                            <label class="block"><span class="block text-sm/6 font-semibold text-gray-900">Qualification Answers</span><textarea x-model="campaignSetup.brief.qualifiedAnswers" rows="4" class="mt-2 block w-full rounded-md bg-white px-3 py-2 text-sm/6 text-gray-700 shadow-sm outline outline-1 -outline-offset-1 outline-gray-300 placeholder:text-gray-400 focus:outline-2 focus:-outline-offset-2 focus:outline-indigo-600"></textarea></label>
+                                            <label class="block"><span class="block text-sm/6 font-semibold text-gray-900">Qualification Answers</span><textarea x-model="campaignSetup.brief.qualifiedAnswers" rows="4" class="mt-2 block w-full rounded-md bg-white px-3 py-2 text-sm/6 text-gray-700 shadow-sm outline outline-1 -outline-offset-1 outline-gray-300 placeholder:text-gray-400 focus:outline-2 focus:-outline-offset-2 focus:outline-indigo-600"></textarea><span class="mt-2 block text-sm leading-6 text-gray-500">Each line becomes one qualifying answer.</span></label>
                                         </div>
                                     </div>
-                            </section>
+                                </div>
+                                <div x-show="campaignSetup.briefTab === 'builder'" x-transition:enter="transition ease-out duration-200" x-transition:enter-start="opacity-0 translate-y-3" x-transition:enter-end="opacity-100 translate-y-0" x-transition:leave="transition ease-in duration-150" x-transition:leave-start="opacity-100 translate-y-0" x-transition:leave-end="opacity-0 translate-y-2" class="mt-6 space-y-5">
+                                    <article class="rounded-lg border border-gray-200 bg-white p-5 shadow-sm">
+                                        <div class="flex items-start justify-between gap-4">
+                                            <div class="flex min-w-0 items-start gap-3">
+                                                <span class="flex size-9 shrink-0 items-center justify-center rounded-md bg-indigo-50 text-indigo-600">
+                                                    <span class="outcraft-icon !text-[19px]">target</span>
+                                                </span>
+                                                <div class="min-w-0">
+                                                    <h3 class="text-base font-semibold leading-6 text-gray-950">Campaign Goal</h3>
+                                                    <p class="mt-1 text-sm leading-6 text-gray-500">Define what the AI should accomplish and when the conversation is considered successful.</p>
+                                                </div>
+                                            </div>
+                                            <span class="inline-flex rounded-md bg-indigo-50 px-2 py-1 text-xs font-medium text-indigo-700 ring-1 ring-inset ring-indigo-700/10">Required</span>
+                                        </div>
+                                        <textarea x-model="campaignSetup.brief.goal" rows="4" placeholder="What should this campaign achieve?" class="mt-4 block w-full rounded-md bg-white px-3 py-2 text-sm/6 text-gray-700 shadow-sm outline outline-1 -outline-offset-1 outline-gray-300 placeholder:text-gray-400 focus:outline-2 focus:-outline-offset-2 focus:outline-indigo-600"></textarea>
+                                    </article>
+
+                                    <article class="rounded-lg border border-gray-200 bg-white p-5 shadow-sm">
+                                        <div class="flex items-start justify-between gap-4">
+                                            <div class="flex min-w-0 items-start gap-3">
+                                                <span class="flex size-9 shrink-0 items-center justify-center rounded-md bg-indigo-50 text-indigo-600">
+                                                    <span class="outcraft-icon !text-[19px]">users</span>
+                                                </span>
+                                                <div class="min-w-0">
+                                                    <h3 class="text-base font-semibold leading-6 text-gray-950">Lead Situation</h3>
+                                                    <p class="mt-1 text-sm leading-6 text-gray-500">Describe who the person is, why this conversation is happening, and what the AI must not assume.</p>
+                                                </div>
+                                            </div>
+                                            <span class="inline-flex rounded-md bg-indigo-50 px-2 py-1 text-xs font-medium text-indigo-700 ring-1 ring-inset ring-indigo-700/10">Required</span>
+                                        </div>
+                                        <textarea x-model="campaignSetup.brief.leadSituation" rows="4" placeholder="Who are these leads and why are we contacting them?" class="mt-4 block w-full rounded-md bg-white px-3 py-2 text-sm/6 text-gray-700 shadow-sm outline outline-1 -outline-offset-1 outline-gray-300 placeholder:text-gray-400 focus:outline-2 focus:-outline-offset-2 focus:outline-indigo-600"></textarea>
+                                    </article>
+
+                                    <template x-for="(item, index) in campaignSetup.brief.builderItems" :key="item.id">
+                                        <article class="rounded-lg border border-gray-200 bg-white p-5 shadow-sm">
+                                            <div class="flex items-start justify-between gap-4">
+                                                <div class="flex min-w-0 items-start gap-3">
+                                                    <span class="flex size-9 shrink-0 items-center justify-center rounded-md bg-indigo-50 text-indigo-600">
+                                                        <span x-show="briefBuilderItemSvgIcon(item.type)" class="size-[21px]" x-html="briefBuilderItemSvgIcon(item.type)"></span>
+                                                        <span x-show="! briefBuilderItemSvgIcon(item.type)" class="outcraft-icon !text-[19px]" x-text="briefBuilderItemIcon(item.type)"></span>
+                                                    </span>
+                                                    <div class="min-w-0">
+                                                        <h3 class="text-base font-semibold leading-6 text-gray-950" x-text="briefBuilderItemTitle(item.type)"></h3>
+                                                        <p class="mt-1 text-sm leading-6 text-gray-500" x-text="briefBuilderItemDescription(item.type)"></p>
+                                                    </div>
+                                                </div>
+                                                <div class="relative shrink-0" x-on:click.outside="if (campaignSetup.briefBuilderItemActionOpen === item.id) campaignSetup.briefBuilderItemActionOpen = ''">
+                                                    <button type="button" x-on:click="campaignSetup.briefBuilderItemActionOpen = campaignSetup.briefBuilderItemActionOpen === item.id ? '' : item.id" class="inline-flex size-8 items-center justify-center rounded-md text-gray-400 transition hover:bg-gray-50 hover:text-gray-700" aria-label="Item Actions">
+                                                        <span class="outcraft-icon !text-[18px]">more_vert</span>
+                                                    </button>
+                                                    <div x-cloak x-show="campaignSetup.briefBuilderItemActionOpen === item.id" x-transition:enter="transition ease-out duration-100" x-transition:enter-start="opacity-0 translate-y-1" x-transition:enter-end="opacity-100 translate-y-0" x-transition:leave="transition ease-in duration-75" x-transition:leave-start="opacity-100 translate-y-0" x-transition:leave-end="opacity-0 translate-y-1" class="absolute right-0 top-9 z-30 w-44 rounded-md bg-white p-1 text-sm shadow-lg ring-1 ring-gray-900/10">
+                                                        <button type="button" x-on:click="moveBriefBuilderItem(index, -1)" :disabled="index === 0" class="flex w-full items-center gap-2 rounded-md px-3 py-2 text-left font-medium text-gray-700 transition hover:bg-gray-50 hover:text-gray-950 disabled:cursor-not-allowed disabled:opacity-40">
+                                                            <span class="outcraft-icon !text-[16px] text-gray-400">arrow_upward</span>
+                                                            Move Up
+                                                        </button>
+                                                        <button type="button" x-on:click="moveBriefBuilderItem(index, 1)" :disabled="index === campaignSetup.brief.builderItems.length - 1" class="flex w-full items-center gap-2 rounded-md px-3 py-2 text-left font-medium text-gray-700 transition hover:bg-gray-50 hover:text-gray-950 disabled:cursor-not-allowed disabled:opacity-40">
+                                                            <span class="outcraft-icon !text-[16px] text-gray-400">arrow_downward</span>
+                                                            Move Down
+                                                        </button>
+                                                        <button type="button" x-on:click="removeBriefBuilderItem(item.id)" class="flex w-full items-center gap-2 rounded-md px-3 py-2 text-left font-medium text-red-600 transition hover:bg-red-50 hover:text-red-700">
+                                                            <span class="outcraft-icon !text-[16px]">delete</span>
+                                                            Delete Block
+                                                        </button>
+                                                    </div>
+                                                </div>
+                                            </div>
+
+                                            <div x-show="item.type === 'find_out'" class="mt-5 space-y-4">
+                                                <div
+                                                    x-sortable
+                                                    data-sortable-animation-duration="150"
+                                                    x-on:end.stop="reorderBriefBuilderQuestions(item, $event.target.sortable.toArray())"
+                                                    class="-mx-5 border-y border-gray-200 bg-white"
+                                                >
+                                                    <template x-for="(question, questionIndex) in item.questions" :key="question.id">
+                                                        <div x-bind:x-sortable-item="question.id" class="flex items-start gap-3 px-5 py-3" :class="questionIndex === item.questions.length - 1 ? '' : 'border-b border-gray-200'">
+                                                            <button type="button" x-sortable-handle class="inline-flex size-7 shrink-0 cursor-grab items-center justify-center rounded-md text-gray-300 transition hover:bg-gray-50 hover:text-gray-500 active:cursor-grabbing" aria-label="Reorder Question">
+                                                                <span class="outcraft-icon !text-[18px]">drag_indicator</span>
+                                                            </button>
+                                                            <span class="min-w-0 flex-1 text-sm leading-6 text-gray-900" x-text="question.text"></span>
+                                                            <span x-show="briefBuilderQuestionCaptured(item, question)" class="inline-flex shrink-0 rounded-md bg-emerald-50 px-2 py-1 text-xs font-medium text-emerald-700 ring-1 ring-inset ring-emerald-600/20">Captured</span>
+                                                            <button x-show="! briefBuilderQuestionCaptured(item, question)" type="button" x-on:click="captureBriefBuilderQuestion(item, question, 'Discovery Questions'); hideFloatingTooltip()" x-on:mouseenter="showFloatingTooltip($event, 'Capture for Conversation Intelligence', 240)" x-on:mouseleave="hideFloatingTooltip()" x-on:focus="showFloatingTooltip($event, 'Capture for Conversation Intelligence', 240)" x-on:blur="hideFloatingTooltip()" class="inline-flex size-7 shrink-0 items-center justify-center rounded-md text-gray-400 transition hover:bg-gray-50 hover:text-indigo-600 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600" aria-label="Capture for Conversation Intelligence">
+                                                                <span class="outcraft-icon !text-[17px]">fact_check</span>
+                                                            </button>
+                                                            <button type="button" x-on:click="removeBriefBuilderQuestion(item, questionIndex)" class="inline-flex size-7 shrink-0 items-center justify-center rounded-md text-gray-400 transition hover:bg-gray-50 hover:text-red-600" aria-label="Remove Question"><span class="outcraft-icon !text-[17px]">delete</span></button>
+                                                        </div>
+                                                    </template>
+                                                    <p x-show="item.questions.length === 0" class="px-5 py-4 text-sm text-gray-500">No Questions Added.</p>
+                                                </div>
+                                                <form x-on:submit.prevent="addBriefBuilderQuestion(item)" class="grid gap-3 sm:grid-cols-[minmax(0,1fr)_auto]">
+                                                    <input x-model="item.newQuestion" type="text" placeholder="e.g. What problem are they trying to solve?" class="block w-full rounded-md bg-white px-3 py-1.5 text-sm/6 text-gray-900 shadow-sm outline outline-1 -outline-offset-1 outline-gray-300 placeholder:text-gray-400 focus:outline-2 focus:-outline-offset-2 focus:outline-indigo-600">
+                                                    <button type="submit" :disabled="! String(item.newQuestion || '').trim()" class="inline-flex h-9 items-center justify-center rounded-md bg-indigo-600 px-3 text-sm font-semibold text-white shadow-sm transition hover:bg-indigo-500 disabled:cursor-not-allowed disabled:opacity-40">Add Question</button>
+                                                </form>
+                                            </div>
+
+                                            <div x-show="item.type === 'pricing'" class="mt-5 space-y-5">
+                                                <label class="block">
+                                                    <span class="block text-sm/6 font-semibold text-gray-900">Pricing</span>
+                                                    <select x-model="campaignSetup.brief.pricingSource" class="mt-2 block w-full rounded-md bg-white py-1.5 pl-3 pr-8 text-sm/6 text-gray-900 shadow-sm outline outline-1 -outline-offset-1 outline-gray-300 focus:outline-2 focus:-outline-offset-2 focus:outline-indigo-600">
+                                                        <option>Use Knowledge Base Pricing</option>
+                                                        <option>Use Manually Entered Pricing</option>
+                                                    </select>
+                                                    <span class="mt-2 block text-sm leading-6 text-gray-500">Choose where the AI should get pricing details from.</span>
+                                                </label>
+                                                <label x-show="campaignSetup.brief.pricingSource === 'Use Manually Entered Pricing'" x-transition:enter="transition ease-out duration-200" x-transition:enter-start="opacity-0 translate-y-3" x-transition:enter-end="opacity-100 translate-y-0" x-transition:leave="transition ease-in duration-150" x-transition:leave-start="opacity-100 translate-y-0" x-transition:leave-end="opacity-0 translate-y-2" class="block">
+                                                    <span class="block text-sm/6 font-semibold text-gray-900">Manual Pricing Notes</span>
+                                                    <textarea x-model="campaignSetup.brief.manualPricing" rows="4" placeholder="Pulsetto Fit - 251 EUR special offer. Pulsetto Lite - 233 EUR special offer." class="mt-2 block w-full rounded-md bg-white px-3 py-2 text-sm/6 text-gray-700 shadow-sm outline outline-1 -outline-offset-1 outline-gray-300 placeholder:text-gray-400 focus:outline-2 focus:-outline-offset-2 focus:outline-indigo-600"></textarea>
+                                                </label>
+                                                <button type="button" x-on:click="campaignSetup.brief.canNegotiatePrice = ! campaignSetup.brief.canNegotiatePrice; scheduleCampaignBuilderLayoutUpdate()" role="switch" :aria-checked="campaignSetup.brief.canNegotiatePrice" class="flex w-full items-start gap-4 rounded-md text-left focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600">
+                                                    <span class="relative mt-1 inline-flex h-6 w-11 shrink-0 rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out" :class="campaignSetup.brief.canNegotiatePrice ? 'bg-indigo-600' : 'bg-gray-200'"><span class="pointer-events-none inline-block size-5 rounded-full bg-white shadow transition duration-200 ease-in-out" :class="campaignSetup.brief.canNegotiatePrice ? 'translate-x-5' : 'translate-x-0'"></span></span>
+                                                    <span><span class="block text-sm font-semibold leading-6 text-gray-950">Can Negotiate Price</span><span class="mt-1 block text-sm leading-6 text-gray-600">Allow AI to negotiate within a limited discount percentage.</span></span>
+                                                </button>
+                                                <label x-show="campaignSetup.brief.canNegotiatePrice" x-transition:enter="transition ease-out duration-200" x-transition:enter-start="opacity-0 translate-y-3" x-transition:enter-end="opacity-100 translate-y-0" x-transition:leave="transition ease-in duration-150" x-transition:leave-start="opacity-100 translate-y-0" x-transition:leave-end="opacity-0 translate-y-2" class="block max-w-xs">
+                                                    <span class="block text-sm/6 font-semibold text-gray-900">Negotiation Limit (%)</span>
+                                                    <input x-model="campaignSetup.brief.priceNegotiationPercent" type="number" min="0" max="100" placeholder="10" class="mt-2 block w-full rounded-md bg-white px-3 py-1.5 text-sm/6 text-gray-900 shadow-sm outline outline-1 -outline-offset-1 outline-gray-300 placeholder:text-gray-400 focus:outline-2 focus:-outline-offset-2 focus:outline-indigo-600">
+                                                </label>
+                                            </div>
+
+                                            <div x-show="item.type === 'guardrails'" class="mt-5 space-y-5">
+                                                <label class="block">
+                                                    <span class="block text-sm/6 font-semibold text-gray-900">Never Ask For</span>
+                                                    <textarea x-model="campaignSetup.brief.neverAskFor" rows="4" placeholder="Credit card information&#10;Banking details&#10;Passwords" class="mt-2 block w-full rounded-md bg-white px-3 py-2 text-sm/6 text-gray-700 shadow-sm outline outline-1 -outline-offset-1 outline-gray-300 placeholder:text-gray-400 focus:outline-2 focus:-outline-offset-2 focus:outline-indigo-600"></textarea>
+                                                </label>
+                                                <label class="block">
+                                                    <span class="block text-sm/6 font-semibold text-gray-900">Never Promise</span>
+                                                    <textarea x-model="campaignSetup.brief.neverPromise" rows="4" placeholder="Refunds&#10;Delivery dates&#10;Guaranteed results" class="mt-2 block w-full rounded-md bg-white px-3 py-2 text-sm/6 text-gray-700 shadow-sm outline outline-1 -outline-offset-1 outline-gray-300 placeholder:text-gray-400 focus:outline-2 focus:-outline-offset-2 focus:outline-indigo-600"></textarea>
+                                                </label>
+                                                <label class="block">
+                                                    <span class="block text-sm/6 font-semibold text-gray-900">Never Discuss</span>
+                                                    <textarea x-model="campaignSetup.brief.neverDiscuss" rows="4" placeholder="Unrelated topics&#10;Competitor breakdowns&#10;Refund approvals" class="mt-2 block w-full rounded-md bg-white px-3 py-2 text-sm/6 text-gray-700 shadow-sm outline outline-1 -outline-offset-1 outline-gray-300 placeholder:text-gray-400 focus:outline-2 focus:-outline-offset-2 focus:outline-indigo-600"></textarea>
+                                                </label>
+                                            </div>
+
+                                            <div x-show="item.type === 'qualification'" class="mt-5 space-y-4">
+                                                <div
+                                                    x-sortable
+                                                    data-sortable-animation-duration="150"
+                                                    x-on:end.stop="reorderBriefBuilderQuestions(item, $event.target.sortable.toArray())"
+                                                    class="-mx-5 border-y border-gray-200 bg-white"
+                                                >
+                                                    <template x-for="(question, questionIndex) in item.questions" :key="question.id">
+                                                        <div x-bind:x-sortable-item="question.id" class="px-5 py-3" :class="questionIndex === item.questions.length - 1 ? '' : 'border-b border-gray-200'">
+                                                            <div class="flex items-start gap-3">
+                                                                <button type="button" x-sortable-handle class="inline-flex size-7 shrink-0 cursor-grab items-center justify-center rounded-md text-gray-300 transition hover:bg-gray-50 hover:text-gray-500 active:cursor-grabbing" aria-label="Reorder Qualification Question">
+                                                                    <span class="outcraft-icon !text-[18px]">drag_indicator</span>
+                                                                </button>
+                                                                <div class="min-w-0 flex-1">
+                                                                    <p class="text-sm font-medium leading-6 text-gray-900" x-text="question.text"></p>
+                                                                    <div class="mt-1 space-y-1 text-sm leading-6 text-gray-500">
+                                                                        <template x-for="(answer, answerIndex) in briefBuilderQualificationAnswerLines(question.answers)" :key="`${question.id}-answer-${answerIndex}`">
+                                                                            <p x-text="`- ${answer}`"></p>
+                                                                        </template>
+                                                                    </div>
+                                                                </div>
+                                                                <span x-show="briefBuilderQuestionCaptured(item, question)" class="inline-flex shrink-0 rounded-md bg-emerald-50 px-2 py-1 text-xs font-medium text-emerald-700 ring-1 ring-inset ring-emerald-600/20">Captured</span>
+                                                                <button x-show="! briefBuilderQuestionCaptured(item, question)" type="button" x-on:click="captureBriefBuilderQuestion(item, question, 'Qualification Questions'); hideFloatingTooltip()" x-on:mouseenter="showFloatingTooltip($event, 'Capture for Conversation Intelligence', 240)" x-on:mouseleave="hideFloatingTooltip()" x-on:focus="showFloatingTooltip($event, 'Capture for Conversation Intelligence', 240)" x-on:blur="hideFloatingTooltip()" class="inline-flex size-7 shrink-0 items-center justify-center rounded-md text-gray-400 transition hover:bg-gray-50 hover:text-indigo-600 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600" aria-label="Capture for Conversation Intelligence">
+                                                                    <span class="outcraft-icon !text-[17px]">fact_check</span>
+                                                                </button>
+                                                                <button type="button" x-on:click="removeBriefBuilderQuestion(item, questionIndex)" class="inline-flex size-7 shrink-0 items-center justify-center rounded-md text-gray-400 transition hover:bg-gray-50 hover:text-red-600" aria-label="Remove Qualification Question"><span class="outcraft-icon !text-[17px]">delete</span></button>
+                                                            </div>
+                                                        </div>
+                                                    </template>
+                                                    <p x-show="item.questions.length === 0" class="px-5 py-4 text-sm text-gray-500">No Qualification Questions Added.</p>
+                                                </div>
+                                                <form x-on:submit.prevent="addBriefBuilderQualificationQuestion(item)" class="space-y-3">
+                                                    <input x-model="item.newQuestion" type="text" placeholder="e.g. Are they ready for the next step?" class="block w-full rounded-md bg-white px-3 py-1.5 text-sm/6 text-gray-900 shadow-sm outline outline-1 -outline-offset-1 outline-gray-300 placeholder:text-gray-400 focus:outline-2 focus:-outline-offset-2 focus:outline-indigo-600">
+                                                    <label class="block">
+                                                        <span class="mb-2 block text-sm/6 font-semibold text-gray-900">Qualifying Answers</span>
+                                                        <textarea x-model="item.newAnswers" rows="3" placeholder="Has a clear need&#10;Wants to move forward" class="block w-full rounded-md bg-white px-3 py-2 text-sm/6 text-gray-700 shadow-sm outline outline-1 -outline-offset-1 outline-gray-300 placeholder:text-gray-400 focus:outline-2 focus:-outline-offset-2 focus:outline-indigo-600"></textarea>
+                                                        <span class="mt-2 block text-sm leading-6 text-gray-500">Each line becomes one qualifying answer.</span>
+                                                    </label>
+                                                    <button type="submit" :disabled="! String(item.newQuestion || '').trim() || briefBuilderQualificationAnswerLines(item.newAnswers).length === 0" class="inline-flex h-9 items-center justify-center rounded-md bg-indigo-600 px-3 text-sm font-semibold text-white shadow-sm transition hover:bg-indigo-500 disabled:cursor-not-allowed disabled:opacity-40">Add Qualification Question</button>
+                                                </form>
+                                            </div>
+
+                                            <label x-show="briefBuilderIsGuidelineItem(item.type)" class="mt-5 block">
+                                                <span class="sr-only" x-text="briefBuilderItemTitle(item.type)"></span>
+                                                <textarea x-model="item.content" rows="5" :placeholder="briefBuilderGuidelinePlaceholder(item.type)" class="block w-full rounded-md bg-white px-3 py-2 text-sm/6 text-gray-700 shadow-sm outline outline-1 -outline-offset-1 outline-gray-300 placeholder:text-gray-400 focus:outline-2 focus:-outline-offset-2 focus:outline-indigo-600"></textarea>
+                                                <span class="mt-2 block text-sm leading-6 text-gray-500" x-text="briefBuilderGuidelineHelper(item.type)"></span>
+                                            </label>
+
+                                            <div x-show="item.type === 'discount_codes'" class="mt-5 space-y-4">
+                                                <form x-on:submit.prevent="addDiscountCode()" class="grid gap-3 sm:grid-cols-[minmax(0,1fr)_auto]">
+                                                    <input x-model="campaignSetup.newDiscountCode" type="text" placeholder="e.g. WELCOME20 or 25OFF" class="block w-full rounded-md bg-white px-3 py-1.5 text-sm/6 text-gray-900 shadow-sm outline outline-1 -outline-offset-1 outline-gray-300 placeholder:text-gray-400 focus:outline-2 focus:-outline-offset-2 focus:outline-indigo-600">
+                                                    <button type="submit" :disabled="! String(campaignSetup.newDiscountCode || '').trim()" class="inline-flex h-9 items-center justify-center rounded-md bg-indigo-600 px-3 text-sm font-semibold text-white shadow-sm transition hover:bg-indigo-500 disabled:cursor-not-allowed disabled:opacity-40">Add</button>
+                                                </form>
+                                                <div class="divide-y divide-gray-200">
+                                                    <template x-for="code in campaignSetup.discountCodes" :key="`builder-${code.value}`">
+                                                        <div class="flex items-start justify-between gap-4 py-3">
+                                                            <div>
+                                                                <p class="text-sm font-semibold leading-6 text-gray-950" x-text="code.value"></p>
+                                                                <p class="text-sm leading-6 text-gray-500" x-text="`Created ${code.created}`"></p>
+                                                            </div>
+                                                            <button type="button" x-on:click="campaignSetup.discountCodes = campaignSetup.discountCodes.filter((item) => item.value !== code.value)" class="inline-flex size-8 items-center justify-center rounded-md text-gray-400 transition hover:bg-gray-50 hover:text-red-600" aria-label="Remove Discount Code">
+                                                                <span class="outcraft-icon !text-[17px]">delete</span>
+                                                            </button>
+                                                        </div>
+                                                    </template>
+                                                    <p x-show="campaignSetup.discountCodes.length === 0" class="py-4 text-sm text-gray-500">No Discount Codes Added.</p>
+                                                </div>
+                                            </div>
+
+                                            <div x-show="item.type === 'handoff'" class="mt-5 space-y-6">
+                                                <button type="button" x-on:click="campaignSetup.handoffPositive = ! campaignSetup.handoffPositive; scheduleCampaignBuilderLayoutUpdate()" role="switch" :aria-checked="campaignSetup.handoffPositive" class="flex w-full items-start gap-4 rounded-md text-left focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600">
+                                                    <span class="relative mt-1 inline-flex h-6 w-11 shrink-0 rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out" :class="campaignSetup.handoffPositive ? 'bg-indigo-600' : 'bg-gray-200'"><span class="pointer-events-none inline-block size-5 rounded-full bg-white shadow transition duration-200 ease-in-out" :class="campaignSetup.handoffPositive ? 'translate-x-5' : 'translate-x-0'"></span></span>
+                                                    <span><span class="block text-sm font-semibold leading-6 text-gray-950">Hand Off After a Positive Reply</span><span class="mt-1 block text-sm leading-6 text-gray-600">AI passes the conversation to a human when the lead responds positively.</span></span>
+                                                </button>
+                                                <label x-show="campaignSetup.handoffPositive" class="block">
+                                                    <span class="block text-sm/6 font-medium text-gray-900">Handoff Trigger Scenarios</span>
+                                                    <select x-model="campaignSetup.handoffScenario" class="mt-2 block w-full rounded-md bg-white py-1.5 pl-3 pr-8 text-sm/6 text-gray-900 shadow-sm outline outline-1 -outline-offset-1 outline-gray-300 focus:outline-2 focus:-outline-offset-2 focus:outline-indigo-600"><option value="">Type Your Own or Select Common Scenario</option><option>Positive Reply</option><option>High Intent</option><option>Pricing Question</option></select>
+                                                    <span class="mt-2 block text-sm leading-6 text-gray-500">Situations where AI should pass to a human agent.</span>
+                                                </label>
+                                                <button type="button" x-on:click="campaignSetup.handoffRequested = ! campaignSetup.handoffRequested; scheduleCampaignBuilderLayoutUpdate()" role="switch" :aria-checked="campaignSetup.handoffRequested" class="flex w-full items-start gap-4 rounded-md text-left focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600">
+                                                    <span class="relative mt-1 inline-flex h-6 w-11 shrink-0 rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out" :class="campaignSetup.handoffRequested ? 'bg-indigo-600' : 'bg-gray-200'"><span class="pointer-events-none inline-block size-5 rounded-full bg-white shadow transition duration-200 ease-in-out" :class="campaignSetup.handoffRequested ? 'translate-x-5' : 'translate-x-0'"></span></span>
+                                                    <span><span class="block text-sm font-semibold leading-6 text-gray-950">Hand Off When the Lead Asks</span><span class="mt-1 block text-sm leading-6 text-gray-600">AI passes the conversation when the lead explicitly requests a human.</span></span>
+                                                </button>
+                                                <label x-show="campaignSetup.handoffRequested" class="block">
+                                                    <span class="block text-sm/6 font-medium text-gray-900">Handoff Channel</span>
+                                                    <select x-model="campaignSetup.handoffChannel" class="mt-2 block w-full rounded-md bg-white py-1.5 pl-3 pr-8 text-sm/6 text-gray-900 shadow-sm outline outline-1 -outline-offset-1 outline-gray-300 focus:outline-2 focus:-outline-offset-2 focus:outline-indigo-600"><option value="">Select a Channel</option><option>Email</option><option>Slack</option><option>Webhook</option></select>
+                                                    <span class="mt-2 block text-sm leading-6 text-gray-500">How the human agent is notified.</span>
+                                                </label>
+                                                <label class="block">
+                                                    <span class="block text-sm/6 font-semibold text-gray-900">Handoff Notification Email</span>
+                                                    <input x-model="campaignSetup.handoffNotificationEmail" type="email" placeholder="support@pulsetto.com" class="mt-2 block w-full rounded-md bg-white px-3 py-1.5 text-sm/6 text-gray-900 shadow-sm outline outline-1 -outline-offset-1 outline-gray-300 placeholder:text-gray-400 focus:outline-2 focus:-outline-offset-2 focus:outline-indigo-600">
+                                                    <span class="mt-2 block text-sm leading-6 text-gray-500">Where to send a notification when AI hands off a conversation.</span>
+                                                </label>
+                                            </div>
+
+                                            <div x-show="item.type === 'followups'" class="mt-5 space-y-6">
+                                                <button type="button" x-on:click="toggleFollowupSequence('followupPositive', 'positive')" role="switch" :aria-checked="campaignSetup.followupPositive" class="flex w-full items-start gap-4 rounded-md text-left focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600">
+                                                    <span class="relative mt-1 inline-flex h-6 w-11 shrink-0 rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out" :class="campaignSetup.followupPositive ? 'bg-indigo-600' : 'bg-gray-200'">
+                                                        <span class="pointer-events-none inline-block size-5 rounded-full bg-white shadow transition duration-200 ease-in-out" :class="campaignSetup.followupPositive ? 'translate-x-5' : 'translate-x-0'"></span>
+                                                    </span>
+                                                    <span class="min-w-0">
+                                                        <span class="block text-sm font-semibold leading-6 text-gray-950">After a Positive Response</span>
+                                                        <span class="mt-1 block text-sm leading-6 text-gray-600">Follow up to confirm the next step, share details, or check if the lead needs anything else.</span>
+                                                    </span>
+                                                </button>
+
+                                                <button type="button" x-on:click="toggleFollowupSequence('followupEngaged', 'engaged')" role="switch" :aria-checked="campaignSetup.followupEngaged" class="flex w-full items-start gap-4 rounded-md text-left focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600">
+                                                    <span class="relative mt-1 inline-flex h-6 w-11 shrink-0 rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out" :class="campaignSetup.followupEngaged ? 'bg-indigo-600' : 'bg-gray-200'">
+                                                        <span class="pointer-events-none inline-block size-5 rounded-full bg-white shadow transition duration-200 ease-in-out" :class="campaignSetup.followupEngaged ? 'translate-x-5' : 'translate-x-0'"></span>
+                                                    </span>
+                                                    <span class="min-w-0">
+                                                        <span class="block text-sm font-semibold leading-6 text-gray-950">When a Lead Is Engaged but Undecided</span>
+                                                        <span class="mt-1 block text-sm leading-6 text-gray-600">Follow up to answer questions and help the lead move toward a clear yes or no.</span>
+                                                    </span>
+                                                </button>
+
+                                                <button type="button" x-on:click="toggleFollowupSequence('followupNegative', 'negative')" role="switch" :aria-checked="campaignSetup.followupNegative" class="flex w-full items-start gap-4 rounded-md text-left focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600">
+                                                    <span class="relative mt-1 inline-flex h-6 w-11 shrink-0 rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out" :class="campaignSetup.followupNegative ? 'bg-indigo-600' : 'bg-gray-200'">
+                                                        <span class="pointer-events-none inline-block size-5 rounded-full bg-white shadow transition duration-200 ease-in-out" :class="campaignSetup.followupNegative ? 'translate-x-5' : 'translate-x-0'"></span>
+                                                    </span>
+                                                    <span class="min-w-0">
+                                                        <span class="block text-sm font-semibold leading-6 text-gray-950">After a Negative Response</span>
+                                                        <span class="mt-1 block text-sm leading-6 text-gray-600">Follow up only when there may still be an opportunity to address concerns or objections.</span>
+                                                    </span>
+                                                </button>
+
+                                                <div x-show="campaignSetup.followupPositive || campaignSetup.followupEngaged || campaignSetup.followupNegative" x-transition:enter="transition ease-out duration-200" x-transition:enter-start="opacity-0 translate-y-3" x-transition:enter-end="opacity-100 translate-y-0" x-transition:leave="transition ease-in duration-150" x-transition:leave-start="opacity-100 translate-y-0" x-transition:leave-end="opacity-0 translate-y-2" class="space-y-5">
+                                                    <div>
+                                                        <h4 class="text-base font-semibold leading-6 text-gray-950">Follow-Up Sequence</h4>
+                                                        <p class="mt-2 text-sm leading-6 text-gray-600">Build a follow-up sequence that will be applied for this campaign.</p>
+                                                    </div>
+                                                    <div class="border-b border-gray-200">
+                                                        <nav class="-mb-px flex flex-wrap gap-6" aria-label="Follow-up sequence tabs">
+                                                            <template x-for="tab in followupSequenceTabs()" :key="`builder-${tab.id}`">
+                                                                <button type="button" x-on:click="campaignSetup.activeFollowupSequence = tab.id" class="border-b-2 px-1 pb-3 text-sm font-semibold transition" :class="campaignSetup.activeFollowupSequence === tab.id ? 'border-indigo-600 text-indigo-600' : 'border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700'">
+                                                                    <span x-text="tab.label"></span>
+                                                                </button>
+                                                            </template>
+                                                        </nav>
+                                                    </div>
+                                                    <div class="flex flex-wrap items-center justify-between gap-3">
+                                                        <button type="button" class="inline-flex h-9 items-center rounded-md bg-white px-3 text-sm font-semibold text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 transition hover:bg-gray-50">Reorder Actions</button>
+                                                        <button type="button" x-on:click="campaignSetup.followupModalOpen = true" class="inline-flex h-9 items-center rounded-md bg-indigo-600 px-3 text-sm font-semibold text-white shadow-sm transition hover:bg-indigo-500">Add Step</button>
+                                                    </div>
+                                                    <div class="overflow-hidden rounded-lg border border-gray-200">
+                                                        <table class="min-w-full divide-y divide-gray-200 text-left text-sm">
+                                                            <thead class="bg-gray-50">
+                                                                <tr>
+                                                                    <template x-for="head in ['Channel','Label','Relative Delay','Exact Flow Step']" :key="`builder-followup-${head}`">
+                                                                        <th class="px-4 py-3 font-semibold text-gray-600" x-text="head"></th>
+                                                                    </template>
+                                                                </tr>
+                                                            </thead>
+                                                        </table>
+                                                        <div class="flex min-h-40 flex-col items-center justify-center border-t border-gray-100 px-6 py-10 text-center">
+                                                            <span class="flex size-12 items-center justify-center rounded-full bg-gray-100 text-gray-400">
+                                                                <span class="outcraft-icon !text-[24px]">close</span>
+                                                            </span>
+                                                            <h5 class="mt-5 text-base font-bold text-gray-950">No Flow Template Steps</h5>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </article>
+                                    </template>
+
+	                                    <button type="button" x-on:click="openBriefBuilderItemModal()" class="group flex w-full items-start gap-3 rounded-lg bg-white p-5 text-left shadow-sm outline outline-1 -outline-offset-1 outline-gray-300 transition hover:outline-2 hover:-outline-offset-2 hover:outline-indigo-600 hover:shadow-sm focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600">
+	                                        <span class="flex size-9 shrink-0 items-center justify-center rounded-md bg-indigo-600 text-white shadow-sm transition group-hover:bg-indigo-500">
+	                                            <span class="outcraft-icon !text-[20px]">add</span>
+	                                        </span>
+	                                        <span class="min-w-0">
+	                                            <span class="block text-base font-semibold leading-6 text-gray-950">Add Item</span>
+	                                            <span class="mt-1 block text-sm leading-6 text-gray-500">Find additional blocks and extend this campaign context with extra rules, guidelines, pricing, discounts, or channel-specific instructions.</span>
+	                                        </span>
+	                                    </button>
+	                                </div>
+	                            </section>
 
 	                            <section x-cloak x-show="campaignSetup.current === 'general' || campaignSetupScrollFromStep === 'general'" x-ref="campaignSetupStep_general"
                                 :style="campaignSetupStepStyle('general')"
@@ -1555,6 +2175,9 @@ class OutreachPage extends Page
                                 class="pr-2 pb-4">
                                 <div class="mb-1">
                                     <p class="text-sm font-semibold text-indigo-600" x-text="`${campaignSetupMode === 'fast' ? 'Fast Setup' : 'Advanced Setup'} · Step ${campaignSetupStepIndex('general') + 1} of ${campaignSetupStepsForMode().length}`"></p>
+                                    <span class="mb-4 flex size-10 items-center justify-center rounded-md bg-indigo-50 text-indigo-600">
+                                        <span class="outcraft-icon !text-[21px]" x-text="campaignSetupStepIcon('general')"></span>
+                                    </span>
                                     <h2 class="mt-2 text-2xl font-bold leading-8 tracking-tight text-gray-950" x-text="campaignSetupHeading('general')"></h2>
                                     <p class="mt-2 max-w-3xl text-sm leading-6 text-gray-600" x-text="campaignSetupDescription('general')"></p>
                                 </div>
@@ -1593,6 +2216,9 @@ class OutreachPage extends Page
                                 class="space-y-6 pr-2 pb-4">
                                 <div class="mb-1">
                                     <p class="text-sm font-semibold text-indigo-600" x-text="`${campaignSetupMode === 'fast' ? 'Fast Setup' : 'Advanced Setup'} · Step ${campaignSetupStepIndex('resources') + 1} of ${campaignSetupStepsForMode().length}`"></p>
+                                    <span class="mb-4 flex size-10 items-center justify-center rounded-md bg-indigo-50 text-indigo-600">
+                                        <span class="outcraft-icon !text-[21px]" x-text="campaignSetupStepIcon('resources')"></span>
+                                    </span>
                                     <h2 class="mt-2 text-2xl font-bold leading-8 tracking-tight text-gray-950" x-text="campaignSetupHeading('resources')"></h2>
                                     <p class="mt-2 max-w-3xl text-sm leading-6 text-gray-600" x-text="campaignSetupDescription('resources')"></p>
                                 </div>
@@ -1612,6 +2238,9 @@ class OutreachPage extends Page
                                 class="space-y-6 pr-2 pb-4">
                                 <div class="mb-1">
                                     <p class="text-sm font-semibold text-indigo-600" x-text="`${campaignSetupMode === 'fast' ? 'Fast Setup' : 'Advanced Setup'} · Step ${campaignSetupStepIndex('agent') + 1} of ${campaignSetupStepsForMode().length}`"></p>
+                                    <span class="mb-4 flex size-10 items-center justify-center rounded-md bg-indigo-50 text-indigo-600">
+                                        <span class="outcraft-icon !text-[21px]" x-text="campaignSetupStepIcon('agent')"></span>
+                                    </span>
                                     <h2 class="mt-2 text-2xl font-bold leading-8 tracking-tight text-gray-950" x-text="campaignSetupHeading('agent')"></h2>
                                     <p class="mt-2 max-w-3xl text-sm leading-6 text-gray-600" x-text="campaignSetupDescription('agent')"></p>
 
@@ -1703,13 +2332,13 @@ class OutreachPage extends Page
                                 </div>
                                 <div class="grid gap-6 lg:grid-cols-2">
                                     <label class="block">
-                                        <span class="block text-sm/6 font-semibold text-gray-900">Agent Name<span class="text-indigo-600">*</span></span>
+                                        <span class="block text-sm/6 font-semibold text-gray-900">Agent Name<span class="text-indigo-400">*</span></span>
                                         <input x-model="campaignSetup.agentName" type="text" class="mt-2 block w-full rounded-md bg-white px-3 py-1.5 text-sm/6 text-gray-900 shadow-sm outline outline-1 -outline-offset-1 outline-gray-300 placeholder:text-gray-400 focus:outline-2 focus:-outline-offset-2 focus:outline-indigo-600">
                                         <span class="mt-2 block text-sm leading-6 text-gray-600">How the AI assistant will introduce itself to leads.</span>
                                     </label>
 
                                     <label class="block">
-                                        <span class="block text-sm/6 font-semibold text-gray-900">Voice<span class="text-indigo-600">*</span></span>
+                                        <span class="block text-sm/6 font-semibold text-gray-900">Voice<span class="text-indigo-400">*</span></span>
                                         <div class="mt-2 grid grid-cols-1">
                                             <select x-model="campaignSetup.voice" class="col-start-1 row-start-1 block w-full appearance-none rounded-md bg-white py-1.5 pr-8 pl-3 text-sm/6 text-gray-900 shadow-sm outline outline-1 -outline-offset-1 outline-gray-300 focus:outline-2 focus:-outline-offset-2 focus:outline-indigo-600">
                                                 <option>Bridget (Ultra-realistic)</option>
@@ -1744,8 +2373,8 @@ class OutreachPage extends Page
                                             <span class="block text-sm/6 font-semibold text-gray-900">Outreach Schedule</span>
                                             <div class="mt-2 grid grid-cols-1">
                                                 <select x-model="campaignSetup.scheduleMode" x-on:change="campaignSetup.allDay = campaignSetup.scheduleMode === 'all-day'; scheduleCampaignBuilderLayoutUpdate()" class="col-start-1 row-start-1 block w-full appearance-none rounded-md bg-white py-1.5 pr-8 pl-3 text-sm/6 text-gray-900 shadow-sm outline outline-1 -outline-offset-1 outline-gray-300 focus:outline-2 focus:-outline-offset-2 focus:outline-indigo-600">
-                                                    <option value="business">Working Hours</option>
-                                                    <option value="all-day">Always On</option>
+                                                    <option value="business">Working Hours (9 - 18)</option>
+                                                    <option value="all-day">Always On (24/7)</option>
                                                     <option value="custom">Custom Schedule</option>
                                                 </select>
                                                 <span class="outcraft-icon pointer-events-none col-start-1 row-start-1 mr-3 self-center justify-self-end text-gray-500">keyboard_arrow_down</span>
@@ -1772,7 +2401,7 @@ class OutreachPage extends Page
 
                                             <div class="mt-7 grid gap-6 lg:grid-cols-2">
                                                 <label class="block">
-                                                    <span class="block text-sm/6 font-semibold text-gray-900">Outreach Start Hour<span class="text-indigo-600">*</span></span>
+                                                    <span class="block text-sm/6 font-semibold text-gray-900">Outreach Start Hour<span class="text-indigo-400">*</span></span>
                                                     <div class="mt-2 grid grid-cols-1">
                                                         <select x-model="campaignSetup.outreachStartHour" class="col-start-1 row-start-1 block w-full appearance-none rounded-md bg-white py-1.5 pl-3 pr-8 text-sm/6 text-gray-900 shadow-sm outline outline-1 -outline-offset-1 outline-gray-300 focus:outline-2 focus:-outline-offset-2 focus:outline-indigo-600">
                                                             <template x-for="hour in outreachHourOptions" :key="`agent-start-${hour}`">
@@ -1785,7 +2414,7 @@ class OutreachPage extends Page
                                                 </label>
 
                                                 <label class="block">
-                                                    <span class="block text-sm/6 font-semibold text-gray-900">Outreach End Hour<span class="text-indigo-600">*</span></span>
+                                                    <span class="block text-sm/6 font-semibold text-gray-900">Outreach End Hour<span class="text-indigo-400">*</span></span>
                                                     <div class="mt-2 grid grid-cols-1">
                                                         <select x-model="campaignSetup.outreachEndHour" class="col-start-1 row-start-1 block w-full appearance-none rounded-md bg-white py-1.5 pl-3 pr-8 text-sm/6 text-gray-900 shadow-sm outline outline-1 -outline-offset-1 outline-gray-300 focus:outline-2 focus:-outline-offset-2 focus:outline-indigo-600">
                                                             <template x-for="hour in outreachHourOptions" :key="`agent-end-${hour}`">
@@ -1798,79 +2427,6 @@ class OutreachPage extends Page
                                                 </label>
                                             </div>
                                         </fieldset>
-                                    </div>
-                                </div>
-                                <div class="overflow-hidden rounded-lg border border-gray-200 bg-white">
-                                    <div class="border-b border-gray-200 px-6 py-5">
-                                        <h3 class="text-base font-semibold leading-6 text-gray-950">Handoff</h3>
-                                    </div>
-                                    <div class="divide-y divide-gray-200">
-                                        <div class="px-6 py-6">
-                                            <button type="button" x-on:click="campaignSetup.handoffPositive = ! campaignSetup.handoffPositive; scheduleCampaignBuilderLayoutUpdate()" role="switch" :aria-checked="campaignSetup.handoffPositive" class="flex w-full items-start gap-4 rounded-md text-left focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600">
-                                                <span class="relative mt-1 inline-flex h-6 w-11 shrink-0 rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out" :class="campaignSetup.handoffPositive ? 'bg-indigo-600' : 'bg-gray-200'">
-                                                    <span class="pointer-events-none inline-block size-5 rounded-full bg-white shadow transition duration-200 ease-in-out" :class="campaignSetup.handoffPositive ? 'translate-x-5' : 'translate-x-0'"></span>
-                                                </span>
-                                                <span class="min-w-0">
-                                                    <span class="block text-sm font-semibold leading-6 text-gray-950">Hand Off After a Positive Reply</span>
-                                                    <span class="mt-1 block text-sm leading-6 text-gray-600">AI passes the conversation to a human when the lead responds positively.</span>
-                                                </span>
-                                            </button>
-
-                                            <div x-show="campaignSetup.handoffPositive" x-transition:enter="transition ease-out duration-200" x-transition:enter-start="opacity-0 translate-y-3" x-transition:enter-end="opacity-100 translate-y-0" x-transition:leave="transition ease-in duration-150" x-transition:leave-start="opacity-100 translate-y-0" x-transition:leave-end="opacity-0 translate-y-2" class="mt-6">
-                                                <label class="block">
-                                                    <span class="block text-sm/6 font-medium text-gray-900">Handoff Trigger Scenarios</span>
-                                                    <div class="mt-2 grid grid-cols-1">
-                                                        <select x-model="campaignSetup.handoffScenario" class="col-start-1 row-start-1 block w-full appearance-none rounded-md bg-white py-1.5 pl-3 pr-8 text-sm/6 text-gray-900 shadow-sm outline outline-1 -outline-offset-1 outline-gray-300 focus:outline-2 focus:-outline-offset-2 focus:outline-indigo-600">
-                                                            <option value="">Type Your Own or Select Common Scenario</option>
-                                                            <option>Positive Reply</option>
-                                                            <option>Pricing Request</option>
-                                                            <option>Legal or Compliance Question</option>
-                                                            <option>Lead Asks for Human Help</option>
-                                                        </select>
-                                                        <span class="outcraft-icon pointer-events-none col-start-1 row-start-1 mr-3 self-center justify-self-end text-gray-500">keyboard_arrow_down</span>
-                                                    </div>
-                                                    <span class="mt-2 block text-sm leading-6 text-gray-500">Situations where AI should pass to a human agent.</span>
-                                                </label>
-                                            </div>
-                                        </div>
-
-                                        <div class="px-6 py-6">
-                                            <button type="button" x-on:click="campaignSetup.handoffRequested = ! campaignSetup.handoffRequested; scheduleCampaignBuilderLayoutUpdate()" role="switch" :aria-checked="campaignSetup.handoffRequested" class="flex w-full items-start gap-4 rounded-md text-left focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600">
-                                                <span class="relative mt-1 inline-flex h-6 w-11 shrink-0 rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out" :class="campaignSetup.handoffRequested ? 'bg-indigo-600' : 'bg-gray-200'">
-                                                    <span class="pointer-events-none inline-block size-5 rounded-full bg-white shadow transition duration-200 ease-in-out" :class="campaignSetup.handoffRequested ? 'translate-x-5' : 'translate-x-0'"></span>
-                                                </span>
-                                                <span class="min-w-0">
-                                                    <span class="block text-sm font-semibold leading-6 text-gray-950">Hand Off When the Lead Asks</span>
-                                                    <span class="mt-1 block text-sm leading-6 text-gray-600">AI passes the conversation when the lead explicitly requests a human.</span>
-                                                </span>
-                                            </button>
-
-                                            <div x-show="campaignSetup.handoffRequested" x-transition:enter="transition ease-out duration-200" x-transition:enter-start="opacity-0 translate-y-3" x-transition:enter-end="opacity-100 translate-y-0" x-transition:leave="transition ease-in duration-150" x-transition:leave-start="opacity-100 translate-y-0" x-transition:leave-end="opacity-0 translate-y-2" class="mt-6">
-                                                <label class="block">
-                                                    <span class="block text-sm/6 font-medium text-gray-900">Handoff Channel</span>
-                                                    <div class="mt-2 grid grid-cols-1">
-                                                        <select x-model="campaignSetup.handoffChannel" class="col-start-1 row-start-1 block w-full appearance-none rounded-md bg-white py-1.5 pl-3 pr-8 text-sm/6 text-gray-900 shadow-sm outline outline-1 -outline-offset-1 outline-gray-300 focus:outline-2 focus:-outline-offset-2 focus:outline-indigo-600">
-                                                            <option value="">Select a Channel</option>
-                                                            <option>Email</option>
-                                                            <option>Slack</option>
-                                                            <option>CRM Task</option>
-                                                            <option>Webhook</option>
-                                                            <option>Internal Dashboard</option>
-                                                        </select>
-                                                        <span class="outcraft-icon pointer-events-none col-start-1 row-start-1 mr-3 self-center justify-self-end text-gray-500">keyboard_arrow_down</span>
-                                                    </div>
-                                                    <span class="mt-2 block text-sm leading-6 text-gray-500">How the human agent is notified.</span>
-                                                </label>
-                                            </div>
-                                        </div>
-
-                                        <div class="px-6 py-6">
-                                            <label class="block">
-                                                <span class="block text-sm/6 font-semibold text-gray-900">Handoff Notification Email</span>
-                                                <input x-model="campaignSetup.handoffNotificationEmail" type="email" placeholder="support@pulsetto.com" class="mt-2 block w-full rounded-md bg-white px-3 py-1.5 text-sm/6 text-gray-900 shadow-sm outline outline-1 -outline-offset-1 outline-gray-300 placeholder:text-gray-400 focus:outline-2 focus:-outline-offset-2 focus:outline-indigo-600">
-                                                <span class="mt-2 block text-sm leading-6 text-gray-600">Where to send a notification when the AI hands off a conversation to a human.</span>
-                                            </label>
-                                        </div>
                                     </div>
                                 </div>
                                 <div x-show="campaignSetupMode === 'advanced'" class="space-y-7">
@@ -1893,7 +2449,7 @@ class OutreachPage extends Page
                                             <div class="order-5 -mx-5 border-t border-gray-200 lg:col-span-2"></div>
                                             <label class="order-1 block lg:col-span-2">
                                                 <span class="mb-2 flex items-center justify-between gap-3">
-                                                    <span class="block text-sm/6 font-semibold text-gray-900">Call Greeting Phrase<span class="text-indigo-600">*</span></span>
+                                                    <span class="block text-sm/6 font-semibold text-gray-900">Call Greeting Phrase<span class="text-indigo-400">*</span></span>
                                                     <span class="relative" x-data="{ fieldActionsOpen: false }" x-on:click.outside="fieldActionsOpen = false">
                                                         <button type="button" x-on:click="fieldActionsOpen = ! fieldActionsOpen" class="inline-flex size-7 items-center justify-center rounded-md text-gray-400 transition hover:bg-gray-50 hover:text-gray-700" aria-label="Call greeting custom field actions">
                                                             <span class="outcraft-icon !text-[18px]">more_vert</span>
@@ -1946,12 +2502,12 @@ class OutreachPage extends Page
                                             <div class="order-8 -mx-5 border-t border-gray-200 lg:col-span-2"></div>
 
                                             <label class="order-9 block lg:col-span-2">
-                                                <span class="mb-2 block text-sm/6 font-semibold text-gray-900">AI Agent Personality<span class="text-indigo-600">*</span></span>
+                                                <span class="mb-2 block text-sm/6 font-semibold text-gray-900">AI Agent Personality<span class="text-indigo-400">*</span></span>
                                                 <textarea x-model="campaignSetup.agentPersonality" rows="6" class="mt-2 block min-h-[140px] w-full resize-y rounded-md bg-white px-3 py-2 text-sm/6 text-gray-700 shadow-sm outline outline-1 -outline-offset-1 outline-gray-300 placeholder:text-gray-400 focus:outline-2 focus:-outline-offset-2 focus:outline-indigo-600"></textarea>
                                             </label>
 
                                             <label class="order-10 block lg:col-span-2">
-                                                <span class="mb-2 block text-sm/6 font-semibold text-gray-900">AI Agent Speech Style<span class="text-indigo-600">*</span></span>
+                                                <span class="mb-2 block text-sm/6 font-semibold text-gray-900">AI Agent Speech Style<span class="text-indigo-400">*</span></span>
                                                 <textarea x-model="campaignSetup.agentSpeechStyle" rows="6" class="mt-2 block min-h-[140px] w-full resize-y rounded-md bg-white px-3 py-2 text-sm/6 text-gray-700 shadow-sm outline outline-1 -outline-offset-1 outline-gray-300 placeholder:text-gray-400 focus:outline-2 focus:-outline-offset-2 focus:outline-indigo-600"></textarea>
                                             </label>
                                         </div>
@@ -1969,113 +2525,25 @@ class OutreachPage extends Page
                                 class="space-y-6 pr-2 pb-4">
                                 <div class="mb-1">
                                     <p class="text-sm font-semibold text-indigo-600" x-text="`${campaignSetupMode === 'fast' ? 'Fast Setup' : 'Advanced Setup'} · Step ${campaignSetupStepIndex('channels') + 1} of ${campaignSetupStepsForMode().length}`"></p>
+                                    <span class="mb-4 flex size-10 items-center justify-center rounded-md bg-indigo-50 text-indigo-600">
+                                        <span class="outcraft-icon !text-[21px]" x-text="campaignSetupStepIcon('channels')"></span>
+                                    </span>
                                     <h2 class="mt-2 text-2xl font-bold leading-8 tracking-tight text-gray-950" x-text="campaignSetupHeading('channels')"></h2>
                                     <p class="mt-2 max-w-3xl text-sm leading-6 text-gray-600" x-text="campaignSetupDescription('channels')"></p>
                                 </div>
+                                <div class="space-y-5">
 	                                <div class="bg-white">
 	                                    <div>
 	                                        <div class="flex items-center justify-between gap-4">
-	                                            <button type="button" x-on:click="toggleChannel('calls')" role="switch" :aria-checked="campaignSetup.channels.calls" class="inline-flex items-center gap-4 rounded-md text-left focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600">
+	                                            <button type="button" x-on:click="toggleChannel('calls')" role="switch" :aria-checked="campaignSetup.channels.calls" class="inline-flex items-start gap-4 rounded-md text-left focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600">
 	                                                <span class="relative inline-flex h-6 w-11 shrink-0 rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out" :class="campaignSetup.channels.calls ? 'bg-indigo-600' : 'bg-gray-200'">
 	                                                    <span class="pointer-events-none inline-block size-5 rounded-full bg-white shadow transition duration-200 ease-in-out" :class="campaignSetup.channels.calls ? 'translate-x-5' : 'translate-x-0'"></span>
 	                                                </span>
-	                                                <span class="text-sm font-semibold leading-6 text-gray-950">Enable AI Calls</span>
-	                                            </button>
-	                                            <button type="button" x-on:click="campaignSetup.channelOpen.calls = ! campaignSetup.channelOpen.calls; scheduleCampaignBuilderLayoutUpdate()" :disabled="! campaignSetup.channels.calls" class="inline-flex h-9 items-center gap-2 rounded-md bg-white px-3 text-sm font-semibold shadow-sm ring-1 ring-inset ring-gray-300 transition hover:bg-gray-50 disabled:cursor-not-allowed disabled:bg-gray-50 disabled:text-gray-400 disabled:ring-gray-200" :class="campaignSetup.channels.calls ? 'text-gray-900' : 'text-gray-400'">
-	                                                Configure
-	                                                <span class="outcraft-icon !text-[16px] text-gray-400" :class="campaignSetup.channels.calls && campaignSetup.channelOpen.calls ? 'rotate-180' : ''">keyboard_arrow_down</span>
-	                                            </button>
-	                                        </div>
-	                                        <div x-show="campaignSetup.channels.calls && campaignSetup.channelOpen.calls" x-transition:enter="transition ease-out duration-200" x-transition:enter-start="opacity-0 translate-y-3" x-transition:enter-end="opacity-100 translate-y-0" x-transition:leave="transition ease-in duration-150" x-transition:leave-start="opacity-100 translate-y-0" x-transition:leave-end="opacity-0 translate-y-2" class="mt-6 rounded-lg border border-gray-200 p-5">
-	                                            <label class="block">
-	                                                <span class="mb-2 flex items-center justify-between gap-3">
-	                                                    <span class="block text-sm/6 font-semibold text-gray-900">Call-Specific Guidelines (optional)</span>
-	                                                    <span class="relative" x-data="{ fieldActionsOpen: false }" x-on:click.outside="fieldActionsOpen = false">
-	                                                        <button type="button" x-on:click="fieldActionsOpen = ! fieldActionsOpen" class="inline-flex size-7 items-center justify-center rounded-md text-gray-400 transition hover:bg-gray-50 hover:text-gray-700" aria-label="Call custom field actions">
-	                                                            <span class="outcraft-icon !text-[18px]">more_vert</span>
-	                                                        </button>
-	                                                        <span x-cloak x-show="fieldActionsOpen" x-transition:enter="transition ease-out duration-200" x-transition:enter-start="opacity-0 translate-y-3" x-transition:enter-end="opacity-100 translate-y-0" x-transition:leave="transition ease-in duration-150" x-transition:leave-start="opacity-100 translate-y-0" x-transition:leave-end="opacity-0 translate-y-2" class="absolute right-0 z-40 mt-2 w-52 rounded-md bg-white py-1 shadow-lg ring-1 ring-gray-900/10">
-	                                                            <button type="button" x-on:click="openCustomFieldTextInput('callGuidelines'); fieldActionsOpen = false" class="flex w-full items-center gap-2 px-3 py-2 text-left text-sm font-medium text-gray-700 transition hover:bg-gray-50 hover:text-gray-950">
-	                                                                <span class="text-xs text-gray-400">{+}</span>
-	                                                                Open Custom Fields
-	                                                            </button>
-	                                                            <button type="button" x-on:click="fieldActionsOpen = false" class="flex w-full items-center gap-2 px-3 py-2 text-left text-sm font-medium text-gray-700 transition hover:bg-gray-50 hover:text-gray-950">
-	                                                                <span class="outcraft-icon !text-[15px] text-gray-400">settings</span>
-	                                                                Configure Custom Fields
-	                                                            </button>
-	                                                        </span>
-	                                                    </span>
+	                                                <span class="min-w-0">
+	                                                    <span class="block text-sm font-semibold leading-6 text-gray-950">Voice &amp; Calls</span>
+	                                                    <span class="mt-1 block text-sm leading-6 text-gray-600">Enable communication with leads through AI voice calls.</span>
 	                                                </span>
-	                                                <div data-component="custom-field-text-input" class="mt-2 overflow-hidden rounded-md border border-gray-300 bg-white shadow-sm transition focus-within:border-indigo-600 focus-within:ring-1 focus-within:ring-indigo-600">
-	                                                    <div class="relative grid min-w-0 overflow-hidden transition-[grid-template-columns] duration-200 ease-out" :class="customFieldTextInputState('callGuidelines').layoutOpen ? 'lg:grid-cols-[minmax(0,1fr)_18rem]' : 'lg:grid-cols-1'">
-	                                                        <textarea x-model="campaignSetup.callGuidelines" rows="4" placeholder="Add call tone, pacing, objection handling, and compliance notes." class="block min-h-[110px] min-w-0 w-full resize-y border-0 bg-white px-5 py-4 text-sm/6 text-gray-700 outline-none placeholder:text-gray-400 focus:ring-0"></textarea>
-	                                                        <aside x-cloak x-show="customFieldTextInputState('callGuidelines').open" x-transition:enter="transition ease-out duration-200" x-transition:enter-start="translate-x-full opacity-0" x-transition:enter-end="translate-x-0 opacity-100" x-transition:leave="transition ease-in duration-150" x-transition:leave-start="translate-x-0 opacity-100" x-transition:leave-end="translate-x-full opacity-0" class="min-w-0 border-t border-gray-200 bg-white lg:border-t-0 lg:border-l lg:border-gray-200">
-	                                                            <div class="flex items-center gap-2 border-b border-gray-200 px-4 py-3"><label class="min-w-0 flex-1"><input :value="customFieldTextInputState('callGuidelines').search" x-on:input="customFieldTextInputState('callGuidelines').search = $event.target.value" type="search" placeholder="Search Custom Fields" class="block h-9 w-full rounded-md bg-white px-3 py-1.5 text-sm text-gray-900 outline outline-1 -outline-offset-1 outline-gray-300 placeholder:text-gray-400 focus:outline-2 focus:-outline-offset-2 focus:outline-indigo-600"></label><button type="button" x-on:click="closeCustomFieldTextInput('callGuidelines')" class="inline-flex size-7 items-center justify-center rounded-md text-gray-400 transition hover:bg-white hover:text-gray-700" aria-label="Close custom fields"><span class="outcraft-icon !text-[18px]">close</span></button></div>
-	                                                            <div class="flex flex-wrap gap-2 px-4 py-4">
-	                                                                <template x-for="tag in filteredCustomFieldTextInputTags('callGuidelines')" :key="`call-${tag}`"><button type="button" class="inline-flex h-8 items-center rounded-md bg-white px-2.5 text-sm font-medium text-gray-600 shadow-sm ring-1 ring-inset ring-gray-200 transition hover:bg-gray-50 hover:text-gray-900" x-text="tag"></button></template>
-	                                                                <p x-show="filteredCustomFieldTextInputTags('callGuidelines').length === 0" class="text-sm text-gray-500">No Custom Fields Found.</p>
-	                                                            </div>
-	                                                        </aside>
-	                                                    </div>
-	                                                </div>
-	                                                <span class="mt-2 block text-sm leading-6 text-gray-600">A brief guideline for call structure, pacing, tone, and edge cases.</span>
-	                                            </label>
-	                                            <div class="mt-6" x-ref="callConversationFlow">
-	                                                <div class="flex flex-wrap items-center justify-between gap-3">
-	                                                    <h4 class="text-base font-semibold leading-6 text-gray-950">Call Conversation Flow</h4>
-	                                                    <div class="flex flex-wrap items-center gap-3">
-	                                                        <button type="button" class="inline-flex items-center gap-2 text-sm font-semibold text-gray-900 transition hover:text-indigo-600">
-	                                                            <span class="outcraft-icon !text-[15px]">refresh</span>
-	                                                            Reset Conversation Flow To Default
-	                                                        </button>
-	                                                    </div>
-	                                                </div>
-	                                                <div class="mt-3 rounded-md bg-amber-50 px-4 py-3 text-sm font-medium leading-5 text-amber-800">
-	                                                    <span class="inline-flex items-start gap-2">
-	                                                        <span class="outcraft-icon mt-0.5 shrink-0 text-amber-500">report</span>
-	                                                        <span>These stages guide how the AI structures the conversation. Keep instructions short (1-2 Sentences per stage). Detailed rules belong in the Short Campaign Description.</span>
-	                                                    </span>
-	                                                </div>
-	                                                <div class="mt-5 space-y-4">
-	                                                    <template x-for="stage in conversationStages" :key="stage.title">
-	                                                        <label class="block">
-	                                                            <span class="mb-2 flex items-center justify-between gap-3">
-	                                                                <span class="block text-sm/6 font-semibold text-gray-900"><span x-text="stage.title"></span><span class="text-indigo-600">*</span></span>
-	                                                                <span class="relative" x-data="{ fieldActionsOpen: false }" x-on:click.outside="fieldActionsOpen = false">
-	                                                                    <button type="button" x-on:click="fieldActionsOpen = ! fieldActionsOpen" class="inline-flex size-7 items-center justify-center rounded-md text-gray-400 transition hover:bg-gray-50 hover:text-gray-700" aria-label="Conversation stage custom field actions">
-	                                                                        <span class="outcraft-icon !text-[18px]">more_vert</span>
-	                                                                    </button>
-	                                                                    <span x-cloak x-show="fieldActionsOpen" x-transition:enter="transition ease-out duration-200" x-transition:enter-start="opacity-0 translate-y-3" x-transition:enter-end="opacity-100 translate-y-0" x-transition:leave="transition ease-in duration-150" x-transition:leave-start="opacity-100 translate-y-0" x-transition:leave-end="opacity-0 translate-y-2" class="absolute right-0 z-40 mt-2 w-52 rounded-md bg-white py-1 shadow-lg ring-1 ring-gray-900/10">
-	                                                                        <button type="button" x-on:click="openCustomFieldTextInput('callStage:' + stage.title); fieldActionsOpen = false" class="flex w-full items-center gap-2 px-3 py-2 text-left text-sm font-medium text-gray-700 transition hover:bg-gray-50 hover:text-gray-950">
-	                                                                            <span class="text-xs text-gray-400">{+}</span>
-	                                                                            Open Custom Fields
-	                                                                        </button>
-	                                                                        <button type="button" x-on:click="fieldActionsOpen = false" class="flex w-full items-center gap-2 px-3 py-2 text-left text-sm font-medium text-gray-700 transition hover:bg-gray-50 hover:text-gray-950">
-	                                                                            <span class="outcraft-icon !text-[15px] text-gray-400">settings</span>
-	                                                                            Configure Custom Fields
-	                                                                        </button>
-	                                                                    </span>
-	                                                                </span>
-	                                                            </span>
-	                                                            <div data-component="custom-field-text-input" class="mt-2 overflow-hidden rounded-md border border-gray-300 bg-white shadow-sm transition focus-within:border-indigo-600 focus-within:ring-1 focus-within:ring-indigo-600">
-	                                                                <div class="relative grid min-w-0 overflow-hidden transition-[grid-template-columns] duration-200 ease-out" :class="customFieldTextInputState('callStage:' + stage.title).layoutOpen ? 'lg:grid-cols-[minmax(0,1fr)_18rem]' : 'lg:grid-cols-1'">
-	                                                                    <textarea x-model="stage.content" rows="2" maxlength="500" class="block min-h-[56px] min-w-0 w-full resize-y border-0 bg-white px-4 py-3 text-sm/6 text-gray-700 outline-none placeholder:text-gray-400 focus:ring-0"></textarea>
-	                                                                    <aside x-cloak x-show="customFieldTextInputState('callStage:' + stage.title).open" x-transition:enter="transition ease-out duration-200" x-transition:enter-start="translate-x-full opacity-0" x-transition:enter-end="translate-x-0 opacity-100" x-transition:leave="transition ease-in duration-150" x-transition:leave-start="translate-x-0 opacity-100" x-transition:leave-end="translate-x-full opacity-0" class="min-w-0 border-t border-gray-200 bg-white lg:border-t-0 lg:border-l lg:border-gray-200">
-	                                                                        <div class="flex items-center gap-2 border-b border-gray-200 px-4 py-3"><label class="min-w-0 flex-1"><input :value="customFieldTextInputState('callStage:' + stage.title).search" x-on:input="customFieldTextInputState('callStage:' + stage.title).search = $event.target.value" type="search" placeholder="Search Custom Fields" class="block h-9 w-full rounded-md bg-white px-3 py-1.5 text-sm text-gray-900 outline outline-1 -outline-offset-1 outline-gray-300 placeholder:text-gray-400 focus:outline-2 focus:-outline-offset-2 focus:outline-indigo-600"></label><button type="button" x-on:click="closeCustomFieldTextInput('callStage:' + stage.title)" class="inline-flex size-7 items-center justify-center rounded-md text-gray-400 transition hover:bg-white hover:text-gray-700" aria-label="Close custom fields"><span class="outcraft-icon !text-[18px]">close</span></button></div>
-	                                                                        <div class="flex flex-wrap gap-2 px-4 py-4">
-	                                                                            <template x-for="tag in filteredCustomFieldTextInputTags('callStage:' + stage.title)" :key="`call-${stage.title}-${tag}`">
-	                                                                                <button type="button" class="inline-flex h-8 items-center rounded-md bg-white px-2.5 text-sm font-medium text-gray-600 shadow-sm ring-1 ring-inset ring-gray-200 transition hover:bg-gray-50 hover:text-gray-900" x-text="tag"></button>
-	                                                                            </template>
-	                                                                            <p x-show="filteredCustomFieldTextInputTags('callStage:' + stage.title).length === 0" class="text-sm text-gray-500">No Custom Fields Found.</p>
-	                                                                        </div>
-	                                                                    </aside>
-	                                                                </div>
-	                                                            </div>
-	                                                            <span class="mt-2 block text-sm leading-6 text-gray-600">Max: 500 Characters</span>
-	                                                        </label>
-	                                                    </template>
-	                                                </div>
-	                                            </div>
+	                                            </button>
 	                                        </div>
 	                                    </div>
 	                                </div>
@@ -2083,11 +2551,14 @@ class OutreachPage extends Page
 	                                <div class="bg-white">
 	                                    <div>
 	                                        <div class="flex items-center justify-between gap-4">
-	                                            <button type="button" x-on:click="toggleChannel('email')" role="switch" :aria-checked="campaignSetup.channels.email" class="inline-flex items-center gap-4 rounded-md text-left focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600">
+	                                            <button type="button" x-on:click="toggleChannel('email')" role="switch" :aria-checked="campaignSetup.channels.email" class="inline-flex items-start gap-4 rounded-md text-left focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600">
 	                                                <span class="relative inline-flex h-6 w-11 shrink-0 rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out" :class="campaignSetup.channels.email ? 'bg-indigo-600' : 'bg-gray-200'">
 	                                                    <span class="pointer-events-none inline-block size-5 rounded-full bg-white shadow transition duration-200 ease-in-out" :class="campaignSetup.channels.email ? 'translate-x-5' : 'translate-x-0'"></span>
 	                                                </span>
-	                                                <span class="text-sm font-semibold leading-6 text-gray-950">Enable Email Sending</span>
+	                                                <span class="min-w-0">
+	                                                    <span class="block text-sm font-semibold leading-6 text-gray-950">Email</span>
+	                                                    <span class="mt-1 block text-sm leading-6 text-gray-600">Enable communication with leads through email.</span>
+	                                                </span>
 	                                            </button>
 	                                            <button type="button" x-on:click="campaignSetup.channelOpen.email = ! campaignSetup.channelOpen.email; scheduleCampaignBuilderLayoutUpdate()" :disabled="! campaignSetup.channels.email" class="inline-flex h-9 items-center gap-2 rounded-md bg-white px-3 text-sm font-semibold shadow-sm ring-1 ring-inset ring-gray-300 transition hover:bg-gray-50 disabled:cursor-not-allowed disabled:bg-gray-50 disabled:text-gray-400 disabled:ring-gray-200" :class="campaignSetup.channels.email ? 'text-gray-900' : 'text-gray-400'">
 	                                                Configure
@@ -2095,39 +2566,6 @@ class OutreachPage extends Page
 	                                            </button>
 	                                        </div>
 	                                        <div x-show="campaignSetup.channels.email && campaignSetup.channelOpen.email" x-transition:enter="transition ease-out duration-200" x-transition:enter-start="opacity-0 translate-y-3" x-transition:enter-end="opacity-100 translate-y-0" x-transition:leave="transition ease-in duration-150" x-transition:leave-start="opacity-100 translate-y-0" x-transition:leave-end="opacity-0 translate-y-2" class="mt-6 space-y-5 rounded-lg border border-gray-200 p-5">
-	                                            <label class="block">
-	                                                <span class="mb-2 flex items-center justify-between gap-3">
-	                                                    <span class="block text-sm/6 font-semibold text-gray-900">Email-Specific Guidelines (optional)</span>
-	                                                    <span class="relative" x-data="{ fieldActionsOpen: false }" x-on:click.outside="fieldActionsOpen = false">
-	                                                        <button type="button" x-on:click="fieldActionsOpen = ! fieldActionsOpen" class="inline-flex size-7 items-center justify-center rounded-md text-gray-400 transition hover:bg-gray-50 hover:text-gray-700" aria-label="Email custom field actions">
-	                                                            <span class="outcraft-icon !text-[18px]">more_vert</span>
-	                                                        </button>
-	                                                        <span x-cloak x-show="fieldActionsOpen" x-transition:enter="transition ease-out duration-200" x-transition:enter-start="opacity-0 translate-y-3" x-transition:enter-end="opacity-100 translate-y-0" x-transition:leave="transition ease-in duration-150" x-transition:leave-start="opacity-100 translate-y-0" x-transition:leave-end="opacity-0 translate-y-2" class="absolute right-0 z-40 mt-2 w-52 rounded-md bg-white py-1 shadow-lg ring-1 ring-gray-900/10">
-	                                                            <button type="button" x-on:click="openCustomFieldTextInput('emailGuidelines'); fieldActionsOpen = false" class="flex w-full items-center gap-2 px-3 py-2 text-left text-sm font-medium text-gray-700 transition hover:bg-gray-50 hover:text-gray-950">
-	                                                                <span class="text-xs text-gray-400">{+}</span>
-	                                                                Open Custom Fields
-	                                                            </button>
-	                                                            <button type="button" x-on:click="fieldActionsOpen = false" class="flex w-full items-center gap-2 px-3 py-2 text-left text-sm font-medium text-gray-700 transition hover:bg-gray-50 hover:text-gray-950">
-	                                                                <span class="outcraft-icon !text-[15px] text-gray-400">settings</span>
-	                                                                Configure Custom Fields
-	                                                            </button>
-	                                                        </span>
-	                                                    </span>
-	                                                </span>
-	                                                <div data-component="custom-field-text-input" class="mt-2 overflow-hidden rounded-md border border-gray-300 bg-white shadow-sm transition focus-within:border-indigo-600 focus-within:ring-1 focus-within:ring-indigo-600">
-	                                                    <div class="relative grid min-w-0 overflow-hidden transition-[grid-template-columns] duration-200 ease-out" :class="customFieldTextInputState('emailGuidelines').layoutOpen ? 'lg:grid-cols-[minmax(0,1fr)_18rem]' : 'lg:grid-cols-1'">
-	                                                        <textarea x-model="campaignSetup.emailGuidelines" rows="4" placeholder="Add email tone, formatting, and compliance notes." class="block min-h-[110px] min-w-0 w-full resize-y border-0 bg-white px-5 py-4 text-sm/6 text-gray-700 outline-none placeholder:text-gray-400 focus:ring-0"></textarea>
-	                                                        <aside x-cloak x-show="customFieldTextInputState('emailGuidelines').open" x-transition:enter="transition ease-out duration-200" x-transition:enter-start="translate-x-full opacity-0" x-transition:enter-end="translate-x-0 opacity-100" x-transition:leave="transition ease-in duration-150" x-transition:leave-start="translate-x-0 opacity-100" x-transition:leave-end="translate-x-full opacity-0" class="min-w-0 border-t border-gray-200 bg-white lg:border-t-0 lg:border-l lg:border-gray-200">
-	                                                            <div class="flex items-center gap-2 border-b border-gray-200 px-4 py-3"><label class="min-w-0 flex-1"><input :value="customFieldTextInputState('emailGuidelines').search" x-on:input="customFieldTextInputState('emailGuidelines').search = $event.target.value" type="search" placeholder="Search Custom Fields" class="block h-9 w-full rounded-md bg-white px-3 py-1.5 text-sm text-gray-900 outline outline-1 -outline-offset-1 outline-gray-300 placeholder:text-gray-400 focus:outline-2 focus:-outline-offset-2 focus:outline-indigo-600"></label><button type="button" x-on:click="closeCustomFieldTextInput('emailGuidelines')" class="inline-flex size-7 items-center justify-center rounded-md text-gray-400 transition hover:bg-white hover:text-gray-700" aria-label="Close custom fields"><span class="outcraft-icon !text-[18px]">close</span></button></div>
-	                                                            <div class="flex flex-wrap gap-2 px-4 py-4">
-	                                                                <template x-for="tag in filteredCustomFieldTextInputTags('emailGuidelines')" :key="`email-${tag}`"><button type="button" class="inline-flex h-8 items-center rounded-md bg-white px-2.5 text-sm font-medium text-gray-600 shadow-sm ring-1 ring-inset ring-gray-200 transition hover:bg-gray-50 hover:text-gray-900" x-text="tag"></button></template>
-	                                                                <p x-show="filteredCustomFieldTextInputTags('emailGuidelines').length === 0" class="text-sm text-gray-500">No Custom Fields Found.</p>
-	                                                            </div>
-	                                                        </aside>
-	                                                    </div>
-	                                                </div>
-	                                                <span class="mt-2 block text-sm leading-6 text-gray-600">A brief guideline for email structure, tone, and content.</span>
-	                                            </label>
 	                                            <button type="button" x-on:click="campaignSetup.trackEmailLinkClicks = ! campaignSetup.trackEmailLinkClicks" role="switch" :aria-checked="campaignSetup.trackEmailLinkClicks" class="flex w-full items-start gap-4 rounded-md text-left focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600">
 	                                                <span class="relative mt-0.5 inline-flex h-6 w-11 shrink-0 rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out" :class="campaignSetup.trackEmailLinkClicks ? 'bg-indigo-600' : 'bg-gray-200'">
 	                                                    <span class="pointer-events-none inline-block size-5 rounded-full bg-white shadow transition duration-200 ease-in-out" :class="campaignSetup.trackEmailLinkClicks ? 'translate-x-5' : 'translate-x-0'"></span>
@@ -2144,11 +2582,14 @@ class OutreachPage extends Page
 	                                <div class="bg-white">
 	                                    <div>
 	                                        <div class="flex items-center justify-between gap-4">
-	                                            <button type="button" x-on:click="toggleChannel('sms')" role="switch" :aria-checked="campaignSetup.channels.sms" class="inline-flex items-center gap-4 rounded-md text-left focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600">
+	                                            <button type="button" x-on:click="toggleChannel('sms')" role="switch" :aria-checked="campaignSetup.channels.sms" class="inline-flex items-start gap-4 rounded-md text-left focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600">
 	                                                <span class="relative inline-flex h-6 w-11 shrink-0 rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out" :class="campaignSetup.channels.sms ? 'bg-indigo-600' : 'bg-gray-200'">
 	                                                    <span class="pointer-events-none inline-block size-5 rounded-full bg-white shadow transition duration-200 ease-in-out" :class="campaignSetup.channels.sms ? 'translate-x-5' : 'translate-x-0'"></span>
 	                                                </span>
-	                                                <span class="text-sm font-semibold leading-6 text-gray-950">Enable SMS Sending</span>
+	                                                <span class="min-w-0">
+	                                                    <span class="block text-sm font-semibold leading-6 text-gray-950">SMS</span>
+	                                                    <span class="mt-1 block text-sm leading-6 text-gray-600">Enable communication with leads through SMS.</span>
+	                                                </span>
 	                                            </button>
 	                                            <button type="button" x-on:click="campaignSetup.channelOpen.sms = ! campaignSetup.channelOpen.sms; scheduleCampaignBuilderLayoutUpdate()" :disabled="! campaignSetup.channels.sms" class="inline-flex h-9 items-center gap-2 rounded-md bg-white px-3 text-sm font-semibold shadow-sm ring-1 ring-inset ring-gray-300 transition hover:bg-gray-50 disabled:cursor-not-allowed disabled:bg-gray-50 disabled:text-gray-400 disabled:ring-gray-200" :class="campaignSetup.channels.sms ? 'text-gray-900' : 'text-gray-400'">
 	                                                Configure
@@ -2160,66 +2601,32 @@ class OutreachPage extends Page
 	                                                <div class="flex items-center justify-between gap-3">
 	                                                    <h4 class="text-sm font-semibold leading-6 text-gray-950">When to Trigger SMS?</h4>
 	                                                </div>
-	                                                <div class="mt-2 grid grid-cols-1">
-	                                                    <select x-model="campaignSetup.smsTrigger" class="col-start-1 row-start-1 block w-full appearance-none rounded-md bg-white py-1.5 pr-8 pl-3 text-sm/6 text-gray-900 shadow-sm outline outline-1 -outline-offset-1 outline-gray-300 focus:outline-2 focus:-outline-offset-2 focus:outline-indigo-600">
-	                                                        <option>Positive Response</option>
-	                                                        <option>No Answer</option>
-	                                                        <option>No Decision</option>
-	                                                        <option>Negative Response</option>
-	                                                        <option>After Call</option>
-	                                                        <option>After Resource Accepted</option>
-	                                                    </select>
-	                                                    <span class="outcraft-icon pointer-events-none col-start-1 row-start-1 mr-3 self-center justify-self-end text-gray-500">keyboard_arrow_down</span>
+	                                                <div class="relative mt-2" x-data="{ smsTriggerMenuOpen: false }" x-on:click.outside="smsTriggerMenuOpen = false">
+	                                                    <div class="flex min-h-9 w-full items-center gap-2 rounded-md bg-white px-2 py-1.5 text-sm/6 text-gray-900 shadow-sm outline outline-1 -outline-offset-1 outline-gray-300 transition focus-within:outline-2 focus-within:-outline-offset-2 focus-within:outline-indigo-600">
+	                                                        <button type="button" x-on:click="smsTriggerMenuOpen = true" class="flex min-w-0 flex-1 flex-wrap items-center gap-1.5 text-left">
+	                                                            <template x-for="trigger in campaignSetup.smsTriggers" :key="trigger">
+	                                                                <span class="inline-flex items-center gap-1 rounded-md bg-indigo-50 px-2 py-1 text-xs font-medium text-indigo-700 ring-1 ring-inset ring-indigo-600/20">
+	                                                                    <span x-text="trigger"></span>
+	                                                                    <span x-on:click.stop="removeSmsTrigger(trigger)" class="outcraft-icon cursor-pointer !text-[14px] text-indigo-500 hover:text-indigo-700">close</span>
+	                                                                </span>
+	                                                            </template>
+	                                                            <span x-show="campaignSetup.smsTriggers.length === 0" class="px-1 text-sm text-gray-400">Select triggers</span>
+	                                                        </button>
+	                                                        <button type="button" x-on:click="smsTriggerMenuOpen = ! smsTriggerMenuOpen" class="flex size-7 shrink-0 items-center justify-center rounded-md text-gray-500 transition hover:bg-gray-50 hover:text-gray-900">
+	                                                            <span class="outcraft-icon !text-[18px]" :class="smsTriggerMenuOpen ? 'rotate-180' : ''">keyboard_arrow_down</span>
+	                                                        </button>
+	                                                    </div>
+	                                                    <div x-cloak x-show="smsTriggerMenuOpen" x-transition:enter="transition ease-out duration-150" x-transition:enter-start="opacity-0 translate-y-1" x-transition:enter-end="opacity-100 translate-y-0" x-transition:leave="transition ease-in duration-100" x-transition:leave-start="opacity-100 translate-y-0" x-transition:leave-end="opacity-0 translate-y-1" class="absolute z-30 mt-2 w-full overflow-hidden rounded-md bg-white py-1 shadow-lg ring-1 ring-black/5">
+	                                                        <template x-for="option in smsTriggerOptions" :key="option">
+	                                                            <button type="button" x-on:click="toggleSmsTrigger(option)" class="flex w-full items-center justify-between gap-3 px-3 py-2 text-left text-sm font-medium transition hover:bg-gray-50" :class="campaignSetup.smsTriggers.includes(option) ? 'text-gray-950' : 'text-gray-600'">
+	                                                                <span x-text="option"></span>
+	                                                                <span x-show="campaignSetup.smsTriggers.includes(option)" class="outcraft-icon !text-[16px] text-indigo-600">check</span>
+	                                                            </button>
+	                                                        </template>
+	                                                    </div>
 	                                                </div>
 	                                                <span class="mt-2 block text-sm leading-6 text-gray-600">Select the events after which the AI can send an SMS to the lead.</span>
 	                                            </div>
-	                                            <label class="block">
-		                                                <span class="flex items-center justify-between gap-3">
-		                                                    <span class="text-sm/6 font-semibold text-gray-900">SMS-Specific Guidelines (optional)</span>
-		                                                    <span class="flex items-center gap-1">
-		                                                        <span class="relative" x-data="{ fieldActionsOpen: false }" x-on:click.outside="fieldActionsOpen = false">
-		                                                            <button type="button" x-on:click="fieldActionsOpen = ! fieldActionsOpen" class="inline-flex size-7 items-center justify-center rounded-md text-gray-400 transition hover:bg-gray-50 hover:text-gray-700" aria-label="SMS custom field actions">
-		                                                                <span class="outcraft-icon !text-[18px]">more_vert</span>
-		                                                            </button>
-		                                                            <span x-cloak x-show="fieldActionsOpen" x-transition:enter="transition ease-out duration-200" x-transition:enter-start="opacity-0 translate-y-3" x-transition:enter-end="opacity-100 translate-y-0" x-transition:leave="transition ease-in duration-150" x-transition:leave-start="opacity-100 translate-y-0" x-transition:leave-end="opacity-0 translate-y-2" class="absolute right-0 z-40 mt-2 w-52 rounded-md bg-white py-1 shadow-lg ring-1 ring-gray-900/10">
-		                                                                <button type="button" x-on:click="openCustomFieldTextInput('smsGuidelines'); fieldActionsOpen = false" class="flex w-full items-center gap-2 px-3 py-2 text-left text-sm font-medium text-gray-700 transition hover:bg-gray-50 hover:text-gray-950">
-		                                                                    <span class="text-xs text-gray-400">{+}</span>
-		                                                                    Open Custom Fields
-		                                                                </button>
-		                                                                <button type="button" x-on:click="fieldActionsOpen = false" class="flex w-full items-center gap-2 px-3 py-2 text-left text-sm font-medium text-gray-700 transition hover:bg-gray-50 hover:text-gray-950">
-		                                                                    <span class="outcraft-icon !text-[15px] text-gray-400">settings</span>
-		                                                                    Configure Custom Fields
-		                                                                </button>
-		                                                            </span>
-		                                                        </span>
-		                                                    </span>
-		                                                </span>
-			                                                <div data-component="custom-field-text-input" class="mt-2 overflow-hidden rounded-md border border-gray-300 bg-white shadow-sm transition focus-within:border-indigo-600 focus-within:ring-1 focus-within:ring-indigo-600">
-			                                                    <div class="relative grid min-w-0 overflow-hidden transition-[grid-template-columns] duration-200 ease-out" :class="customFieldTextInputState('smsGuidelines').layoutOpen ? 'lg:grid-cols-[minmax(0,1fr)_18rem]' : 'lg:grid-cols-1'">
-			                                                        <textarea x-model="campaignSetup.smsGuidelines" rows="7" class="block min-h-[180px] min-w-0 w-full resize-y border-0 bg-white px-5 py-4 text-sm/6 text-gray-700 outline-none placeholder:text-gray-400 focus:ring-0"></textarea>
-			                                                        <aside
-			                                                            x-cloak
-			                                                            x-show="customFieldTextInputState('smsGuidelines').open"
-		                                                            x-transition:enter="transition ease-out duration-200"
-		                                                            x-transition:enter-start="translate-x-full opacity-0"
-		                                                            x-transition:enter-end="translate-x-0 opacity-100"
-		                                                            x-transition:leave="transition ease-in duration-150"
-		                                                            x-transition:leave-start="translate-x-0 opacity-100"
-		                                                            x-transition:leave-end="translate-x-full opacity-0"
-		                                                            class="min-w-0 border-t border-gray-200 bg-white lg:border-t-0 lg:border-l lg:border-gray-200"
-			                                                        >
-			                                                            <div class="flex items-center gap-2 border-b border-gray-200 px-4 py-3"><label class="min-w-0 flex-1"><input :value="customFieldTextInputState('smsGuidelines').search" x-on:input="customFieldTextInputState('smsGuidelines').search = $event.target.value" type="search" placeholder="Search Custom Fields" class="block h-9 w-full rounded-md bg-white px-3 py-1.5 text-sm text-gray-900 outline outline-1 -outline-offset-1 outline-gray-300 placeholder:text-gray-400 focus:outline-2 focus:-outline-offset-2 focus:outline-indigo-600"></label><button type="button" x-on:click="closeCustomFieldTextInput('smsGuidelines')" class="inline-flex size-7 items-center justify-center rounded-md text-gray-400 transition hover:bg-white hover:text-gray-700" aria-label="Close custom fields"><span class="outcraft-icon !text-[18px]">close</span></button></div>
-			                                                            <div class="flex flex-wrap gap-2 px-4 py-4">
-			                                                                <template x-for="tag in filteredCustomFieldTextInputTags('smsGuidelines')" :key="`sms-${tag}`">
-			                                                                    <button type="button" class="inline-flex h-8 items-center rounded-md bg-white px-2.5 text-sm font-medium text-gray-600 shadow-sm ring-1 ring-inset ring-gray-200 transition hover:bg-gray-50 hover:text-gray-900" x-text="tag"></button>
-			                                                                </template>
-			                                                                <p x-show="filteredCustomFieldTextInputTags('smsGuidelines').length === 0" class="text-sm text-gray-500">No Custom Fields Found.</p>
-		                                                            </div>
-		                                                        </aside>
-		                                                    </div>
-		                                                </div>
-	                                                <span class="mt-2 block text-sm leading-6 text-gray-600">A brief guidelines for the SMS structure, content, length, etc..</span>
-	                                            </label>
 	                                        </div>
 	                                    </div>
 	                                </div>
@@ -2227,51 +2634,15 @@ class OutreachPage extends Page
 	                                <div class="bg-white">
 	                                    <div>
 	                                        <div class="flex items-center justify-between gap-4">
-	                                            <button type="button" x-on:click="toggleChannel('whatsapp')" role="switch" :aria-checked="campaignSetup.channels.whatsapp" class="inline-flex items-center gap-4 rounded-md text-left focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600">
+	                                            <button type="button" x-on:click="toggleChannel('whatsapp')" role="switch" :aria-checked="campaignSetup.channels.whatsapp" class="inline-flex items-start gap-4 rounded-md text-left focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600">
 	                                                <span class="relative inline-flex h-6 w-11 shrink-0 rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out" :class="campaignSetup.channels.whatsapp ? 'bg-indigo-600' : 'bg-gray-200'">
 	                                                    <span class="pointer-events-none inline-block size-5 rounded-full bg-white shadow transition duration-200 ease-in-out" :class="campaignSetup.channels.whatsapp ? 'translate-x-5' : 'translate-x-0'"></span>
 	                                                </span>
-	                                                <span class="text-sm font-semibold leading-6 text-gray-950">Enable WhatsApp Sending</span>
-	                                            </button>
-	                                            <button type="button" x-on:click="campaignSetup.channelOpen.whatsapp = ! campaignSetup.channelOpen.whatsapp; scheduleCampaignBuilderLayoutUpdate()" :disabled="! campaignSetup.channels.whatsapp" class="inline-flex h-9 items-center gap-2 rounded-md bg-white px-3 text-sm font-semibold shadow-sm ring-1 ring-inset ring-gray-300 transition hover:bg-gray-50 disabled:cursor-not-allowed disabled:bg-gray-50 disabled:text-gray-400 disabled:ring-gray-200" :class="campaignSetup.channels.whatsapp ? 'text-gray-900' : 'text-gray-400'">
-	                                                Configure
-	                                                <span class="outcraft-icon !text-[16px] text-gray-400" :class="campaignSetup.channels.whatsapp && campaignSetup.channelOpen.whatsapp ? 'rotate-180' : ''">keyboard_arrow_down</span>
-	                                            </button>
-	                                        </div>
-	                                        <div x-show="campaignSetup.channels.whatsapp && campaignSetup.channelOpen.whatsapp" x-transition:enter="transition ease-out duration-200" x-transition:enter-start="opacity-0 translate-y-3" x-transition:enter-end="opacity-100 translate-y-0" x-transition:leave="transition ease-in duration-150" x-transition:leave-start="opacity-100 translate-y-0" x-transition:leave-end="opacity-0 translate-y-2" class="mt-6 rounded-lg border border-gray-200 p-5">
-	                                            <label class="block">
-	                                                <span class="mb-2 flex items-center justify-between gap-3">
-	                                                    <span class="block text-sm/6 font-semibold text-gray-900">WhatsApp-Specific Guidelines (optional)</span>
-	                                                    <span class="relative" x-data="{ fieldActionsOpen: false }" x-on:click.outside="fieldActionsOpen = false">
-	                                                        <button type="button" x-on:click="fieldActionsOpen = ! fieldActionsOpen" class="inline-flex size-7 items-center justify-center rounded-md text-gray-400 transition hover:bg-gray-50 hover:text-gray-700" aria-label="WhatsApp custom field actions">
-	                                                            <span class="outcraft-icon !text-[18px]">more_vert</span>
-	                                                        </button>
-	                                                        <span x-cloak x-show="fieldActionsOpen" x-transition:enter="transition ease-out duration-200" x-transition:enter-start="opacity-0 translate-y-3" x-transition:enter-end="opacity-100 translate-y-0" x-transition:leave="transition ease-in duration-150" x-transition:leave-start="opacity-100 translate-y-0" x-transition:leave-end="opacity-0 translate-y-2" class="absolute right-0 z-40 mt-2 w-52 rounded-md bg-white py-1 shadow-lg ring-1 ring-gray-900/10">
-	                                                            <button type="button" x-on:click="openCustomFieldTextInput('whatsappGuidelines'); fieldActionsOpen = false" class="flex w-full items-center gap-2 px-3 py-2 text-left text-sm font-medium text-gray-700 transition hover:bg-gray-50 hover:text-gray-950">
-	                                                                <span class="text-xs text-gray-400">{+}</span>
-	                                                                Open Custom Fields
-	                                                            </button>
-	                                                            <button type="button" x-on:click="fieldActionsOpen = false" class="flex w-full items-center gap-2 px-3 py-2 text-left text-sm font-medium text-gray-700 transition hover:bg-gray-50 hover:text-gray-950">
-	                                                                <span class="outcraft-icon !text-[15px] text-gray-400">settings</span>
-	                                                                Configure Custom Fields
-	                                                            </button>
-	                                                        </span>
-	                                                    </span>
+	                                                <span class="min-w-0">
+	                                                    <span class="block text-sm font-semibold leading-6 text-gray-950">WhatsApp</span>
+	                                                    <span class="mt-1 block text-sm leading-6 text-gray-600">Enable communication with leads through WhatsApp.</span>
 	                                                </span>
-	                                                <div data-component="custom-field-text-input" class="mt-2 overflow-hidden rounded-md border border-gray-300 bg-white shadow-sm transition focus-within:border-indigo-600 focus-within:ring-1 focus-within:ring-indigo-600">
-	                                                    <div class="relative grid min-w-0 overflow-hidden transition-[grid-template-columns] duration-200 ease-out" :class="customFieldTextInputState('whatsappGuidelines').layoutOpen ? 'lg:grid-cols-[minmax(0,1fr)_18rem]' : 'lg:grid-cols-1'">
-	                                                        <textarea x-model="campaignSetup.whatsappGuidelines" rows="4" placeholder="Add WhatsApp-specific tone, length, and follow-up notes." class="block min-h-[110px] min-w-0 w-full resize-y border-0 bg-white px-5 py-4 text-sm/6 text-gray-700 outline-none placeholder:text-gray-400 focus:ring-0"></textarea>
-	                                                        <aside x-cloak x-show="customFieldTextInputState('whatsappGuidelines').open" x-transition:enter="transition ease-out duration-200" x-transition:enter-start="translate-x-full opacity-0" x-transition:enter-end="translate-x-0 opacity-100" x-transition:leave="transition ease-in duration-150" x-transition:leave-start="translate-x-0 opacity-100" x-transition:leave-end="translate-x-full opacity-0" class="min-w-0 border-t border-gray-200 bg-white lg:border-t-0 lg:border-l lg:border-gray-200">
-	                                                            <div class="flex items-center gap-2 border-b border-gray-200 px-4 py-3"><label class="min-w-0 flex-1"><input :value="customFieldTextInputState('whatsappGuidelines').search" x-on:input="customFieldTextInputState('whatsappGuidelines').search = $event.target.value" type="search" placeholder="Search Custom Fields" class="block h-9 w-full rounded-md bg-white px-3 py-1.5 text-sm text-gray-900 outline outline-1 -outline-offset-1 outline-gray-300 placeholder:text-gray-400 focus:outline-2 focus:-outline-offset-2 focus:outline-indigo-600"></label><button type="button" x-on:click="closeCustomFieldTextInput('whatsappGuidelines')" class="inline-flex size-7 items-center justify-center rounded-md text-gray-400 transition hover:bg-white hover:text-gray-700" aria-label="Close custom fields"><span class="outcraft-icon !text-[18px]">close</span></button></div>
-	                                                            <div class="flex flex-wrap gap-2 px-4 py-4">
-	                                                                <template x-for="tag in filteredCustomFieldTextInputTags('whatsappGuidelines')" :key="`whatsapp-${tag}`"><button type="button" class="inline-flex h-8 items-center rounded-md bg-white px-2.5 text-sm font-medium text-gray-600 shadow-sm ring-1 ring-inset ring-gray-200 transition hover:bg-gray-50 hover:text-gray-900" x-text="tag"></button></template>
-	                                                                <p x-show="filteredCustomFieldTextInputTags('whatsappGuidelines').length === 0" class="text-sm text-gray-500">No Custom Fields Found.</p>
-	                                                            </div>
-	                                                        </aside>
-	                                                    </div>
-	                                                </div>
-	                                                <span class="mt-2 block text-sm leading-6 text-gray-600">A brief guideline for WhatsApp structure, tone, and content.</span>
-	                                            </label>
+	                                            </button>
 	                                        </div>
 	                                    </div>
 	                                </div>
@@ -2280,136 +2651,42 @@ class OutreachPage extends Page
 	                                    <div class="border-b border-gray-200 px-6 py-5">
 	                                        <h3 class="text-base font-semibold text-gray-950">Email &amp; Message Content</h3>
 	                                    </div>
-	                                    <div class="divide-y divide-gray-200">
-	                                        <div class="px-6 py-6">
-	                                            <button type="button" x-on:click="campaignSetup.discountCode = ! campaignSetup.discountCode; scheduleCampaignBuilderLayoutUpdate()" role="switch" :aria-checked="campaignSetup.discountCode" class="flex w-full items-start gap-4 rounded-md text-left focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600">
-	                                                <span class="relative mt-1 inline-flex h-6 w-11 shrink-0 rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out" :class="campaignSetup.discountCode ? 'bg-indigo-600' : 'bg-gray-200'">
-	                                                    <span class="pointer-events-none inline-block size-5 rounded-full bg-white shadow transition duration-200 ease-in-out" :class="campaignSetup.discountCode ? 'translate-x-5' : 'translate-x-0'"></span>
-	                                                </span>
-	                                                <span>
-	                                                    <span class="block text-sm font-semibold leading-6 text-gray-950">Send a Discount Code</span>
-	                                                    <span class="mt-1 block text-sm leading-6 text-gray-600">AI attaches a discount code to the message.</span>
-	                                                </span>
-	                                            </button>
-	                                        </div>
+		                                    <div class="divide-y divide-gray-200">
+		                                        <div class="px-6 py-6">
+		                                            <div>
+		                                                <h4 class="text-sm font-semibold leading-6 text-gray-950">Link Tracking Structure</h4>
+		                                                <p class="mt-1 text-sm leading-6 text-gray-600">Configure abandoned cart link tracking.</p>
+		                                            </div>
+		                                            <div class="mt-5 space-y-5">
+		                                                <label class="block">
+		                                                    <span class="block text-sm/6 font-medium text-gray-900">Link Source</span>
+		                                                    <div class="mt-2 grid grid-cols-1">
+		                                                        <select x-model="campaignSetup.cartLinkSource" class="col-start-1 row-start-1 block w-full appearance-none rounded-md bg-white py-1.5 pl-3 pr-8 text-sm/6 text-gray-900 shadow-sm outline outline-1 -outline-offset-1 outline-gray-300 focus:outline-2 focus:-outline-offset-2 focus:outline-indigo-600">
+		                                                            <option>Static (Manually set URL below)</option>
+		                                                            <option>Dynamic (Use URL from lead data)</option>
+		                                                        </select>
+		                                                        <span class="outcraft-icon pointer-events-none col-start-1 row-start-1 mr-3 self-center justify-self-end text-gray-500">keyboard_arrow_down</span>
+		                                                    </div>
+		                                                    <span class="mt-2 block text-sm leading-6 text-gray-500">Choose whether the base URL is manually entered or pulled from lead data.</span>
+		                                                </label>
+		                                                <label class="block">
+		                                                    <span class="block text-sm/6 font-medium text-gray-900">Link Structure</span>
+		                                                    <input x-model="campaignSetup.cartLinkStructure" type="text" :placeholder="campaignSetup.cartLinkSource === 'Static (Manually set URL below)' ? 'https://outcraft.ai/cart?utm_source=outcraft&utm_medium=email' : '@{{cart_url}}?utm_source=outcraft&utm_medium=email'" class="mt-2 block w-full rounded-md bg-white px-3 py-1.5 text-sm/6 text-gray-900 shadow-sm outline outline-1 -outline-offset-1 outline-gray-300 placeholder:text-gray-400 focus:outline-2 focus:-outline-offset-2 focus:outline-indigo-600">
+		                                                    <span class="mt-2 block text-sm leading-6 text-gray-500" x-text="cartLinkStructureExample()"></span>
+		                                                </label>
+		                                            </div>
+		                                        </div>
 
-	                                        <div class="px-6 py-6">
-	                                            <button type="button" x-on:click="campaignSetup.abandonedCartLink = ! campaignSetup.abandonedCartLink; scheduleCampaignBuilderLayoutUpdate()" role="switch" :aria-checked="campaignSetup.abandonedCartLink" class="flex w-full items-start gap-4 rounded-md text-left focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600">
-	                                                <span class="relative mt-1 inline-flex h-6 w-11 shrink-0 rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out" :class="campaignSetup.abandonedCartLink ? 'bg-indigo-600' : 'bg-gray-200'">
-	                                                    <span class="pointer-events-none inline-block size-5 rounded-full bg-white shadow transition duration-200 ease-in-out" :class="campaignSetup.abandonedCartLink ? 'translate-x-5' : 'translate-x-0'"></span>
-	                                                </span>
-	                                                <span>
-	                                                    <span class="block text-sm font-semibold leading-6 text-gray-950">Send an Abandoned Cart Link</span>
-	                                                    <span class="mt-1 block text-sm leading-6 text-gray-600">AI attaches a cart recovery link to the message.</span>
-	                                                </span>
-	                                            </button>
-	                                            <div x-show="campaignSetup.abandonedCartLink" x-transition:enter="transition ease-out duration-200" x-transition:enter-start="opacity-0 translate-y-3" x-transition:enter-end="opacity-100 translate-y-0" x-transition:leave="transition ease-in duration-150" x-transition:leave-start="opacity-100 translate-y-0" x-transition:leave-end="opacity-0 translate-y-2" class="mt-6 space-y-6">
-	                                                <div class="rounded-lg bg-gray-50 p-4 ring-1 ring-inset ring-gray-200">
-	                                                    <label class="block">
-	                                                        <span class="block text-sm/6 font-medium text-gray-900">Link Source</span>
-	                                                        <div class="mt-2 grid grid-cols-1">
-	                                                            <select x-model="campaignSetup.cartLinkSource" class="col-start-1 row-start-1 block w-full appearance-none rounded-md bg-white py-1.5 pl-3 pr-8 text-sm/6 text-gray-900 shadow-sm outline outline-1 -outline-offset-1 outline-gray-300 focus:outline-2 focus:-outline-offset-2 focus:outline-indigo-600">
-	                                                                <option>Dynamic - Use URL from Lead Data</option>
-	                                                                <option>Static - Use Configured URL</option>
-	                                                                <option>Generated Checkout URL</option>
-	                                                            </select>
-	                                                            <span class="outcraft-icon pointer-events-none col-start-1 row-start-1 mr-3 self-center justify-self-end text-gray-500">keyboard_arrow_down</span>
-	                                                        </div>
-	                                                        <span class="mt-2 block text-sm leading-6 text-gray-500">Where the cart URL comes from.</span>
-	                                                    </label>
-	                                                </div>
-
-	                                                <button type="button" x-on:click="campaignSetup.customizeCartLink = ! campaignSetup.customizeCartLink; scheduleCampaignBuilderLayoutUpdate()" role="switch" :aria-checked="campaignSetup.customizeCartLink" class="flex w-full items-start gap-4 rounded-md text-left focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600">
-	                                                    <span class="relative mt-1 inline-flex h-6 w-11 shrink-0 rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out" :class="campaignSetup.customizeCartLink ? 'bg-indigo-600' : 'bg-gray-200'">
-	                                                        <span class="pointer-events-none inline-block size-5 rounded-full bg-white shadow transition duration-200 ease-in-out" :class="campaignSetup.customizeCartLink ? 'translate-x-5' : 'translate-x-0'"></span>
-	                                                    </span>
-	                                                    <span>
-	                                                        <span class="block text-sm font-semibold leading-6 text-gray-950">Customise Cart Link</span>
-	                                                        <span class="mt-1 block text-sm leading-6 text-gray-600">Override the default cart URL structure by setting a custom path and adding tracking parameters.</span>
-	                                                    </span>
-	                                                </button>
-
-	                                                <div x-show="campaignSetup.customizeCartLink" x-transition:enter="transition ease-out duration-200" x-transition:enter-start="opacity-0 translate-y-3" x-transition:enter-end="opacity-100 translate-y-0" x-transition:leave="transition ease-in duration-150" x-transition:leave-start="opacity-100 translate-y-0" x-transition:leave-end="opacity-0 translate-y-2" class="space-y-6">
-	                                                    <div class="rounded-lg bg-gray-50 p-4 ring-1 ring-inset ring-gray-200">
-	                                                        <label class="block">
-	                                                            <span class="block text-sm/6 font-medium text-gray-900">Path</span>
-	                                                            <input x-model="campaignSetup.cartPath" type="text" placeholder="/checkout" class="mt-2 block w-full rounded-md bg-white px-3 py-1.5 text-sm/6 text-gray-900 shadow-sm outline outline-1 -outline-offset-1 outline-gray-300 placeholder:text-gray-400 focus:outline-2 focus:-outline-offset-2 focus:outline-indigo-600">
-	                                                            <span class="mt-2 block text-sm leading-6 text-gray-500">Appended to your domain - e.g. /checkout or /cart</span>
-	                                                        </label>
-	                                                    </div>
-
-	                                                    <div class="rounded-lg bg-gray-50 p-4 ring-1 ring-inset ring-gray-200">
-	                                                        <h4 class="text-sm font-medium text-gray-900">UTM Tags</h4>
-	                                                        <div class="mt-4 grid gap-4 sm:grid-cols-3">
-	                                                            <label class="block">
-	                                                                <span class="block text-sm/6 font-medium text-gray-900">Source</span>
-	                                                                <input x-model="campaignSetup.utmSource" type="text" placeholder="outcraft" class="mt-2 block w-full rounded-md bg-white px-3 py-1.5 text-sm/6 text-gray-900 shadow-sm outline outline-1 -outline-offset-1 outline-gray-300 placeholder:text-gray-400 focus:outline-2 focus:-outline-offset-2 focus:outline-indigo-600">
-	                                                            </label>
-	                                                            <label class="block">
-	                                                                <span class="block text-sm/6 font-medium text-gray-900">Medium</span>
-	                                                                <input x-model="campaignSetup.utmMedium" type="text" placeholder="email" class="mt-2 block w-full rounded-md bg-white px-3 py-1.5 text-sm/6 text-gray-900 shadow-sm outline outline-1 -outline-offset-1 outline-gray-300 placeholder:text-gray-400 focus:outline-2 focus:-outline-offset-2 focus:outline-indigo-600">
-	                                                            </label>
-	                                                            <label class="block">
-	                                                                <span class="block text-sm/6 font-medium text-gray-900">Campaign</span>
-	                                                                <input x-model="campaignSetup.utmCampaign" type="text" placeholder="cart-recovery" class="mt-2 block w-full rounded-md bg-white px-3 py-1.5 text-sm/6 text-gray-900 shadow-sm outline outline-1 -outline-offset-1 outline-gray-300 placeholder:text-gray-400 focus:outline-2 focus:-outline-offset-2 focus:outline-indigo-600">
-	                                                            </label>
-	                                                        </div>
-	                                                        <span class="mt-2 block text-sm leading-6 text-gray-500">Builds: ?utm_source=outcraft&amp;utm_medium=email&amp;utm_campaign=cart-recovery</span>
-	                                                    </div>
-
-	                                                    <div class="rounded-lg bg-gray-50 p-4 ring-1 ring-inset ring-gray-200">
-	                                                        <h4 class="text-sm font-medium text-gray-900">Dynamic Parameters</h4>
-	                                                        <div class="mt-4 grid gap-4 sm:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_auto]">
-	                                                            <label class="block">
-	                                                                <span class="block text-sm/6 font-medium text-gray-900">Parameter Name</span>
-	                                                                <input x-model="campaignSetup.dynamicParameterName" type="text" placeholder="affid" class="mt-2 block w-full rounded-md bg-white px-3 py-1.5 text-sm/6 text-gray-900 shadow-sm outline outline-1 -outline-offset-1 outline-gray-300 placeholder:text-gray-400 focus:outline-2 focus:-outline-offset-2 focus:outline-indigo-600">
-	                                                            </label>
-	                                                            <label class="block">
-	                                                                <span class="block text-sm/6 font-medium text-gray-900">Value</span>
-	                                                                <input x-model="campaignSetup.dynamicParameterValue" type="text" placeholder="Enter Value" class="mt-2 block w-full rounded-md bg-white px-3 py-1.5 text-sm/6 text-gray-900 shadow-sm outline outline-1 -outline-offset-1 outline-gray-300 placeholder:text-gray-400 focus:outline-2 focus:-outline-offset-2 focus:outline-indigo-600">
-	                                                            </label>
-	                                                            <button type="button" class="mt-8 inline-flex size-8 items-center justify-center rounded-md text-gray-400 transition hover:bg-white hover:text-gray-700" aria-label="Remove parameter">
-	                                                                <span class="outcraft-icon !text-[18px]">delete</span>
-	                                                            </button>
-	                                                            <label class="block sm:col-span-1">
-	                                                                <span class="sr-only">Parameter Name</span>
-	                                                                <input type="text" placeholder="Enter Parameter Name" class="block w-full rounded-md bg-white px-3 py-1.5 text-sm/6 text-gray-900 shadow-sm outline outline-1 -outline-offset-1 outline-gray-300 placeholder:text-gray-400 focus:outline-2 focus:-outline-offset-2 focus:outline-indigo-600">
-	                                                            </label>
-	                                                            <label class="block sm:col-span-1">
-	                                                                <span class="sr-only">Value</span>
-	                                                                <input type="text" placeholder="Enter Value" class="block w-full rounded-md bg-white px-3 py-1.5 text-sm/6 text-gray-900 shadow-sm outline outline-1 -outline-offset-1 outline-gray-300 placeholder:text-gray-400 focus:outline-2 focus:-outline-offset-2 focus:outline-indigo-600">
-	                                                            </label>
-	                                                            <button type="button" class="inline-flex size-8 items-center justify-center rounded-md text-gray-400 transition hover:bg-white hover:text-gray-700" aria-label="Remove parameter">
-	                                                                <span class="outcraft-icon !text-[18px]">delete</span>
-	                                                            </button>
-	                                                        </div>
-	                                                        <span class="mt-2 block text-sm leading-6 text-gray-500">Add any additional tracking keys your platform needs - like affid, sub_id, or click_id.</span>
-	                                                        <button type="button" class="mt-4 inline-flex h-9 items-center gap-2 rounded-md bg-white px-3 text-sm font-semibold text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 transition hover:bg-gray-50">
-	                                                            <span class="outcraft-icon !text-[16px] text-gray-400">add</span>
-	                                                            Add Parameter
-	                                                        </button>
-	                                                    </div>
-	                                                </div>
-	                                            </div>
-	                                        </div>
-
-	                                        <div class="px-6 py-6">
+		                                        <div class="px-6 py-6">
 	                                            <button type="button" x-on:click="campaignSetup.shortenLinks = ! campaignSetup.shortenLinks; scheduleCampaignBuilderLayoutUpdate()" role="switch" :aria-checked="campaignSetup.shortenLinks" class="flex w-full items-start gap-4 rounded-md text-left focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600">
 	                                                <span class="relative mt-1 inline-flex h-6 w-11 shrink-0 rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out" :class="campaignSetup.shortenLinks ? 'bg-indigo-600' : 'bg-gray-200'">
 	                                                    <span class="pointer-events-none inline-block size-5 rounded-full bg-white shadow transition duration-200 ease-in-out" :class="campaignSetup.shortenLinks ? 'translate-x-5' : 'translate-x-0'"></span>
 	                                                </span>
 	                                                <span>
 	                                                    <span class="block text-sm font-semibold leading-6 text-gray-950">Shorten Links in Messages</span>
-	                                                    <span class="mt-1 block text-sm leading-6 text-gray-600">Shorten and add a link identifier to your URL.</span>
+	                                                    <span class="mt-1 block text-sm leading-6 text-gray-600">Shortens message links for cleaner tracking and delivery-friendly formatting. Links will resolve through ocrft.co/...</span>
 	                                                </span>
 	                                            </button>
-	                                            <div x-show="campaignSetup.shortenLinks" x-transition:enter="transition ease-out duration-200" x-transition:enter-start="opacity-0 translate-y-3" x-transition:enter-end="opacity-100 translate-y-0" x-transition:leave="transition ease-in duration-150" x-transition:leave-start="opacity-100 translate-y-0" x-transition:leave-end="opacity-0 translate-y-2" class="mt-5 rounded-lg bg-gray-50 p-4 ring-1 ring-inset ring-gray-200">
-	                                                <label class="block">
-	                                                    <span class="block text-sm/6 font-medium text-gray-900">Link Identifier</span>
-	                                                    <input x-model="campaignSetup.shortLinkBrand" type="text" placeholder="pulsetto" class="mt-2 block w-full rounded-md bg-white px-3 py-1.5 text-sm/6 text-gray-900 shadow-sm outline outline-1 -outline-offset-1 outline-gray-300 placeholder:text-gray-400 focus:outline-2 focus:-outline-offset-2 focus:outline-indigo-600">
-	                                                    <span class="mt-2 block text-sm leading-6 text-gray-500">Resolves to: outcraft.ai/l/@{{brand}}-a1b2c3d4</span>
-	                                                </label>
-	                                            </div>
 	                                        </div>
 
 	                                        <div class="px-6 py-6">
@@ -2421,6 +2698,7 @@ class OutreachPage extends Page
 	                                        </div>
 	                                    </div>
 	                                </div>
+                                </div>
 	                            </section>
 
                             <section x-cloak x-show="campaignSetup.current === 'discounts' || campaignSetupScrollFromStep === 'discounts'" x-ref="campaignSetupStep_discounts"
@@ -2429,6 +2707,9 @@ class OutreachPage extends Page
                                 class="space-y-6 pr-2 pb-4">
                                 <div class="mb-1">
                                     <p class="text-sm font-semibold text-indigo-600" x-text="`${campaignSetupMode === 'fast' ? 'Fast Setup' : 'Advanced Setup'} · Step ${campaignSetupStepIndex('discounts') + 1} of ${campaignSetupStepsForMode().length}`"></p>
+                                    <span class="mb-4 flex size-10 items-center justify-center rounded-md bg-indigo-50 text-indigo-600">
+                                        <span class="outcraft-icon !text-[21px]" x-text="campaignSetupStepIcon('discounts')"></span>
+                                    </span>
                                     <h2 class="mt-2 text-2xl font-bold leading-8 tracking-tight text-gray-950" x-text="campaignSetupHeading('discounts')"></h2>
                                     <p class="mt-2 max-w-3xl text-sm leading-6 text-gray-600" x-text="campaignSetupDescription('discounts')"></p>
                                 </div>
@@ -2441,30 +2722,23 @@ class OutreachPage extends Page
                                     <button type="submit" :disabled="! campaignSetup.newDiscountCode.trim()" class="inline-flex h-9 items-center justify-center rounded-md bg-indigo-600 px-3 text-sm font-semibold text-white shadow-sm transition hover:bg-indigo-500 disabled:cursor-not-allowed disabled:opacity-40">Add</button>
                                 </form>
 
-                                <div class="overflow-x-auto bg-white">
-                                    <table class="min-w-full text-left text-sm">
-                                        <thead class="border-b border-gray-200">
-                                            <tr>
-                                                <th class="px-4 py-3 font-semibold text-gray-600">Discount Code</th>
-                                                <th class="px-4 py-3 font-semibold text-gray-600">Created</th>
-                                                <th class="px-4 py-3 text-right font-semibold text-gray-600"></th>
-                                            </tr>
-                                        </thead>
-                                        <tbody class="divide-y divide-gray-100">
-                                            <template x-for="code in campaignSetup.discountCodes" :key="code.value">
-                                                <tr>
-                                                    <td class="px-4 py-3 font-semibold text-gray-950" x-text="code.value"></td>
-                                                    <td class="px-4 py-3 text-gray-600" x-text="code.created"></td>
-                                                    <td class="px-4 py-3 text-right">
-                                                        <button type="button" x-on:click="campaignSetup.discountCodes = campaignSetup.discountCodes.filter((item) => item.value !== code.value)" class="text-sm font-semibold text-gray-500 transition hover:text-red-600">Remove</button>
-                                                    </td>
-                                                </tr>
-                                            </template>
-                                        </tbody>
-                                    </table>
-                                    <div x-show="campaignSetup.discountCodes.length === 0" class="border-t border-gray-100 px-6 py-10 text-center">
-                                        <p class="text-sm font-medium text-gray-900">No Discount Codes Yet</p>
+                                <div class="bg-white">
+                                    <div x-show="campaignSetup.discountCodes.length === 0" class="py-10 text-center">
+                                        <p class="text-sm font-medium text-gray-900">No Discount Codes</p>
                                         <p class="mt-1 text-sm leading-6 text-gray-500">Add Codes the AI can include when discount content is enabled.</p>
+                                    </div>
+                                    <div x-show="campaignSetup.discountCodes.length > 0" class="divide-y divide-gray-200">
+                                        <template x-for="code in campaignSetup.discountCodes" :key="code.value">
+                                            <div class="flex items-center justify-between gap-4 py-3">
+                                                <div class="min-w-0">
+                                                    <p class="truncate text-sm font-semibold leading-6 text-gray-950" x-text="code.value"></p>
+                                                    <p class="text-sm leading-6 text-gray-500" x-text="`Created ${code.created}`"></p>
+                                                </div>
+                                                <button type="button" x-on:click="campaignSetup.discountCodes = campaignSetup.discountCodes.filter((item) => item.value !== code.value)" class="inline-flex size-8 shrink-0 items-center justify-center rounded-md text-gray-400 transition hover:bg-gray-50 hover:text-red-600" aria-label="Remove Discount Code">
+                                                    <span class="outcraft-icon !text-[18px]">delete</span>
+                                                </button>
+                                            </div>
+                                        </template>
                                     </div>
                                 </div>
                             </section>
@@ -2475,6 +2749,9 @@ class OutreachPage extends Page
                                 class="space-y-6 pr-2 pb-4">
                                 <div class="mb-1">
                                     <p class="text-sm font-semibold text-indigo-600" x-text="`${campaignSetupMode === 'fast' ? 'Fast Setup' : 'Advanced Setup'} · Step ${campaignSetupStepIndex('booking') + 1} of ${campaignSetupStepsForMode().length}`"></p>
+                                    <span class="mb-4 flex size-10 items-center justify-center rounded-md bg-indigo-50 text-indigo-600">
+                                        <span class="outcraft-icon !text-[21px]" x-text="campaignSetupStepIcon('booking')"></span>
+                                    </span>
                                     <h2 class="mt-2 text-2xl font-bold leading-8 tracking-tight text-gray-950" x-text="campaignSetupHeading('booking')"></h2>
                                     <p class="mt-2 max-w-3xl text-sm leading-6 text-gray-600" x-text="campaignSetupDescription('booking')"></p>
                                 </div>
@@ -2483,18 +2760,32 @@ class OutreachPage extends Page
                                     <label class="block">
                                         <span class="block text-sm/6 font-semibold text-gray-900">Which Calendar Service Do You Use?</span>
                                         <div class="mt-2 grid grid-cols-1">
-                                            <select x-model="campaignSetup.calendarService" class="col-start-1 row-start-1 block w-full appearance-none rounded-md bg-white py-1.5 pr-8 pl-3 text-sm/6 text-gray-900 shadow-sm outline outline-1 -outline-offset-1 outline-gray-300 focus:outline-2 focus:-outline-offset-2 focus:outline-indigo-600">
+                                            <select x-model="campaignSetup.calendarService" x-on:change="campaignSetup.calendarConnectionStatus = ''; scheduleCampaignBuilderLayoutUpdate()" class="col-start-1 row-start-1 block w-full appearance-none rounded-md bg-white py-1.5 pr-8 pl-3 text-sm/6 text-gray-900 shadow-sm outline outline-1 -outline-offset-1 outline-gray-300 focus:outline-2 focus:-outline-offset-2 focus:outline-indigo-600">
                                                 <option value="">Select an Option</option>
+                                                <option>HubSpot</option>
                                                 <option>Calendly</option>
-                                                <option>HubSpot Meetings</option>
-                                                <option>Google Calendar</option>
-                                                <option>Cal.com</option>
-                                                <option>Custom Booking Service</option>
                                             </select>
                                             <span class="outcraft-icon pointer-events-none col-start-1 row-start-1 mr-3 self-center justify-self-end text-gray-500">keyboard_arrow_down</span>
                                         </div>
                                         <span class="mt-2 block text-sm leading-6 text-gray-600">Select the calendar service you use for booking appointments.</span>
                                     </label>
+
+                                    <div x-show="campaignSetup.calendarService" x-transition:enter="transition ease-out duration-200" x-transition:enter-start="opacity-0 translate-y-3" x-transition:enter-end="opacity-100 translate-y-0" x-transition:leave="transition ease-in duration-150" x-transition:leave-start="opacity-100 translate-y-0" x-transition:leave-end="opacity-0 translate-y-2" class="rounded-lg border border-gray-200 bg-white p-6 shadow-sm">
+                                        <div class="flex flex-col gap-4 sm:flex-row sm:items-start">
+                                            <span class="flex size-[60px] shrink-0 items-center justify-center rounded-md" :class="calendarServiceLogoContainerClass(campaignSetup.calendarService)">
+                                                <span x-show="calendarServiceLogoHtml(campaignSetup.calendarService)" class="outcraft-source-logo outcraft-source-logo-lg" x-html="calendarServiceLogoHtml(campaignSetup.calendarService)"></span>
+                                                <span x-show="! calendarServiceLogoHtml(campaignSetup.calendarService)" class="outcraft-icon !text-[32px]" x-text="'calendar_month'"></span>
+                                            </span>
+                                            <div class="min-w-0 flex-1">
+                                                <h3 class="text-sm font-semibold leading-6 text-gray-950" x-text="campaignSetup.calendarService"></h3>
+                                                <p class="mt-2 text-sm leading-6 text-gray-600">Connect your calendar service to sync booking links, availability, and meeting events for this campaign.</p>
+                                                <div class="mt-5 flex flex-wrap items-center gap-3">
+                                                    <button type="button" x-on:click="connectCalendarService()" class="inline-flex h-9 items-center rounded-md bg-indigo-600 px-3 text-sm font-semibold text-white shadow-sm transition hover:bg-indigo-500" x-text="`Connect ${campaignSetup.calendarService}`"></button>
+                                                    <span x-show="campaignSetup.calendarConnectionStatus === 'Connected'" class="inline-flex rounded-md bg-green-50 px-2 py-1 text-xs font-medium text-green-700 ring-1 ring-inset ring-green-600/20">Connected</span>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
 
                                     <div class="rounded-lg border border-gray-200 p-6">
                                         <h3 class="text-sm font-semibold text-gray-900">Links</h3>
@@ -2506,9 +2797,9 @@ class OutreachPage extends Page
                                                 </div>
                                             </div>
 
-                                            <div class="grid gap-6 lg:grid-cols-2">
+                                            <div class="space-y-6">
                                                 <label class="block">
-                                                    <span class="block text-sm/6 font-semibold text-gray-900">Booking Link for Calls<span class="text-indigo-600">*</span></span>
+                                                    <span class="block text-sm/6 font-semibold text-gray-900">Booking Link for Calls<span class="text-indigo-400">*</span></span>
                                                     <input x-model="campaignSetup.bookingCallLink" type="url" placeholder="https://calendly.com/your-link" class="mt-2 block w-full rounded-md bg-white px-3 py-1.5 text-sm/6 text-gray-900 shadow-sm outline outline-1 -outline-offset-1 outline-gray-300 placeholder:text-gray-400 focus:outline-2 focus:-outline-offset-2 focus:outline-indigo-600">
                                                     <span class="mt-2 block text-sm leading-6 text-gray-600">Must contain service name of a calendar, https://hubspot.com/your-link.</span>
                                                 </label>
@@ -2536,6 +2827,9 @@ class OutreachPage extends Page
                                 class="pr-2 pb-4">
                                 <div class="mb-1">
                                     <p class="text-sm font-semibold text-indigo-600" x-text="`${campaignSetupMode === 'fast' ? 'Fast Setup' : 'Advanced Setup'} · Step ${campaignSetupStepIndex('availability') + 1} of ${campaignSetupStepsForMode().length}`"></p>
+                                    <span class="mb-4 flex size-10 items-center justify-center rounded-md bg-indigo-50 text-indigo-600">
+                                        <span class="outcraft-icon !text-[21px]" x-text="campaignSetupStepIcon('availability')"></span>
+                                    </span>
                                     <h2 class="mt-2 text-2xl font-bold leading-8 tracking-tight text-gray-950" x-text="campaignSetupHeading('availability')"></h2>
                                     <p class="mt-2 mb-8 max-w-3xl text-sm leading-6 text-gray-600" x-text="campaignSetupDescription('availability')"></p>
                                 </div>
@@ -2570,7 +2864,7 @@ class OutreachPage extends Page
 
 	                                            <div class="mt-7 grid gap-6 lg:grid-cols-2">
 	                                                <label class="block">
-	                                                    <span class="block text-sm/6 font-semibold text-gray-900">Outreach Start Hour<span class="text-indigo-600">*</span></span>
+	                                                    <span class="block text-sm/6 font-semibold text-gray-900">Outreach Start Hour<span class="text-indigo-400">*</span></span>
 		                                                    <div class="mt-2 grid grid-cols-1">
 		                                                        <select x-model="campaignSetup.outreachStartHour" class="col-start-1 row-start-1 block w-full appearance-none rounded-md bg-white py-1.5 pl-3 pr-8 text-sm/6 text-gray-900 shadow-sm outline outline-1 -outline-offset-1 outline-gray-300 focus:outline-2 focus:-outline-offset-2 focus:outline-indigo-600">
 		                                                            <template x-for="hour in outreachHourOptions" :key="`availability-start-${hour}`">
@@ -2583,7 +2877,7 @@ class OutreachPage extends Page
 	                                                </label>
 
 	                                                <label class="block">
-	                                                    <span class="block text-sm/6 font-semibold text-gray-900">Outreach End Hour<span class="text-indigo-600">*</span></span>
+	                                                    <span class="block text-sm/6 font-semibold text-gray-900">Outreach End Hour<span class="text-indigo-400">*</span></span>
 		                                                    <div class="mt-2 grid grid-cols-1">
 		                                                        <select x-model="campaignSetup.outreachEndHour" class="col-start-1 row-start-1 block w-full appearance-none rounded-md bg-white py-1.5 pl-3 pr-8 text-sm/6 text-gray-900 shadow-sm outline outline-1 -outline-offset-1 outline-gray-300 focus:outline-2 focus:-outline-offset-2 focus:outline-indigo-600">
 		                                                            <template x-for="hour in outreachHourOptions" :key="`availability-end-${hour}`">
@@ -2607,39 +2901,58 @@ class OutreachPage extends Page
                                 class="space-y-6 pr-2 pb-4">
                                 <div class="mb-1">
                                     <p class="text-sm font-semibold text-indigo-600" x-text="`${campaignSetupMode === 'fast' ? 'Fast Setup' : 'Advanced Setup'} · Step ${campaignSetupStepIndex('sequence') + 1} of ${campaignSetupStepsForMode().length}`"></p>
+                                    <span class="mb-4 flex size-10 items-center justify-center rounded-md bg-indigo-50 text-indigo-600">
+                                        <span class="outcraft-icon !text-[21px]" x-text="campaignSetupStepIcon('sequence')"></span>
+                                    </span>
                                     <h2 class="mt-2 text-2xl font-bold leading-8 tracking-tight text-gray-950" x-text="campaignSetupHeading('sequence')"></h2>
                                     <p class="mt-2 max-w-3xl text-sm leading-6 text-gray-600" x-text="campaignSetupDescription('sequence')"></p>
                                 </div>
-                                <div class="flex flex-wrap items-center justify-between gap-3">
-                                    <button type="button" class="inline-flex h-9 items-center rounded-md bg-white px-3 text-sm font-semibold text-gray-900 ring-1 ring-inset ring-gray-300 transition hover:bg-gray-50">Reorder Actions</button>
-                                    <button type="button" x-on:click="campaignSetup.sequenceModalOpen = true" class="inline-flex h-9 items-center rounded-md bg-indigo-600 px-3 text-sm font-semibold text-white shadow-sm transition hover:bg-indigo-500">Add Step</button>
+                                <div class="flex justify-end">
+                                    <button type="button" x-on:click="campaignSetup.sequenceModalOpen = true; campaignSetup.sequenceEditingIndex = null" class="inline-flex h-9 items-center rounded-md bg-indigo-600 px-3 text-sm font-semibold text-white shadow-sm transition hover:bg-indigo-500">Add Step</button>
                                 </div>
-                                <div class="overflow-hidden rounded-lg border border-gray-200">
-                                    <table class="min-w-full divide-y divide-gray-200 text-left text-sm">
-                                        <thead class="bg-gray-50">
-                                            <tr>
-                                                <template x-for="head in ['Channel','Label','Relative Delay','Exact Flow Step','Actions']" :key="head">
-                                                    <th class="px-4 py-3 font-semibold text-gray-600" x-text="head"></th>
-                                                </template>
-                                            </tr>
-                                        </thead>
-                                        <tbody class="divide-y divide-gray-100">
-                                            <template x-for="row in sequenceRows" :key="`${row.channel}-${row.delay}-${row.label}`">
-                                                <tr>
-                                                    <td class="px-4 py-3" x-text="row.channel"></td>
-                                                    <td class="px-4 py-3 font-mono text-xs" x-text="row.label"></td>
-                                                    <td class="px-4 py-3" x-text="row.delay"></td>
-                                                    <td class="px-4 py-3 text-gray-600" x-text="row.step"></td>
-                                                    <td class="px-4 py-3">
-                                                        <div class="flex items-center gap-3 whitespace-nowrap">
-                                                            <button type="button" class="font-semibold text-indigo-600 transition hover:text-indigo-500">Edit</button>
-                                                            <button type="button" x-show="row.channel !== 'None'" class="font-semibold text-gray-600 transition hover:text-gray-900">View</button>
+                                <div class="space-y-0">
+                                    <template x-for="(row, index) in sequenceRows" :key="row.id">
+                                        <div class="relative pl-9" :class="index === sequenceRows.length - 1 ? 'pb-0' : 'pb-5'">
+                                            <span x-show="index < sequenceRows.length - 1" class="absolute left-3 top-9 bottom-0 w-px bg-gray-200"></span>
+                                            <span class="absolute left-0 top-3 flex size-6 items-center justify-center rounded-full border border-indigo-200 bg-indigo-50 text-indigo-600 shadow-sm">
+                                                <span class="outcraft-icon !text-[15px]" x-text="sequenceChannelIcon(row.channel)"></span>
+                                            </span>
+                                            <article class="rounded-lg border border-gray-200 bg-white p-4 shadow-sm transition hover:border-gray-300 hover:shadow">
+                                                <div class="flex items-start justify-between gap-4">
+                                                    <div class="min-w-0">
+                                                        <div class="flex flex-wrap items-center gap-2">
+                                                            <span class="text-sm font-semibold leading-6 text-gray-950" x-text="row.channel"></span>
+                                                            <span class="inline-flex rounded-md bg-gray-50 px-2 py-1 text-xs font-medium text-gray-600 ring-1 ring-inset ring-gray-500/10" x-text="sequenceDelayLabel(row.delay)"></span>
                                                         </div>
-                                                    </td>
-                                                </tr>
-                                            </template>
-                                        </tbody>
-                                    </table>
+                                                        <p class="mt-2 text-sm leading-6 text-gray-600" x-text="row.step"></p>
+                                                    </div>
+                                                    <div class="relative shrink-0" x-on:click.outside="campaignSetup.sequenceActionOpen === row.id && (campaignSetup.sequenceActionOpen = '')">
+                                                        <button type="button" x-on:click="campaignSetup.sequenceActionOpen = campaignSetup.sequenceActionOpen === row.id ? '' : row.id" class="inline-flex size-8 items-center justify-center rounded-md text-gray-400 transition hover:bg-gray-50 hover:text-gray-700" aria-label="Open Sequence Step Actions">
+                                                            <span class="outcraft-icon !text-[20px]">more_vert</span>
+                                                        </button>
+                                                        <div x-cloak x-show="campaignSetup.sequenceActionOpen === row.id" x-transition:enter="transition ease-out duration-100" x-transition:enter-start="opacity-0 translate-y-1" x-transition:enter-end="opacity-100 translate-y-0" x-transition:leave="transition ease-in duration-75" x-transition:leave-start="opacity-100 translate-y-0" x-transition:leave-end="opacity-0 translate-y-1" class="absolute right-0 z-30 mt-2 w-44 rounded-md bg-white py-1 shadow-lg ring-1 ring-gray-900/10">
+                                                            <button type="button" x-on:click="moveSequenceRow(index, -1)" :disabled="index === 0" class="flex w-full items-center gap-2 rounded-md px-3 py-2 text-left text-sm font-medium text-gray-700 transition hover:bg-gray-50 hover:text-gray-950 disabled:cursor-not-allowed disabled:opacity-40">
+                                                                <span class="outcraft-icon !text-[17px]">arrow_upward</span>
+                                                                <span>Move Up</span>
+                                                            </button>
+                                                            <button type="button" x-on:click="moveSequenceRow(index, 1)" :disabled="index === sequenceRows.length - 1" class="flex w-full items-center gap-2 rounded-md px-3 py-2 text-left text-sm font-medium text-gray-700 transition hover:bg-gray-50 hover:text-gray-950 disabled:cursor-not-allowed disabled:opacity-40">
+                                                                <span class="outcraft-icon !text-[17px]">arrow_downward</span>
+                                                                <span>Move Down</span>
+                                                            </button>
+                                                            <button type="button" x-on:click="editSequenceRow(index)" class="flex w-full items-center gap-2 rounded-md px-3 py-2 text-left text-sm font-medium text-gray-700 transition hover:bg-gray-50 hover:text-gray-950">
+                                                                <span class="outcraft-icon !text-[17px]">edit</span>
+                                                                <span>Edit</span>
+                                                            </button>
+                                                            <button type="button" x-on:click="deleteSequenceRow(index)" class="flex w-full items-center gap-2 rounded-md px-3 py-2 text-left text-sm font-medium text-red-600 transition hover:bg-red-50 hover:text-red-700">
+                                                                <span class="outcraft-icon !text-[17px]">delete</span>
+                                                                <span>Delete</span>
+                                                            </button>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </article>
+                                        </div>
+                                    </template>
                                 </div>
                             </section>
 
@@ -2649,11 +2962,14 @@ class OutreachPage extends Page
                                 class="space-y-6 pr-2 pb-4">
                                 <div class="mb-1">
                                     <p class="text-sm font-semibold text-indigo-600" x-text="`${campaignSetupMode === 'fast' ? 'Fast Setup' : 'Advanced Setup'} · Step ${campaignSetupStepIndex('followups') + 1} of ${campaignSetupStepsForMode().length}`"></p>
+                                    <span class="mb-4 flex size-10 items-center justify-center rounded-md bg-indigo-50 text-indigo-600">
+                                        <span class="outcraft-icon !text-[21px]" x-text="campaignSetupStepIcon('followups')"></span>
+                                    </span>
                                     <h2 class="mt-2 text-2xl font-bold leading-8 tracking-tight text-gray-950" x-text="campaignSetupHeading('followups')"></h2>
                                     <p class="mt-2 max-w-3xl text-sm leading-6 text-gray-600" x-text="campaignSetupDescription('followups')"></p>
                                 </div>
                                     <div class="space-y-5">
-                                            <button type="button" x-on:click="campaignSetup.followupPositive = ! campaignSetup.followupPositive; scheduleCampaignBuilderLayoutUpdate()" role="switch" :aria-checked="campaignSetup.followupPositive" class="flex w-full items-start gap-4 rounded-md text-left focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600">
+                                            <button type="button" x-on:click="toggleFollowupSequence('followupPositive', 'positive')" role="switch" :aria-checked="campaignSetup.followupPositive" class="flex w-full items-start gap-4 rounded-md text-left focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600">
                                                 <span class="relative mt-1 inline-flex h-6 w-11 shrink-0 rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out" :class="campaignSetup.followupPositive ? 'bg-indigo-600' : 'bg-gray-200'">
                                                     <span class="pointer-events-none inline-block size-5 rounded-full bg-white shadow transition duration-200 ease-in-out" :class="campaignSetup.followupPositive ? 'translate-x-5' : 'translate-x-0'"></span>
                                                 </span>
@@ -2663,7 +2979,7 @@ class OutreachPage extends Page
                                                 </span>
                                             </button>
 
-                                            <button type="button" x-on:click="campaignSetup.followupEngaged = ! campaignSetup.followupEngaged; scheduleCampaignBuilderLayoutUpdate()" role="switch" :aria-checked="campaignSetup.followupEngaged" class="flex w-full items-start gap-4 rounded-md text-left focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600">
+                                            <button type="button" x-on:click="toggleFollowupSequence('followupEngaged', 'engaged')" role="switch" :aria-checked="campaignSetup.followupEngaged" class="flex w-full items-start gap-4 rounded-md text-left focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600">
                                                 <span class="relative mt-1 inline-flex h-6 w-11 shrink-0 rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out" :class="campaignSetup.followupEngaged ? 'bg-indigo-600' : 'bg-gray-200'">
                                                     <span class="pointer-events-none inline-block size-5 rounded-full bg-white shadow transition duration-200 ease-in-out" :class="campaignSetup.followupEngaged ? 'translate-x-5' : 'translate-x-0'"></span>
                                                 </span>
@@ -2673,7 +2989,7 @@ class OutreachPage extends Page
                                                 </span>
                                             </button>
 
-                                            <button type="button" x-on:click="campaignSetup.followupNegative = ! campaignSetup.followupNegative; scheduleCampaignBuilderLayoutUpdate()" role="switch" :aria-checked="campaignSetup.followupNegative" class="flex w-full items-start gap-4 rounded-md text-left focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600">
+                                            <button type="button" x-on:click="toggleFollowupSequence('followupNegative', 'negative')" role="switch" :aria-checked="campaignSetup.followupNegative" class="flex w-full items-start gap-4 rounded-md text-left focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600">
                                                 <span class="relative mt-1 inline-flex h-6 w-11 shrink-0 rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out" :class="campaignSetup.followupNegative ? 'bg-indigo-600' : 'bg-gray-200'">
                                                     <span class="pointer-events-none inline-block size-5 rounded-full bg-white shadow transition duration-200 ease-in-out" :class="campaignSetup.followupNegative ? 'translate-x-5' : 'translate-x-0'"></span>
                                                 </span>
@@ -2689,17 +3005,15 @@ class OutreachPage extends Page
                                             <h3 class="text-base font-semibold leading-6 text-gray-950">Follow-Up Sequence</h3>
                                             <p class="mt-2 text-sm leading-6 text-gray-600">Build a follow-up sequence that will be applied for this campaign</p>
                                         </div>
-                                        <label class="block max-w-xs">
-                                            <span class="block text-sm/6 font-semibold text-gray-900">Choose Follow-Up Sequence to Edit:</span>
-                                            <div class="mt-2 grid grid-cols-1">
-                                                <select class="col-start-1 row-start-1 block w-full appearance-none rounded-md bg-white py-1.5 pr-8 pl-3 text-sm/6 text-gray-900 shadow-sm outline outline-1 -outline-offset-1 outline-gray-300 focus:outline-2 focus:-outline-offset-2 focus:outline-indigo-600">
-                                                    <option>Positive</option>
-                                                    <option>Engaged but No Decision</option>
-                                                    <option>Negative Response</option>
-                                                </select>
-                                                <span class="outcraft-icon pointer-events-none col-start-1 row-start-1 mr-3 self-center justify-self-end text-gray-500">keyboard_arrow_down</span>
-                                            </div>
-                                        </label>
+                                        <div class="border-b border-gray-200">
+                                            <nav class="-mb-px flex flex-wrap gap-6" aria-label="Follow-up sequence tabs">
+                                                <template x-for="tab in followupSequenceTabs()" :key="tab.id">
+                                                    <button type="button" x-on:click="campaignSetup.activeFollowupSequence = tab.id" class="border-b-2 px-1 pb-3 text-sm font-semibold transition" :class="campaignSetup.activeFollowupSequence === tab.id ? 'border-indigo-600 text-indigo-600' : 'border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700'">
+                                                        <span x-text="tab.label"></span>
+                                                    </button>
+                                                </template>
+                                            </nav>
+                                        </div>
 
                                         <div class="flex flex-wrap items-center justify-between gap-3">
                                             <button type="button" class="inline-flex h-9 items-center rounded-md bg-white px-3 text-sm font-semibold text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 transition hover:bg-gray-50">Reorder Actions</button>
@@ -2732,6 +3046,9 @@ class OutreachPage extends Page
                                 class="space-y-6 pr-2 pb-4">
                                 <div class="mb-1">
                                     <p class="text-sm font-semibold text-indigo-600" x-text="`${campaignSetupMode === 'fast' ? 'Fast Setup' : 'Advanced Setup'} · Step ${campaignSetupStepIndex('handoff') + 1} of ${campaignSetupStepsForMode().length}`"></p>
+                                    <span class="mb-4 flex size-10 items-center justify-center rounded-md bg-indigo-50 text-indigo-600">
+                                        <span class="outcraft-icon !text-[21px]" x-text="campaignSetupStepIcon('handoff')"></span>
+                                    </span>
                                     <h2 class="mt-2 text-2xl font-bold leading-8 tracking-tight text-gray-950" x-text="campaignSetupHeading('handoff')"></h2>
                                     <p class="mt-2 max-w-3xl text-sm leading-6 text-gray-600" x-text="campaignSetupDescription('handoff')"></p>
                                 </div>
@@ -2813,13 +3130,59 @@ class OutreachPage extends Page
                                 class="space-y-6 pr-2 pb-4">
                                 <div class="mb-1">
                                     <p class="text-sm font-semibold text-indigo-600" x-text="`${campaignSetupMode === 'fast' ? 'Fast Setup' : 'Advanced Setup'} · Step ${campaignSetupStepIndex('intelligence') + 1} of ${campaignSetupStepsForMode().length}`"></p>
+                                    <span class="mb-4 flex size-10 items-center justify-center rounded-md bg-indigo-50 text-indigo-600">
+                                        <span class="outcraft-icon !text-[21px]" x-text="campaignSetupStepIcon('intelligence')"></span>
+                                    </span>
                                     <h2 class="mt-2 text-2xl font-bold leading-8 tracking-tight text-gray-950" x-text="campaignSetupHeading('intelligence')"></h2>
                                     <p class="mt-2 max-w-3xl text-sm leading-6 text-gray-600" x-text="campaignSetupDescription('intelligence')"></p>
                                 </div>
-                                <div class="flex justify-end">
-                                    <button type="button" x-on:click="campaignSetup.evaluationDrawerOpen = true" class="inline-flex h-9 items-center rounded-md bg-indigo-600 px-3 text-sm font-semibold text-white shadow-sm transition hover:bg-indigo-500">Create New Evaluation</button>
+                                <div class="space-y-3">
+                                    <div class="flex justify-end">
+                                        <button type="button" x-on:click="campaignSetup.evaluationDrawerOpen = true" class="inline-flex h-9 items-center rounded-md bg-indigo-600 px-3 text-sm font-semibold text-white shadow-sm transition hover:bg-indigo-500">Create New Evaluation</button>
+                                    </div>
+                                    <div class="rounded-lg border border-gray-200">
+                                        <table class="min-w-full divide-y divide-gray-200 text-left text-sm">
+                                            <thead class="bg-gray-50">
+                                                <tr>
+                                                    <th class="px-4 py-3 font-semibold text-gray-600">Evaluation</th>
+                                                    <th class="px-4 py-3 font-semibold text-gray-600">Response Format</th>
+                                                    <th class="px-4 py-3"><span class="sr-only">Actions</span></th>
+                                                </tr>
+                                            </thead>
+                                            <tbody class="divide-y divide-gray-100">
+                                                <template x-for="evaluation in conversationIntelligenceEvaluations()" :key="evaluation.id">
+                                                    <tr>
+                                                        <td class="px-4 py-3">
+                                                            <div class="flex flex-wrap items-center gap-2">
+                                                                <p class="font-semibold text-gray-950" x-text="evaluation.name"></p>
+                                                                <span x-show="evaluation.review" class="inline-flex rounded-md bg-amber-50 px-2 py-1 text-xs font-medium text-amber-700 ring-1 ring-inset ring-amber-600/20">Review</span>
+                                                            </div>
+                                                            <p class="mt-1 text-gray-500" x-text="evaluation.description"></p>
+                                                        </td>
+                                                        <td class="px-4 py-3 text-gray-700" x-text="evaluation.format"></td>
+                                                        <td class="px-4 py-3 text-right">
+                                                            <div class="relative inline-flex" x-on:click.outside="campaignSetup.evaluationActionOpen === evaluation.id && (campaignSetup.evaluationActionOpen = '')">
+                                                                <button type="button" x-on:click="campaignSetup.evaluationActionOpen = campaignSetup.evaluationActionOpen === evaluation.id ? '' : evaluation.id" class="inline-flex size-8 items-center justify-center rounded-md text-gray-400 transition hover:bg-gray-50 hover:text-gray-700" aria-label="Open Evaluation Actions">
+                                                                    <span class="outcraft-icon !text-[20px]">more_vert</span>
+                                                                </button>
+                                                                <div x-cloak x-show="campaignSetup.evaluationActionOpen === evaluation.id" x-transition:enter="transition ease-out duration-100" x-transition:enter-start="opacity-0 translate-y-1" x-transition:enter-end="opacity-100 translate-y-0" x-transition:leave="transition ease-in duration-75" x-transition:leave-start="opacity-100 translate-y-0" x-transition:leave-end="opacity-0 translate-y-1" class="absolute right-0 top-full z-30 mt-2 w-36 rounded-md bg-white py-1 text-left shadow-lg ring-1 ring-gray-900/10">
+                                                                    <button type="button" x-on:click="editConversationEvaluation(evaluation)" class="flex w-full items-center gap-2 rounded-md px-3 py-2 text-sm font-medium text-gray-700 transition hover:bg-gray-50 hover:text-gray-950">
+                                                                        <span class="outcraft-icon !text-[17px]">edit</span>
+                                                                        <span>Edit</span>
+                                                                    </button>
+                                                                    <button type="button" x-on:click="removeConversationEvaluation(evaluation)" class="flex w-full items-center gap-2 rounded-md px-3 py-2 text-sm font-medium text-red-600 transition hover:bg-red-50 hover:text-red-700">
+                                                                        <span class="outcraft-icon !text-[17px]">delete</span>
+                                                                        <span>Remove</span>
+                                                                    </button>
+                                                                </div>
+                                                            </div>
+                                                        </td>
+                                                    </tr>
+                                                </template>
+                                            </tbody>
+                                        </table>
+                                    </div>
                                 </div>
-                                <div class="overflow-hidden rounded-lg border border-gray-200"><table class="min-w-full divide-y divide-gray-200 text-left text-sm"><thead class="bg-gray-50"><tr><th class="px-4 py-3 font-semibold text-gray-600">Evaluation</th><th class="px-4 py-3 font-semibold text-gray-600">Response Format</th><th class="px-4 py-3 font-semibold text-gray-600">Actions</th></tr></thead><tbody><tr><td class="px-4 py-3"><p class="font-semibold text-gray-950">Summary of the interaction</p><p class="mt-1 text-gray-500">Summarize the interaction in 1–2 short sentences.</p></td><td class="px-4 py-3">Text Summary</td><td class="px-4 py-3"><button class="font-semibold text-indigo-600">Edit</button></td></tr></tbody></table></div>
                             </section>
 
                             <section x-cloak x-show="campaignSetup.current === 'geo' || campaignSetupScrollFromStep === 'geo'" x-ref="campaignSetupStep_geo"
@@ -2828,6 +3191,9 @@ class OutreachPage extends Page
                                 class="space-y-5 pr-2 pb-4">
                                 <div class="mb-1">
                                     <p class="text-sm font-semibold text-indigo-600" x-text="`${campaignSetupMode === 'fast' ? 'Fast Setup' : 'Advanced Setup'} · Step ${campaignSetupStepIndex('geo') + 1} of ${campaignSetupStepsForMode().length}`"></p>
+                                    <span class="mb-4 flex size-10 items-center justify-center rounded-md bg-indigo-50 text-indigo-600">
+                                        <span class="outcraft-icon !text-[21px]" x-text="campaignSetupStepIcon('geo')"></span>
+                                    </span>
                                     <h2 class="mt-2 text-2xl font-bold leading-8 tracking-tight text-gray-950" x-text="campaignSetupHeading('geo')"></h2>
                                     <p class="mt-2 max-w-3xl text-sm leading-6 text-gray-600" x-text="campaignSetupDescription('geo')"></p>
                                 </div>
@@ -2842,6 +3208,9 @@ class OutreachPage extends Page
                                 class="space-y-6 pr-2 pb-4">
                                 <div class="mb-1">
                                     <p class="text-sm font-semibold text-indigo-600" x-text="`${campaignSetupMode === 'fast' ? 'Fast Setup' : 'Advanced Setup'} · Step ${campaignSetupStepIndex('dispatch') + 1} of ${campaignSetupStepsForMode().length}`"></p>
+                                    <span class="mb-4 flex size-10 items-center justify-center rounded-md bg-indigo-50 text-indigo-600">
+                                        <span class="outcraft-icon !text-[21px]" x-text="campaignSetupStepIcon('dispatch')"></span>
+                                    </span>
                                     <h2 class="mt-2 text-2xl font-bold leading-8 tracking-tight text-gray-950" x-text="campaignSetupHeading('dispatch')"></h2>
                                     <p class="mt-2 max-w-3xl text-sm leading-6 text-gray-600" x-text="campaignSetupDescription('dispatch')"></p>
                                 </div>
@@ -2858,6 +3227,9 @@ class OutreachPage extends Page
                                 class="space-y-6 pr-2 pb-4">
                                 <div class="mb-1">
                                     <p class="text-sm font-semibold text-indigo-600" x-text="`${campaignSetupMode === 'fast' ? 'Fast Setup' : 'Advanced Setup'} · Step ${campaignSetupStepIndex('priority') + 1} of ${campaignSetupStepsForMode().length}`"></p>
+                                    <span class="mb-4 flex size-10 items-center justify-center rounded-md bg-indigo-50 text-indigo-600">
+                                        <span class="outcraft-icon !text-[21px]" x-text="campaignSetupStepIcon('priority')"></span>
+                                    </span>
                                     <h2 class="mt-2 text-2xl font-bold leading-8 tracking-tight text-gray-950" x-text="campaignSetupHeading('priority')"></h2>
                                     <p class="mt-2 max-w-3xl text-sm leading-6 text-gray-600" x-text="campaignSetupDescription('priority')"></p>
                                 </div>
@@ -2871,25 +3243,23 @@ class OutreachPage extends Page
                             <section x-cloak x-show="campaignSetup.current === 'review' || campaignSetupScrollFromStep === 'review'" x-ref="campaignSetupStep_review"
                                 :style="campaignSetupStepStyle('review')"
                                 data-campaign-setup-step
-                                class="space-y-6 pr-2 pb-4">
-                                <div class="mb-1">
-                                    <p class="text-sm font-semibold text-indigo-600" x-text="`${campaignSetupMode === 'fast' ? 'Fast Setup' : 'Advanced Setup'} · Step ${campaignSetupStepIndex('review') + 1} of ${campaignSetupStepsForMode().length}`"></p>
-                                    <h2 class="mt-2 text-2xl font-bold leading-8 tracking-tight text-gray-950" x-text="campaignSetupHeading('review')"></h2>
-                                    <p class="mt-2 max-w-3xl text-sm leading-6 text-gray-600" x-text="campaignSetupDescription('review')"></p>
+                                class="pr-2 pb-4">
+                                <div>
+                                    <span class="mb-4 flex size-10 items-center justify-center rounded-md bg-indigo-50 text-indigo-600">
+                                        <span class="outcraft-icon !text-[21px]" x-text="campaignSetupStepIcon('review')"></span>
+                                    </span>
+                                    <h2 class="text-2xl font-bold leading-8 tracking-tight text-gray-950" x-text="campaignSetupHeading('review')"></h2>
+                                    <p class="mt-2 text-sm leading-6 text-gray-600" x-text="campaignSetupDescription('review')"></p>
                                 </div>
-                                <label class="block max-w-xl">
-                                    <span class="block text-sm/6 font-semibold text-gray-900">Campaign Name</span>
-                                    <input x-model="campaignSetup.name" type="text" placeholder="Generated automatically if left empty" class="mt-2 block w-full rounded-md bg-white px-3 py-1.5 text-sm/6 text-gray-900 shadow-sm outline outline-1 -outline-offset-1 outline-gray-300 placeholder:text-gray-400 focus:outline-2 focus:-outline-offset-2 focus:outline-indigo-600">
-                                    <span class="mt-2 block text-sm leading-6 text-gray-500">Add a name now, or leave it empty and AI will assign one.</span>
-                                </label>
-                                <div class="rounded-lg border border-gray-200 bg-gray-50 p-5">
-                                    <h3 class="text-base font-bold text-gray-950">Publish Knowledge Base Changes</h3>
-                                    <p class="mt-2 text-sm leading-6 text-gray-600">Before you can start using your campaign, review and publish the changes made to the knowledgebase during setup. You can update your knowledgebase later if needed.</p>
-                                    <div class="mt-5 flex flex-wrap gap-3">
-                                        <button type="button" x-on:click="campaignSetup.knowledgePublished = true" class="inline-flex h-9 items-center rounded-md bg-white px-3 text-sm font-semibold text-gray-900 ring-1 ring-inset ring-gray-300">Review & Publish</button>
-                                        <button type="button" class="inline-flex h-9 items-center rounded-md bg-indigo-600 px-3 text-sm font-semibold text-white" x-text="campaignSetupMode === 'fast' ? 'Test Campaign' : 'Test Campaign'"></button>
-                                        <button type="button" x-show="campaignSetupMode === 'fast'" x-on:click="continueCampaignSetupAdvanced()" class="inline-flex h-9 items-center rounded-md bg-white px-3 text-sm font-semibold text-gray-900 ring-1 ring-inset ring-gray-300">Continue to Advanced Setup</button>
-                                        <button type="button" x-show="campaignSetupMode === 'advanced'" :disabled="launchBlocked()" class="inline-flex h-9 items-center rounded-md bg-indigo-600 px-3 text-sm font-semibold text-white disabled:cursor-not-allowed disabled:opacity-40">Launch Campaign</button>
+                                <div class="max-w-xl space-y-5">
+                                    <label class="block">
+                                        <span class="block text-sm/6 font-semibold text-gray-900">Campaign Name</span>
+                                        <input x-model="campaignSetup.name" type="text" placeholder="Generated automatically if left empty" class="mt-2 block w-full rounded-md bg-white px-3 py-1.5 text-sm/6 text-gray-900 shadow-sm outline outline-1 -outline-offset-1 outline-gray-300 placeholder:text-gray-400 focus:outline-2 focus:-outline-offset-2 focus:outline-indigo-600">
+                                        <span class="mt-2 block text-sm leading-6 text-gray-500">Add a name now, or leave it empty and AI will assign one.</span>
+                                    </label>
+                                    <div class="flex flex-wrap gap-3">
+                                        <button type="button" class="inline-flex h-9 items-center rounded-md bg-white px-3 text-sm font-semibold text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 transition hover:bg-gray-50">Test Campaign</button>
+                                        <button type="button" x-on:click="publishCampaignSetup()" :disabled="launchBlocked()" class="inline-flex h-9 items-center rounded-md bg-indigo-600 px-3 text-sm font-semibold text-white shadow-sm transition hover:bg-indigo-500 disabled:cursor-not-allowed disabled:opacity-40">Launch Campaign</button>
                                     </div>
                                 </div>
                             </section>
@@ -2901,7 +3271,7 @@ class OutreachPage extends Page
                                     <span class="outcraft-icon !text-[18px]">arrow_upward</span>
                                     Back
                                 </button>
-                                <button type="button" x-on:click="nextCampaignSetupStep()" class="inline-flex h-9 min-w-0 items-center gap-2 rounded-md bg-indigo-600 px-3 text-sm font-semibold text-white shadow-sm transition hover:bg-indigo-500">
+                                <button type="button" x-on:click="nextCampaignSetupStep()" :disabled="campaignSetupStepIndex() >= campaignSetupStepsForMode().length - 1 && launchBlocked()" class="inline-flex h-9 min-w-0 items-center gap-2 rounded-md bg-indigo-600 px-3 text-sm font-semibold text-white shadow-sm transition hover:bg-indigo-500 disabled:cursor-not-allowed disabled:opacity-40">
                                     <span class="truncate" x-text="campaignSetupContinueLabel()"></span>
                                     <span class="outcraft-icon !text-[18px]" x-text="campaignSetupContinueIcon()"></span>
                                 </button>
@@ -2910,14 +3280,116 @@ class OutreachPage extends Page
 
                         <div x-cloak x-show="campaignSetup.sequenceModalOpen || campaignSetup.followupModalOpen || campaignSetup.discountCodeModalOpen || campaignSetup.overrideModalOpen" class="fixed inset-0 z-50 flex items-center justify-center bg-gray-950/30 p-4">
                             <div class="w-full max-w-lg rounded-lg bg-white p-6 shadow-2xl">
-                                <h2 class="text-lg font-bold text-gray-950" x-text="campaignSetup.overrideModalOpen ? 'Create Campaign Override' : (campaignSetup.discountCodeModalOpen ? 'Add Discount Code' : (campaignSetup.followupModalOpen ? 'Create Flow Template Step' : 'Create Outreach Sequence Step'))"></h2>
+                                <h2 class="text-lg font-bold text-gray-950" x-text="campaignSetup.overrideModalOpen ? 'Create Campaign Override' : (campaignSetup.discountCodeModalOpen ? 'Add Discount Code' : (campaignSetup.followupModalOpen ? 'Create Flow Template Step' : (campaignSetup.sequenceEditingIndex === null ? 'Create Outreach Sequence Step' : 'Edit Outreach Sequence Step')))"></h2>
                                 <div class="mt-5 space-y-4">
-                                    <template x-if="campaignSetup.sequenceModalOpen"><div class="grid gap-4"><label class="block"><span class="text-sm font-medium text-gray-900">Channel</span><select class="mt-2 block w-full rounded-md px-3 py-2 text-sm outline outline-1 -outline-offset-1 outline-gray-300"><option>Call</option><option>SMS</option><option>Email</option><option>WhatsApp</option><option>None</option></select></label><label class="block"><span class="text-sm font-medium text-gray-900">Label</span><input type="text" placeholder="initial_call" class="mt-2 block w-full rounded-md px-3 py-1.5 text-sm outline outline-1 -outline-offset-1 outline-gray-300"></label><label class="block"><span class="text-sm font-medium text-gray-900">Action / Flow Step</span><select class="mt-2 block w-full rounded-md px-3 py-2 text-sm outline outline-1 -outline-offset-1 outline-gray-300"><option>Select an Option</option></select></label><label class="block"><span class="text-sm font-medium text-gray-900">Wait Before Sending</span><input type="number" value="1" class="mt-2 block w-full rounded-md px-3 py-1.5 text-sm outline outline-1 -outline-offset-1 outline-gray-300"><span class="mt-2 block text-sm text-gray-500">This delay starts after the previous step is completed.</span></label></div></template>
+                                    <template x-if="campaignSetup.sequenceModalOpen"><div class="grid gap-4"><label class="block"><span class="text-sm font-medium text-gray-900">Channel</span><select class="mt-2 block w-full rounded-md px-3 py-2 text-sm outline outline-1 -outline-offset-1 outline-gray-300"><option>Call</option><option>SMS</option><option>Email</option><option>WhatsApp</option><option>None</option></select></label><label class="block"><span class="text-sm font-medium text-gray-900">Action / Flow Step</span><select class="mt-2 block w-full rounded-md px-3 py-2 text-sm outline outline-1 -outline-offset-1 outline-gray-300"><option>Select an Option</option></select></label><label class="block"><span class="text-sm font-medium text-gray-900">Wait Before Sending</span><input type="number" value="1" class="mt-2 block w-full rounded-md px-3 py-1.5 text-sm outline outline-1 -outline-offset-1 outline-gray-300"><span class="mt-2 block text-sm text-gray-500">This delay starts after the previous step is completed.</span></label></div></template>
                                     <template x-if="campaignSetup.followupModalOpen"><div class="grid gap-4"><label class="block"><span class="text-sm font-medium text-gray-900">Choose Step</span><select class="mt-2 block w-full rounded-md px-3 py-2 text-sm outline outline-1 -outline-offset-1 outline-gray-300"><option>Select an Option</option></select></label><label class="block"><span class="text-sm font-medium text-gray-900">Delay Dispatch By</span><input type="number" value="0" class="mt-2 block w-full rounded-md px-3 py-1.5 text-sm outline outline-1 -outline-offset-1 outline-gray-300"><span class="mt-2 block text-sm text-gray-500">Will delay this step after the previous step was dispatched.</span></label></div></template>
                                     <template x-if="campaignSetup.discountCodeModalOpen"><div class="grid gap-4"><label class="block"><span class="text-sm font-medium text-gray-900">Discount Code</span><input x-model="campaignSetup.newDiscountCode" type="text" placeholder="25OFF" class="mt-2 block w-full rounded-md px-3 py-1.5 text-sm outline outline-1 -outline-offset-1 outline-gray-300 placeholder:text-gray-400 focus:outline-2 focus:-outline-offset-2 focus:outline-indigo-600"><span class="mt-2 block text-sm text-gray-500">Code to include - e.g. SUMMER20, WELCOME10.</span></label></div></template>
                                     <template x-if="campaignSetup.overrideModalOpen"><div class="grid gap-4"><button type="button" class="flex items-start justify-between gap-4 rounded-lg border border-gray-200 p-4 text-left"><span><span class="block text-sm font-medium text-gray-900">Allow Override All Campaigns?</span><span class="mt-1 block text-sm text-gray-500">If enabled, this campaign will have priority over any already running campaign once triggered.</span></span><span class="relative inline-flex h-6 w-11 rounded-full bg-gray-200 p-0.5"><span class="size-5 rounded-full bg-white shadow-sm"></span></span></button><label class="block"><span class="text-sm font-medium text-gray-900">Which Campaign Should Current Campaign Override?</span><select class="mt-2 block w-full rounded-md px-3 py-2 text-sm outline outline-1 -outline-offset-1 outline-gray-300"><option>Select an Option</option><option>Abandoned Cart Recovery</option><option>Web Support</option></select></label></div></template>
                                 </div>
-                                <div class="mt-6 flex justify-end gap-3"><button type="button" x-on:click="closeCampaignSetupOverlays()" class="inline-flex h-9 items-center rounded-md bg-white px-3 text-sm font-semibold text-gray-900 ring-1 ring-inset ring-gray-300">Cancel</button><button type="button" x-on:click="campaignSetup.discountCodeModalOpen ? addDiscountCode() : closeCampaignSetupOverlays()" class="inline-flex h-9 items-center rounded-md bg-indigo-600 px-3 text-sm font-semibold text-white" x-text="campaignSetup.discountCodeModalOpen ? 'Add Code' : 'Create'"></button></div>
+                                <div class="mt-6 flex justify-end gap-3"><button type="button" x-on:click="closeCampaignSetupOverlays()" class="inline-flex h-9 items-center rounded-md bg-white px-3 text-sm font-semibold text-gray-900 ring-1 ring-inset ring-gray-300">Cancel</button><button type="button" x-on:click="campaignSetup.discountCodeModalOpen ? addDiscountCode() : closeCampaignSetupOverlays()" class="inline-flex h-9 items-center rounded-md bg-indigo-600 px-3 text-sm font-semibold text-white" x-text="campaignSetup.discountCodeModalOpen ? 'Add Code' : (campaignSetup.sequenceModalOpen && campaignSetup.sequenceEditingIndex !== null ? 'Save' : 'Create')"></button></div>
+                            </div>
+                        </div>
+
+                        <div
+                            x-cloak
+                            x-show="campaignSetup.briefBuilderItemModalOpen"
+                            x-transition.opacity
+                            x-on:keydown.escape.window="closeCampaignSetupOverlays()"
+                            class="fixed inset-0 z-50 flex items-center justify-center bg-gray-950/30 p-4"
+                        >
+                            <div x-on:click="closeCampaignSetupOverlays()" class="absolute inset-0"></div>
+                            <div
+                                x-show="campaignSetup.briefBuilderItemModalOpen"
+                                x-transition:enter="transition ease-out duration-150"
+                                x-transition:enter-start="opacity-0 translate-y-3 scale-95"
+                                x-transition:enter-end="opacity-100 translate-y-0 scale-100"
+                                x-transition:leave="transition ease-in duration-100"
+                                x-transition:leave-start="opacity-100 translate-y-0 scale-100"
+                                x-transition:leave-end="opacity-0 translate-y-2 scale-95"
+                                class="relative flex max-h-[min(680px,calc(100vh-2rem))] w-full max-w-xl flex-col overflow-hidden rounded-lg bg-white shadow-xl ring-1 ring-gray-900/10"
+                                role="dialog"
+                                aria-modal="true"
+                                aria-labelledby="add-campaign-context-item-title"
+                            >
+                                <div class="border-b border-gray-200 px-6 py-5">
+                                    <div class="flex items-start justify-between gap-4">
+                                        <div>
+                                            <h2 id="add-campaign-context-item-title" class="text-base font-semibold text-gray-950">Add Campaign Context Item</h2>
+                                            <p class="mt-1 text-sm leading-6 text-gray-500">Choose a block to add to your custom campaign context.</p>
+                                        </div>
+                                        <button type="button" x-on:click="closeCampaignSetupOverlays()" class="inline-flex size-8 items-center justify-center rounded-md text-gray-400 transition hover:bg-gray-50 hover:text-gray-700" aria-label="Close">
+                                            <span class="outcraft-icon !text-[20px]">close</span>
+                                        </button>
+                                    </div>
+                                    <label class="mt-4 block">
+                                        <span class="sr-only">Search Items</span>
+                                        <input x-model="campaignSetup.briefBuilderItemSearch" type="search" placeholder="Search Items" class="block h-9 w-full rounded-md bg-white px-3 py-1.5 text-sm text-gray-900 outline outline-1 -outline-offset-1 outline-gray-300 placeholder:text-gray-400 focus:outline-2 focus:-outline-offset-2 focus:outline-indigo-600">
+                                    </label>
+                                </div>
+                                <div class="min-h-0 flex-1 overflow-y-auto px-6 py-4">
+                                    <div class="space-y-6">
+                                        <template x-for="group in filteredBriefBuilderItemGroups()" :key="group.label">
+                                            <section>
+                                                <h3 class="text-xs font-semibold uppercase tracking-wide text-gray-400" x-text="group.label"></h3>
+                                                <div class="mt-2 space-y-2">
+                                                    <template x-for="option in group.options" :key="option.type">
+                                                        <button type="button" x-on:click="addBriefBuilderItem(option.type)" class="flex w-full items-start gap-3 rounded-lg border border-gray-200 bg-white p-4 text-left transition hover:bg-gray-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600" :class="briefBuilderHasItem(option.type) ? 'opacity-60' : ''">
+                                                            <span class="flex size-9 shrink-0 items-center justify-center rounded-md bg-indigo-50 text-indigo-600">
+                                                                <span x-show="briefBuilderItemSvgIcon(option.type)" class="size-[21px]" x-html="briefBuilderItemSvgIcon(option.type)"></span>
+                                                                <span x-show="! briefBuilderItemSvgIcon(option.type)" class="outcraft-icon !text-[19px]" x-text="option.icon"></span>
+                                                            </span>
+                                                            <span class="min-w-0 flex-1">
+                                                                <span class="flex items-center gap-2">
+                                                                    <span class="text-sm font-semibold text-gray-950" x-text="option.title"></span>
+                                                                    <span x-show="briefBuilderHasItem(option.type)" class="inline-flex rounded-md bg-gray-50 px-2 py-0.5 text-xs font-medium text-gray-600 ring-1 ring-inset ring-gray-500/10">Added</span>
+                                                                </span>
+                                                                <span class="mt-1 block text-sm leading-6 text-gray-500" x-text="option.description"></span>
+                                                            </span>
+                                                        </button>
+                                                    </template>
+                                                </div>
+                                            </section>
+                                        </template>
+                                        <p x-show="filteredBriefBuilderItemGroups().length === 0" class="px-1 py-6 text-center text-sm text-gray-500">No Items Found.</p>
+                                    </div>
+                                </div>
+	                            </div>
+	                        </div>
+
+	                        <div
+	                            x-cloak
+	                            x-show="campaignSetup.integrationSkipModalOpen"
+                            x-transition.opacity
+                            x-on:keydown.escape.window="closeCampaignSetupOverlays()"
+                            class="fixed inset-0 z-50 flex items-center justify-center bg-gray-950/30 p-4"
+                        >
+                            <div x-on:click="closeCampaignSetupOverlays()" class="absolute inset-0"></div>
+                            <div
+                                x-show="campaignSetup.integrationSkipModalOpen"
+                                x-transition:enter="transition ease-out duration-150"
+                                x-transition:enter-start="opacity-0 translate-y-3 scale-95"
+                                x-transition:enter-end="opacity-100 translate-y-0 scale-100"
+                                x-transition:leave="transition ease-in duration-100"
+                                x-transition:leave-start="opacity-100 translate-y-0 scale-100"
+                                x-transition:leave-end="opacity-0 translate-y-2 scale-95"
+                                class="relative w-full max-w-lg rounded-lg bg-white p-6 text-center shadow-xl ring-1 ring-gray-900/10"
+                                role="dialog"
+                                aria-modal="true"
+                                aria-labelledby="skip-integration-title"
+                            >
+                                <button type="button" x-on:click="closeCampaignSetupOverlays()" class="absolute right-4 top-4 inline-flex size-8 items-center justify-center rounded-md text-gray-400 transition hover:bg-gray-50 hover:text-gray-700" aria-label="Close">
+                                    <span class="outcraft-icon !text-[22px]">close</span>
+                                </button>
+                                <div class="mx-auto flex size-12 items-center justify-center rounded-full bg-indigo-50 text-indigo-600">
+                                    <span class="outcraft-icon !text-[24px]">report</span>
+                                </div>
+                                <h2 id="skip-integration-title" class="mt-5 text-base font-bold text-gray-950">Set Up Lead Source Later?</h2>
+                                <p class="mt-2 text-sm leading-6 text-gray-500">Without custom fields or merge tags, AI will have less context to personalize conversations.</p>
+                                <div class="mt-6 flex justify-center gap-3">
+                                    <button type="button" x-on:click="closeCampaignSetupOverlays()" class="inline-flex h-9 min-w-28 items-center justify-center rounded-md bg-white px-3 text-sm font-semibold text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 transition hover:bg-gray-50">Cancel</button>
+                                    <button type="button" x-on:click="confirmSkipCampaignIntegration()" class="inline-flex h-9 min-w-28 items-center justify-center rounded-md bg-indigo-600 px-3 text-sm font-semibold text-white shadow-sm transition hover:bg-indigo-500">Setup Later</button>
+                                </div>
                             </div>
                         </div>
 
@@ -3186,7 +3658,7 @@ class OutreachPage extends Page
                             </button>
                         </template>
                     </div>
-                    <button type="button" class="inline-flex h-10 items-center gap-2 rounded-lg border border-gray-200 bg-white px-4 text-[15px] font-semibold text-gray-800 shadow-sm transition hover:bg-gray-200 hover:text-gray-950">
+                    <button type="button" class="inline-flex h-10 items-center gap-2 rounded-lg border border-gray-200 bg-white px-4 text-[15px] font-semibold text-gray-800 shadow-sm transition hover:bg-gray-50 hover:text-gray-950">
                         <span class="outcraft-icon !text-[18px] text-gray-500">download</span>
                         Export
                     </button>
@@ -3265,13 +3737,13 @@ class OutreachPage extends Page
                         <tbody>
                             <template x-for="signal in insightsSignals()" :key="signal.name">
                                 <tr class="border-b border-gray-200 last:border-b-0">
-                                    <td class="px-6 py-4 font-medium text-gray-950" x-text="signal.name"></td>
-                                    <td class="px-4 py-4 text-gray-700" x-text="signal.segment"></td>
-                                    <td class="px-4 py-4">
+                                    <td class="px-6 py-4 align-top font-medium text-gray-950" x-text="signal.name"></td>
+                                    <td class="px-4 py-4 align-top text-gray-700" x-text="signal.segment"></td>
+                                    <td class="px-4 py-4 align-top">
                                         <span class="inline-flex rounded-md px-2 py-1 text-xs font-medium ring-1 ring-inset" :class="signal.impact === 'High' ? 'bg-green-50 text-green-700 ring-green-600/20' : 'bg-gray-50 text-gray-600 ring-gray-500/10'" x-text="signal.impact"></span>
                                     </td>
-                                    <td class="px-4 py-4 text-gray-700" x-text="signal.confidence"></td>
-                                    <td class="px-4 py-4 font-semibold text-gray-600">View</td>
+                                    <td class="px-4 py-4 align-top text-gray-700" x-text="signal.confidence"></td>
+                                    <td class="px-4 py-4 align-top font-semibold text-gray-600">View</td>
                                 </tr>
                             </template>
                         </tbody>
@@ -3372,7 +3844,12 @@ class OutreachPage extends Page
                         </div>
                         <div class="border-t border-gray-100 px-6 py-6">
                             <dt class="text-sm/6 font-medium text-gray-900">Country</dt>
-                            <dd class="mt-1 truncate text-sm/6 text-gray-700 sm:mt-2" x-text="`${selectedLead?.countryFlag || '🇺🇸'} ${selectedLead?.country || 'US'}`"></dd>
+                            <dd class="mt-1 flex items-center gap-2 text-sm/6 text-gray-700 sm:mt-2">
+                                <span class="inline-flex size-5 shrink-0 overflow-hidden rounded-full ring-1 ring-gray-200">
+                                    <img :src="countryFlagUrl(selectedLead?.countryFlagCode || selectedLead?.country || 'US')" :alt="`${leadCountryOption(selectedLead?.country || 'US').name} flag`" class="size-full object-cover" loading="lazy">
+                                </span>
+                                <span x-text="leadCountryOption(selectedLead?.country || 'US').name"></span>
+                            </dd>
                         </div>
                         <div class="border-t border-gray-100 px-6 py-6">
                             <dt class="text-sm/6 font-medium text-gray-900">Timezone</dt>
@@ -3419,13 +3896,23 @@ class OutreachPage extends Page
                                 <label for="lead-edit-country" class="block text-sm/6 font-medium text-gray-900">Country</label>
                                 <div class="relative mt-2" x-on:click.outside="leadSelectOpen === 'country' && (leadSelectOpen = '')">
                                     <button id="lead-edit-country" type="button" x-on:click="toggleLeadSelect('country')" class="flex h-10 w-full items-center justify-between rounded-md bg-white px-3 text-left text-sm/6 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 transition hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-indigo-600">
-                                        <span class="truncate" x-text="leadCountryLabel(leadEditForm.country)"></span>
+                                        <span class="flex min-w-0 items-center gap-2">
+                                            <span class="inline-flex size-5 shrink-0 overflow-hidden rounded-full ring-1 ring-gray-200">
+                                                <img :src="countryFlagUrl(leadEditForm.country)" :alt="`${leadEditForm.country || 'US'} flag`" class="size-full object-cover" loading="lazy">
+                                            </span>
+                                            <span class="truncate" x-text="leadCountryLabel(leadEditForm.country)"></span>
+                                        </span>
                                         <span class="outcraft-icon ml-3 shrink-0 text-gray-500">keyboard_arrow_down</span>
                                     </button>
                                     <div x-cloak x-show="leadSelectOpen === 'country'" class="absolute z-30 mt-2 max-h-64 w-full overflow-auto rounded-md bg-white py-1 shadow-lg ring-1 ring-gray-900/10">
                                         <template x-for="countryOption in leadCountryOptions" :key="countryOption.code">
                                             <button type="button" x-on:click="selectLeadCountry(countryOption.code)" class="flex w-full items-center justify-between gap-3 px-3 py-2 text-left text-sm text-gray-900 transition hover:bg-gray-50">
-                                                <span x-text="`${countryOption.flag} ${countryOption.name} (${countryOption.code})`"></span>
+                                                <span class="flex min-w-0 items-center gap-2">
+                                                    <span class="inline-flex size-5 shrink-0 overflow-hidden rounded-full ring-1 ring-gray-200">
+                                                        <img :src="countryFlagUrl(countryOption)" :alt="`${countryOption.name} flag`" class="size-full object-cover" loading="lazy">
+                                                    </span>
+                                                    <span class="truncate" x-text="`${countryOption.name} (${countryOption.code})`"></span>
+                                                </span>
                                                 <span x-show="leadEditForm.country === countryOption.code" class="outcraft-icon text-indigo-600">check</span>
                                             </button>
                                         </template>
@@ -3708,7 +4195,7 @@ class OutreachPage extends Page
                                 <div>
                                     <div class="px-1 py-2 text-[15px] font-semibold" x-text="group.column"></div>
                                     <template x-for="value in group.values" :key="group.column + value">
-                                        <button x-on:click="addFilter(value)" class="block w-full rounded-lg px-1 py-2 text-left text-[15px] hover:bg-gray-200" x-text="value"></button>
+                                        <button x-on:click="addFilter(value)" class="block w-full rounded-lg px-1 py-2 text-left text-[15px] hover:bg-gray-50" x-text="value"></button>
                                     </template>
                                 </div>
                             </template>
@@ -3726,9 +4213,9 @@ class OutreachPage extends Page
                         <span class="outcraft-icon text-gray-600">keyboard_arrow_down</span>
                     </button>
                     <div x-cloak x-show="presetOpen" x-transition:enter="transition ease-out duration-200" x-transition:enter-start="opacity-0 translate-y-3" x-transition:enter-end="opacity-100 translate-y-0" x-transition:leave="transition ease-in duration-150" x-transition:leave-start="opacity-100 translate-y-0" x-transition:leave-end="opacity-0 translate-y-2" class="absolute right-0 top-12 z-40 w-[230px] overflow-hidden rounded-md bg-white p-1 text-sm text-gray-900 shadow-lg ring-1 ring-gray-900/5">
-                        <button type="button" x-on:click="clearFilters()" class="block w-full rounded-lg px-3 py-2 text-left font-semibold hover:bg-gray-200">Clear Filters</button>
+                        <button type="button" x-on:click="clearFilters()" class="block w-full rounded-lg px-3 py-2 text-left font-semibold hover:bg-gray-50">Clear Filters</button>
                         <template x-for="preset in presets" :key="preset.name">
-                            <div class="group flex items-center rounded-lg hover:bg-gray-200">
+                            <div class="group flex items-center rounded-lg hover:bg-gray-50">
                                 <button type="button" x-on:click="applyPreset(preset)" class="flex min-w-0 flex-1 items-center justify-between px-3 py-2 text-left">
                                     <span class="truncate" x-text="preset.name"></span>
                                     <span x-show="selectedPresetName === preset.name" class="outcraft-icon ml-3 shrink-0 text-blue-500">check</span>
@@ -3742,19 +4229,131 @@ class OutreachPage extends Page
                 </div>
             </div>
 
-            <div class="flex min-h-[74px] items-center justify-end gap-3 border-y border-gray-200 bg-white px-6">
-                <button type="button" x-on:click="addFilter('Review Required')" class="inline-flex h-9 items-center gap-2 rounded-lg border border-gray-200 bg-white px-3 text-[14px] font-semibold text-gray-800 shadow-sm transition hover:bg-gray-200">
-                    <span class="outcraft-icon !text-[18px] text-gray-500">manage_search</span>
-                    Review Required
-                </button>
-                <button type="button" class="inline-flex h-9 items-center gap-2 rounded-lg border border-gray-200 bg-white px-3 text-[14px] font-semibold text-gray-800 shadow-sm transition hover:bg-gray-200">
-                    <span class="outcraft-icon !text-[18px] text-gray-500">upload</span>
-                    Import CSV
-                </button>
-                <button type="button" class="inline-flex h-9 items-center gap-2 rounded-lg border border-gray-200 bg-white px-3 text-[14px] font-semibold text-gray-800 shadow-sm transition hover:bg-gray-200">
-                    <span class="outcraft-icon !text-[18px] text-gray-500">add</span>
-                    Add Lead
-                </button>
+            <div class="flex min-h-[74px] items-center justify-between gap-3 border-y border-gray-200 bg-white px-6">
+                <label class="inline-flex items-center gap-3 text-sm font-semibold text-gray-700">
+                    <span class="grid size-4 shrink-0 grid-cols-1">
+                        <input
+                            type="checkbox"
+                            :checked="allVisibleLeadsSelected()"
+                            x-effect="$el.indeterminate = someVisibleLeadsSelected()"
+                            x-on:change="toggleVisibleLeadSelection()"
+                            class="col-start-1 row-start-1 appearance-none rounded border border-gray-300 bg-white checked:border-indigo-600 checked:bg-indigo-600 indeterminate:border-indigo-600 indeterminate:bg-indigo-600 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600"
+                        >
+                        <svg x-show="allVisibleLeadsSelected()" viewBox="0 0 14 14" fill="none" class="pointer-events-none col-start-1 row-start-1 size-3 self-center justify-self-center stroke-white">
+                            <path d="M3 8L6 11L11 3.5" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+                        </svg>
+                        <svg x-show="someVisibleLeadsSelected()" viewBox="0 0 14 14" fill="none" class="pointer-events-none col-start-1 row-start-1 size-3 self-center justify-self-center stroke-white">
+                            <path d="M3 7H11" stroke-width="2" stroke-linecap="round" />
+                        </svg>
+                    </span>
+                    <span>Select All</span>
+                </label>
+
+                <div x-show="selectedLeadIds.length === 0" class="flex items-center justify-end gap-3">
+                    <button type="button" x-on:click="addFilter('Review Required')" class="inline-flex h-9 items-center gap-2 rounded-lg border border-gray-200 bg-white px-3 text-[14px] font-semibold text-gray-800 shadow-sm transition hover:bg-gray-50">
+                        <span class="outcraft-icon !text-[18px] text-gray-500">manage_search</span>
+                        Review Required
+                    </button>
+                    <div class="relative inline-flex" x-on:click.outside="leadAddMenuOpen = false">
+                        <div class="inline-flex h-9 overflow-hidden rounded-lg border border-gray-200 bg-white shadow-sm">
+                            <button type="button" x-on:click="leadAddMenuOpen = false" class="inline-flex items-center gap-2 px-3 text-[14px] font-semibold text-gray-800 transition hover:bg-gray-50">
+                                <span class="outcraft-icon !text-[18px] text-gray-500">add</span>
+                                Add Lead
+                            </button>
+                            <button type="button" x-on:click="leadAddMenuOpen = ! leadAddMenuOpen" class="inline-flex w-9 items-center justify-center border-l border-gray-200 bg-white text-gray-500 transition hover:bg-gray-50 hover:text-gray-700" aria-label="More lead actions">
+                                <span class="outcraft-icon !text-[18px]">keyboard_arrow_down</span>
+                            </button>
+                        </div>
+                        <div x-cloak x-show="leadAddMenuOpen" x-transition:enter="transition ease-out duration-100" x-transition:enter-start="opacity-0 translate-y-1" x-transition:enter-end="opacity-100 translate-y-0" x-transition:leave="transition ease-in duration-75" x-transition:leave-start="opacity-100 translate-y-0" x-transition:leave-end="opacity-0 translate-y-1" class="absolute right-0 top-11 z-40 w-44 rounded-md bg-white p-1 text-sm shadow-lg ring-1 ring-gray-900/10">
+                            <button type="button" x-on:click="leadAddMenuOpen = false" class="flex w-full items-center gap-2 rounded-md px-3 py-2 text-left font-medium text-gray-700 transition hover:bg-gray-50 hover:text-gray-900">
+                                <span class="outcraft-icon !text-[18px] text-gray-500">upload</span>
+                                Import CSV
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <div
+                    x-cloak
+                    x-show="selectedLeadIds.length > 0"
+                    x-transition:enter="transition ease-out duration-150"
+                    x-transition:enter-start="opacity-0 translate-y-1"
+                    x-transition:enter-end="opacity-100 translate-y-0"
+                    x-transition:leave="transition ease-in duration-100"
+                    x-transition:leave-start="opacity-100 translate-y-0"
+                    x-transition:leave-end="opacity-0 translate-y-1"
+                    class="relative flex items-center justify-end gap-3"
+                >
+                    <span class="text-sm font-medium text-gray-500" x-text="`${selectedLeadIds.length} Selected`"></span>
+                    <button type="button" x-on:click.stop="$wire.mountAction('deleteSelectedLeads', { ids: Array.from(selectedLeadIds) })" class="inline-flex h-9 items-center gap-2 rounded-md bg-white px-3 text-sm font-semibold text-red-600 shadow-sm ring-1 ring-inset ring-red-200 transition hover:bg-red-50 hover:text-red-700">
+                        <span class="outcraft-icon !text-[18px]">delete</span>
+                        Delete
+                    </button>
+                    <button type="button" x-on:click="openLeadAssignModal()" class="inline-flex h-9 items-center gap-2 rounded-md bg-white px-3 text-sm font-semibold text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 transition hover:bg-gray-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600">
+                        Assign Campaign
+                        <span class="outcraft-icon !text-[18px] text-gray-500">arrow_forward</span>
+                    </button>
+                </div>
+            </div>
+
+            <div
+                x-cloak
+                x-show="leadAssignModalOpen"
+                x-transition.opacity
+                x-on:keydown.escape.window="closeLeadAssignModal()"
+                class="fixed inset-0 z-50 flex items-center justify-center bg-gray-950/30 p-4"
+            >
+                <div x-on:click="closeLeadAssignModal()" class="absolute inset-0"></div>
+                <div
+                    x-show="leadAssignModalOpen"
+                    x-transition:enter="transition ease-out duration-150"
+                    x-transition:enter-start="opacity-0 translate-y-3 scale-95"
+                    x-transition:enter-end="opacity-100 translate-y-0 scale-100"
+                    x-transition:leave="transition ease-in duration-100"
+                    x-transition:leave-start="opacity-100 translate-y-0 scale-100"
+                    x-transition:leave-end="opacity-0 translate-y-2 scale-95"
+                    class="relative flex max-h-[min(680px,calc(100vh-2rem))] w-full max-w-2xl flex-col overflow-hidden rounded-lg bg-white shadow-xl ring-1 ring-gray-900/10"
+                    role="dialog"
+                    aria-modal="true"
+                    aria-labelledby="assign-campaign-title"
+                >
+                    <div class="border-b border-gray-200 px-6 py-5">
+                        <h2 id="assign-campaign-title" class="text-base font-semibold text-gray-900">Assign Campaign</h2>
+                        <p class="mt-1 text-sm leading-6 text-gray-500" x-text="`Choose a campaign for ${selectedLeadIds.length} selected lead${selectedLeadIds.length === 1 ? '' : 's'}.`"></p>
+                    </div>
+
+                    <div class="min-h-0 flex-1 overflow-y-auto px-6 py-4">
+                        <div class="space-y-2">
+                            <template x-for="campaign in campaignAssignmentOptions()" :key="campaign.name">
+                                <button
+                                    type="button"
+                                    x-on:click="leadAssignCampaignName = campaign.name"
+                                    class="flex w-full items-start gap-3 rounded-lg border p-4 text-left transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600"
+                                    :class="leadAssignCampaignName === campaign.name ? 'border-indigo-600 bg-indigo-50/50' : 'border-gray-200 bg-white hover:bg-gray-50'"
+                                >
+                                    <span class="mt-0.5 grid size-4 shrink-0 grid-cols-1">
+                                        <span class="col-start-1 row-start-1 rounded-full border" :class="leadAssignCampaignName === campaign.name ? 'border-indigo-600 bg-indigo-600' : 'border-gray-300 bg-white'"></span>
+                                        <span x-show="leadAssignCampaignName === campaign.name" class="col-start-1 row-start-1 size-1.5 self-center justify-self-center rounded-full bg-white"></span>
+                                    </span>
+                                    <span class="min-w-0 flex-1">
+                                        <span class="block truncate text-sm font-semibold text-gray-900" x-text="campaign.name"></span>
+                                        <span class="mt-1 flex flex-wrap items-center gap-2 text-xs leading-5 text-gray-500">
+                                            <span class="inline-flex rounded-md px-2 py-1 font-medium ring-1 ring-inset" :class="campaign.status === 'Running' ? 'bg-green-50 text-green-700 ring-green-600/20' : 'bg-gray-50 text-gray-600 ring-gray-500/10'" x-text="campaign.status"></span>
+                                            <span x-show="campaign.change" class="inline-flex rounded-md bg-amber-50 px-2 py-1 font-medium text-amber-700 ring-1 ring-inset ring-amber-600/20" x-text="campaign.change"></span>
+                                            <span x-text="campaign.modified"></span>
+                                        </span>
+                                    </span>
+                                    <span x-show="leadAssignCampaignName === campaign.name" class="outcraft-icon !text-[20px] text-indigo-600">check</span>
+                                </button>
+                            </template>
+                        </div>
+                    </div>
+
+                    <div class="flex items-center justify-end gap-3 border-t border-gray-200 bg-gray-50 px-6 py-4">
+                        <button type="button" x-on:click="closeLeadAssignModal()" class="inline-flex h-10 items-center justify-center rounded-md bg-white px-4 text-sm font-semibold text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 transition hover:bg-gray-50">Cancel</button>
+                        <button type="button" x-on:click="assignSelectedLeadsToCampaign()" :disabled="! leadAssignCampaignName" class="inline-flex h-10 items-center justify-center rounded-md bg-indigo-600 px-4 text-sm font-semibold text-white shadow-sm transition hover:bg-indigo-500 disabled:cursor-not-allowed disabled:opacity-40 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600">Assign And Dispatch</button>
+                    </div>
+                </div>
             </div>
 
             <div class="overflow-x-auto">
@@ -3763,27 +4362,40 @@ class OutreachPage extends Page
                         <div class="mx-auto flex size-[56px] items-center justify-center rounded-xl bg-white" x-html="tableLoaderSvg()"></div>
                     </li>
                     <template x-for="row in loadingRows()" :key="'lead-' + row.name + row.phone + row.email + row.age">
-                        <li class="flex items-center justify-between gap-x-6 px-6 py-5">
+                        <li x-on:click="openLeadDetails(row)" class="flex cursor-pointer items-start justify-between gap-x-4 px-6 py-5 transition-colors" :class="isLeadSelected(row) ? 'hover:bg-gray-100' : 'hover:bg-gray-50'">
+                            <div class="pt-1">
+                                <label x-on:click.stop class="grid size-4 shrink-0 grid-cols-1">
+                                    <input
+                                        type="checkbox"
+                                        :checked="isLeadSelected(row)"
+                                        x-on:change="toggleLeadSelection(row)"
+                                        :aria-label="`Select ${row.name || 'No Name'}`"
+                                        class="col-start-1 row-start-1 appearance-none rounded border border-gray-300 bg-white checked:border-indigo-600 checked:bg-indigo-600 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600"
+                                    >
+                                    <svg x-show="isLeadSelected(row)" viewBox="0 0 14 14" fill="none" class="pointer-events-none col-start-1 row-start-1 size-3 self-center justify-self-center stroke-white">
+                                        <path d="M3 8L6 11L11 3.5" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+                                    </svg>
+                                </label>
+                            </div>
                             <div class="min-w-0 flex-auto">
                                 <div class="flex min-w-0 items-center gap-x-3">
-                                    <p class="truncate text-sm/6 font-medium text-gray-900" x-text="row.name || 'Unknown Lead'"></p>
+                                    <p class="truncate text-sm/6 font-medium" :class="row.name ? 'text-gray-900' : 'text-gray-400'" x-text="row.name || 'No Name'"></p>
                                     <span class="outcraft-label inline-flex shrink-0 rounded-md px-2 py-1 text-xs font-medium ring-1 ring-inset" :class="leadStateClass(row.state)">
                                         <span x-text="row.state"></span>
                                     </span>
                                 </div>
-                                <div class="mt-1 flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1 text-xs/5 text-gray-500">
-                                    <button type="button" x-show="row.email" x-on:click="copyContact(row.email)" class="group relative inline-flex min-w-0 max-w-[320px] text-left transition hover:text-gray-900">
+                                <div class="mt-1 min-h-[52px] space-y-1 text-[13px]/6 text-gray-500">
+                                    <button type="button" x-show="row.email" x-on:click.stop="copyContact(row.email)" class="group relative flex min-w-0 max-w-[320px] text-left transition hover:text-gray-900">
                                         <span class="truncate" x-text="row.email"></span>
-                                        <span class="pointer-events-none absolute bottom-full left-1/2 z-50 mb-2 -translate-x-1/2 translate-y-1 whitespace-nowrap rounded-lg bg-gray-900 px-3 py-2 text-xs font-medium text-white opacity-0 shadow-sm transition group-hover:translate-y-0 group-hover:opacity-100">
+                                        <span class="pointer-events-none absolute bottom-full left-1/2 z-50 mb-2 -translate-x-1/2 translate-y-1 whitespace-nowrap rounded-lg bg-gray-900 px-3 py-2 text-[13px] font-medium text-white opacity-0 shadow-sm transition group-hover:translate-y-0 group-hover:opacity-100">
                                             <span x-text="row.email"></span>
                                             <span class="ml-2 text-white/70">Click to Copy</span>
                                             <span class="absolute left-1/2 top-full size-2 -translate-x-1/2 -translate-y-1 rotate-45 bg-gray-900"></span>
                                         </span>
                                     </button>
-                                    <span x-show="row.email && row.phone" class="mx-2 size-0.5 rounded-full bg-gray-500"></span>
-                                    <button type="button" x-show="row.phone" x-on:click="copyContact(row.phone)" class="group relative inline-flex text-left transition hover:text-gray-900">
-                                        <span x-text="row.phone"></span>
-                                        <span class="pointer-events-none absolute bottom-full left-1/2 z-50 mb-2 -translate-x-1/2 translate-y-1 whitespace-nowrap rounded-lg bg-gray-900 px-3 py-2 text-xs font-medium text-white opacity-0 shadow-sm transition group-hover:translate-y-0 group-hover:opacity-100">
+                                    <button type="button" x-show="row.phone" x-on:click.stop="copyContact(row.phone)" class="group relative flex min-w-0 text-left transition hover:text-gray-900">
+                                        <span class="truncate" x-text="row.phone"></span>
+                                        <span class="pointer-events-none absolute bottom-full left-1/2 z-50 mb-2 -translate-x-1/2 translate-y-1 whitespace-nowrap rounded-lg bg-gray-900 px-3 py-2 text-[13px] font-medium text-white opacity-0 shadow-sm transition group-hover:translate-y-0 group-hover:opacity-100">
                                             <span x-text="row.phone"></span>
                                             <span class="ml-2 text-white/70">Click to Copy</span>
                                             <span class="absolute left-1/2 top-full size-2 -translate-x-1/2 -translate-y-1 rotate-45 bg-gray-900"></span>
@@ -3794,10 +4406,12 @@ class OutreachPage extends Page
 
                             <div class="hidden min-w-[230px] sm:block">
                                 <div class="flex items-center gap-x-2 text-sm/6 font-medium text-gray-900">
-                                    <span x-text="row.countryFlag"></span>
+                                    <span class="inline-flex size-4 shrink-0 overflow-hidden rounded-full ring-1 ring-gray-200">
+                                        <img :src="countryFlagUrl(row.countryFlagCode || row.country)" :alt="`${row.country || 'US'} flag`" class="size-full object-cover" loading="lazy">
+                                    </span>
                                     <span x-text="row.phoneCountry"></span>
                                 </div>
-                                <p class="mt-1 truncate text-xs/5 text-gray-500" x-text="row.timezone"></p>
+                                <p class="mt-1 truncate text-[13px]/5 text-gray-500" x-text="row.timezone"></p>
                             </div>
 
                             <div class="min-w-[145px] text-right">
@@ -3811,9 +4425,6 @@ class OutreachPage extends Page
                                 </span>
                             </div>
 
-                            <div class="w-[52px] shrink-0 text-right">
-                                <button type="button" x-on:click="openLeadDetails(row)" class="text-sm/6 font-semibold text-gray-600 transition hover:text-gray-950">View</button>
-                            </div>
                         </li>
                     </template>
                     <li x-show="! isLoading && filteredRows().length === 0" class="px-8 py-16 text-center text-gray-500">No leads match these filters.</li>
@@ -3903,7 +4514,7 @@ class OutreachPage extends Page
                                 <div>
                                     <div class="px-1 py-2 text-[15px] font-semibold" x-text="group.column"></div>
                                     <template x-for="value in group.values" :key="group.column + value">
-                                        <button x-on:click="addFilter(value)" class="block w-full rounded-lg px-1 py-2 text-left text-[15px] hover:bg-gray-200" x-text="value"></button>
+                                        <button x-on:click="addFilter(value)" class="block w-full rounded-lg px-1 py-2 text-left text-[15px] hover:bg-gray-50" x-text="value"></button>
                                     </template>
                                 </div>
                             </template>
@@ -3921,9 +4532,9 @@ class OutreachPage extends Page
                         <span class="outcraft-icon text-gray-600">keyboard_arrow_down</span>
                     </button>
                     <div x-cloak x-show="presetOpen" x-transition:enter="transition ease-out duration-200" x-transition:enter-start="opacity-0 translate-y-3" x-transition:enter-end="opacity-100 translate-y-0" x-transition:leave="transition ease-in duration-150" x-transition:leave-start="opacity-100 translate-y-0" x-transition:leave-end="opacity-0 translate-y-2" class="absolute right-0 top-12 z-40 w-[230px] overflow-hidden rounded-md bg-white p-1 text-sm text-gray-900 shadow-lg ring-1 ring-gray-900/5">
-                        <button type="button" x-on:click="clearFilters()" class="block w-full rounded-lg px-3 py-2 text-left font-semibold hover:bg-gray-200">Clear Filters</button>
+                        <button type="button" x-on:click="clearFilters()" class="block w-full rounded-lg px-3 py-2 text-left font-semibold hover:bg-gray-50">Clear Filters</button>
                         <template x-for="preset in presets" :key="preset.name">
-                            <div class="group flex items-center rounded-lg hover:bg-gray-200">
+                            <div class="group flex items-center rounded-lg hover:bg-gray-50">
                                 <button type="button" x-on:click="applyPreset(preset)" class="flex min-w-0 flex-1 items-center justify-between px-3 py-2 text-left">
                                     <span class="truncate" x-text="preset.name"></span>
                                     <span x-show="selectedPresetName === preset.name" class="outcraft-icon ml-3 shrink-0 text-blue-500">check</span>
@@ -3961,18 +4572,18 @@ class OutreachPage extends Page
                         </tr>
                         <template x-for="(row, rowIndex) in loadingRows()" :key="'campaign-' + row.campaignName + row.name + row.phone + row.email + row.age">
                             <tr :class="rowIndex === loadingRows().length - 1 ? '' : 'border-b border-gray-200'">
-                                <td class="px-6 py-4" x-text="row.campaignName"></td>
-                                <td class="px-4 py-4">
+                                <td class="px-6 py-4 align-top" x-text="row.campaignName"></td>
+                                <td class="px-4 py-4 align-top">
                                     <span class="group relative inline-flex max-w-full">
-                                        <span class="truncate" x-text="row.name"></span>
-                                        <span class="pointer-events-none absolute bottom-full left-1/2 z-50 mb-2 -translate-x-1/2 translate-y-1 whitespace-nowrap rounded-lg bg-gray-900 px-3 py-2 text-xs font-medium text-white opacity-0 shadow-sm transition group-hover:translate-y-0 group-hover:opacity-100">
-                                            <span x-text="row.name"></span>
+                                        <span class="truncate" :class="row.name ? 'text-gray-900' : 'text-gray-400'" x-text="row.name || 'No Name'"></span>
+                                        <span class="pointer-events-none absolute bottom-full left-1/2 z-50 mb-2 -translate-x-1/2 translate-y-1 whitespace-nowrap rounded-lg bg-gray-900 px-3 py-2 text-[13px] font-medium text-white opacity-0 shadow-sm transition group-hover:translate-y-0 group-hover:opacity-100">
+                                            <span x-text="row.name || 'No Name'"></span>
                                             <span class="absolute left-1/2 top-full size-2 -translate-x-1/2 -translate-y-1 rotate-45 bg-gray-900"></span>
                                         </span>
                                     </span>
                                 </td>
-                                <td class="px-4 py-4" x-text="row.phone"></td>
-                                <td class="px-4 py-4">
+                                <td class="px-4 py-4 align-top" x-text="row.phone"></td>
+                                <td class="px-4 py-4 align-top">
                                     <span x-show="! row.email" class="text-gray-300"></span>
                                     <span x-show="row.email" class="group relative inline-flex max-w-full">
                                         <span class="truncate" x-text="shortEmail(row.email)"></span>
@@ -3982,22 +4593,22 @@ class OutreachPage extends Page
                                         </span>
                                     </span>
                                 </td>
-                                <td class="px-4 py-4">
+                                <td class="px-4 py-4 align-top">
                                     <span class="outcraft-label inline-flex max-w-[104px] rounded-md px-2 py-1 text-xs font-medium ring-1 ring-inset" :class="campaignBadgeClass(row.campaignStatus)">
                                         <span class="truncate" x-text="row.campaignStatus"></span>
                                     </span>
                                 </td>
-                                <td class="px-4 py-4">
+                                <td class="px-4 py-4 align-top">
                                     <span class="outcraft-label inline-flex max-w-[116px] rounded-md px-2 py-1 text-xs font-medium ring-1 ring-inset" :class="campaignBadgeClass(row.firstInteraction)">
                                         <span class="truncate" x-text="row.firstInteraction"></span>
                                     </span>
                                 </td>
-                                <td class="px-4 py-4">
+                                <td class="px-4 py-4 align-top">
                                     <span class="outcraft-label inline-flex max-w-[110px] rounded-md px-2 py-1 text-xs font-medium ring-1 ring-inset" :class="campaignBadgeClass(row.followUp)">
                                         <span class="truncate" x-text="row.followUp"></span>
                                     </span>
                                 </td>
-                                <td class="px-4 py-4">
+                                <td class="px-4 py-4 align-top">
                                     <span class="group relative inline-flex">
                                         <span>Created </span><span x-text="campaignAge(row)"></span>
                                         <span class="pointer-events-none absolute bottom-full left-1/2 z-50 mb-2 -translate-x-1/2 translate-y-1 whitespace-nowrap rounded-lg bg-gray-900 px-3 py-2 text-xs font-medium text-white opacity-0 shadow-sm transition group-hover:translate-y-0 group-hover:opacity-100">
@@ -4006,8 +4617,8 @@ class OutreachPage extends Page
                                         </span>
                                     </span>
                                 </td>
-                                <td class="px-4 py-4 text-right font-semibold text-gray-600 transition hover:text-gray-950">Flow</td>
-                                <td class="py-4 pr-6 pl-4 text-right">
+                                <td class="px-4 py-4 align-top text-right font-semibold text-gray-600 transition hover:text-gray-950">Flow</td>
+                                <td class="py-4 pr-6 pl-4 align-top text-right">
                                     <button type="button" x-on:click="openLeadDetails(row)" class="font-semibold text-gray-600 transition hover:text-gray-950">View</button>
                                 </td>
                             </tr>
@@ -4102,7 +4713,7 @@ class OutreachPage extends Page
                                 <div>
                                     <div class="px-1 py-2 text-[15px] font-semibold" x-text="group.column"></div>
                                     <template x-for="value in group.values" :key="group.column + value">
-                                        <button x-on:click="addFilter(value)" class="block w-full rounded-lg px-1 py-2 text-left text-[15px] hover:bg-gray-200" x-text="value"></button>
+                                        <button x-on:click="addFilter(value)" class="block w-full rounded-lg px-1 py-2 text-left text-[15px] hover:bg-gray-50" x-text="value"></button>
                                     </template>
                                 </div>
                             </template>
@@ -4120,9 +4731,9 @@ class OutreachPage extends Page
                         <span class="outcraft-icon text-gray-600">keyboard_arrow_down</span>
                     </button>
                     <div x-cloak x-show="presetOpen" x-transition:enter="transition ease-out duration-200" x-transition:enter-start="opacity-0 translate-y-3" x-transition:enter-end="opacity-100 translate-y-0" x-transition:leave="transition ease-in duration-150" x-transition:leave-start="opacity-100 translate-y-0" x-transition:leave-end="opacity-0 translate-y-2" class="absolute right-0 top-12 z-40 w-[230px] overflow-hidden rounded-md bg-white p-1 text-sm text-gray-900 shadow-lg ring-1 ring-gray-900/5">
-                        <button type="button" x-on:click="clearFilters()" class="block w-full rounded-lg px-3 py-2 text-left font-semibold hover:bg-gray-200">Clear Filters</button>
+                        <button type="button" x-on:click="clearFilters()" class="block w-full rounded-lg px-3 py-2 text-left font-semibold hover:bg-gray-50">Clear Filters</button>
                         <template x-for="preset in presets" :key="preset.name">
-                            <div class="group flex items-center rounded-lg hover:bg-gray-200">
+                            <div class="group flex items-center rounded-lg hover:bg-gray-50">
                                 <button type="button" x-on:click="applyPreset(preset)" class="flex min-w-0 flex-1 items-center justify-between px-3 py-2 text-left">
                                     <span class="truncate" x-text="preset.name"></span>
                                     <span x-show="selectedPresetName === preset.name" class="outcraft-icon ml-3 shrink-0 text-blue-500">check</span>
@@ -4137,16 +4748,14 @@ class OutreachPage extends Page
             </div>
 
             <div class="overflow-x-auto">
-                <table class="relative w-full min-w-[1080px] table-fixed border-collapse text-[15px]">
-                    <thead>
-                        <tr class="border-y border-gray-200 bg-gray-50 text-left text-[14px] font-semibold text-gray-950">
-                            <th class="w-[225px] px-6 py-4">Campaign</th>
-                            <th class="w-[160px] px-4 py-4">Lead</th>
-                            <th class="w-[245px] px-4 py-4">Contacts</th>
-                            <th class="w-[310px] px-4 py-4">Interaction</th>
-                            <th class="sticky right-0 z-10 w-[140px] bg-gray-50 py-4 pr-6 pl-4 text-right shadow-[-12px_0_18px_-18px_rgba(15,23,42,0.45)]"></th>
-                        </tr>
-                    </thead>
+                <table class="relative w-full min-w-[1040px] table-fixed border-collapse text-[15px]">
+                    <colgroup>
+                        <col class="w-1/3">
+                        <col>
+                        <col>
+                        <col>
+                        <col>
+                    </colgroup>
                     <tbody>
                         <tr x-show="isLoading" x-transition.opacity>
                             <td colspan="5" class="h-[260px] bg-white px-8 py-12 text-center">
@@ -4154,57 +4763,62 @@ class OutreachPage extends Page
                             </td>
                         </tr>
                         <template x-for="(row, rowIndex) in loadingRows()" :key="'lead-campaign-multiline-' + row.campaignName + row.name + row.phone + row.email + row.age">
-                            <tr :class="rowIndex === loadingRows().length - 1 ? '' : 'border-b border-gray-200'">
-                                <td class="px-6 py-5">
-                                    <div class="truncate font-medium text-gray-950" x-text="row.campaignName"></div>
-                                    <div class="mt-2 flex min-w-0 items-center gap-2">
-                                        <span class="inline-flex max-w-[112px] items-center rounded-md px-2 py-1 text-xs font-medium ring-1 ring-inset" :class="campaignPillClass(row.campaignStatus)">
-                                            <span class="truncate" x-text="row.campaignStatus"></span>
-                                        </span>
-                                        <span class="truncate text-gray-500">Created <span x-text="campaignAge(row)"></span></span>
+                            <tr x-on:click="openLeadDetails(row)" class="cursor-pointer transition-colors hover:bg-gray-50" :class="rowIndex === loadingRows().length - 1 ? 'h-[96px]' : 'h-[96px] border-b border-gray-200'">
+                                <td class="px-6 py-5 align-top">
+                                    <div class="truncate text-sm/6 font-medium" :class="row.name ? 'text-gray-900' : 'text-gray-400'" x-text="row.name || 'No Name'"></div>
+                                    <div class="mt-1 min-h-[52px] space-y-1 text-[13px]/6 text-gray-500">
+                                        <button type="button" x-on:click.stop="copyContact(row.email)" x-show="row.email" class="group relative flex min-w-0 max-w-[240px] cursor-pointer text-left transition hover:text-gray-900">
+                                            <span class="truncate" x-text="row.email"></span>
+                                            <span class="pointer-events-none absolute bottom-full left-1/2 z-50 mb-2 -translate-x-1/2 translate-y-1 whitespace-nowrap rounded-lg bg-gray-900 px-3 py-2 text-[13px] font-medium text-white opacity-0 shadow-sm transition group-hover:translate-y-0 group-hover:opacity-100">
+                                                <span x-text="row.email"></span>
+                                                <span class="ml-2 text-white/70">Click to Copy</span>
+                                                <span class="absolute left-1/2 top-full size-2 -translate-x-1/2 -translate-y-1 rotate-45 bg-gray-900"></span>
+                                            </span>
+                                        </button>
+                                        <button type="button" x-on:click.stop="copyContact(row.phone)" x-show="row.phone" class="group relative flex min-w-0 cursor-pointer text-left transition hover:text-gray-900">
+                                            <span class="truncate" x-text="row.phone"></span>
+                                            <span class="pointer-events-none absolute bottom-full left-1/2 z-50 mb-2 -translate-x-1/2 translate-y-1 whitespace-nowrap rounded-lg bg-gray-900 px-3 py-2 text-[13px] font-medium text-white opacity-0 shadow-sm transition group-hover:translate-y-0 group-hover:opacity-100">
+                                                <span x-text="row.phone"></span>
+                                                <span class="ml-2 text-white/70">Click to Copy</span>
+                                                <span class="absolute left-1/2 top-full size-2 -translate-x-1/2 -translate-y-1 rotate-45 bg-gray-900"></span>
+                                            </span>
+                                        </button>
+                                        <span x-show="! row.email && ! row.phone" class="text-gray-300">No Contact</span>
                                     </div>
                                 </td>
-                                <td class="px-4 py-5">
-                                    <div class="truncate font-medium text-gray-950" x-text="campaignLeadFirstName(row)"></div>
-                                    <div class="mt-1 truncate text-gray-500" x-text="campaignLeadLastName(row)"></div>
-                                </td>
-                                <td class="px-4 py-5">
-                                    <button type="button" x-on:click="copyContact(row.email)" x-show="row.email" class="group relative block max-w-full cursor-pointer text-left text-gray-950 transition hover:text-indigo-600">
-                                        <span class="block truncate" x-text="row.email"></span>
-                                        <span class="pointer-events-none absolute bottom-full left-1/2 z-50 mb-2 -translate-x-1/2 translate-y-1 whitespace-nowrap rounded-lg bg-gray-900 px-3 py-2 text-xs font-medium text-white opacity-0 shadow-sm transition group-hover:translate-y-0 group-hover:opacity-100">
-                                            <span x-text="row.email"></span>
-                                            <span class="ml-2 text-white/70">Click to Copy</span>
-                                            <span class="absolute left-1/2 top-full size-2 -translate-x-1/2 -translate-y-1 rotate-45 bg-gray-900"></span>
+                                <td class="px-4 py-5 align-top">
+                                    <div class="truncate text-sm/6 font-medium text-gray-900" x-text="row.campaignName"></div>
+                                    <div class="mt-1">
+                                        <span class="inline-flex max-w-[140px] items-center rounded-md px-2 py-1 text-xs font-medium ring-1 ring-inset" :class="campaignPillClass(row.campaignStatus)">
+                                            <span class="truncate" x-text="row.campaignStatus"></span>
                                         </span>
-                                    </button>
-                                    <div x-show="! row.email" class="truncate text-gray-300">No email</div>
-                                    <button type="button" x-on:click="copyContact(row.phone)" x-show="row.phone" class="group relative mt-1 block max-w-full cursor-pointer text-left text-gray-500 transition hover:text-indigo-600">
-                                        <span class="block truncate" x-text="row.phone"></span>
-                                        <span class="pointer-events-none absolute bottom-full left-1/2 z-50 mb-2 -translate-x-1/2 translate-y-1 whitespace-nowrap rounded-lg bg-gray-900 px-3 py-2 text-xs font-medium text-white opacity-0 shadow-sm transition group-hover:translate-y-0 group-hover:opacity-100">
-                                            <span x-text="row.phone"></span>
-                                            <span class="ml-2 text-white/70">Click to Copy</span>
-                                            <span class="absolute left-1/2 top-full size-2 -translate-x-1/2 -translate-y-1 rotate-45 bg-gray-900"></span>
-                                        </span>
-                                    </button>
-                                    <div x-show="! row.phone" class="mt-1 truncate text-gray-300">No phone</div>
+                                    </div>
                                 </td>
-                                <td class="px-4 py-5">
-                                    <div class="flex min-w-0 items-center gap-2">
-                                        <span class="w-[88px] shrink-0 whitespace-nowrap text-gray-500">First</span>
-                                        <span class="inline-flex min-w-0 max-w-[200px] items-center rounded-md px-2 py-1 text-xs font-medium ring-1 ring-inset" :class="campaignPillClass(row.firstInteraction)">
+                                <td class="px-4 py-5 align-top">
+                                    <div class="text-sm/6 font-medium text-gray-900">First</div>
+                                    <div class="mt-1">
+                                        <span class="inline-flex w-fit max-w-full min-w-0 items-center rounded-md px-2 py-1 text-xs font-medium ring-1 ring-inset" :class="campaignPillClass(row.firstInteraction)">
                                             <span class="truncate" x-text="row.firstInteraction"></span>
                                         </span>
                                     </div>
-                                    <div class="mt-2 flex min-w-0 items-center gap-2">
-                                        <span class="w-[88px] shrink-0 whitespace-nowrap text-gray-500">Follow-Up</span>
-                                        <span class="inline-flex min-w-0 max-w-[200px] items-center rounded-md px-2 py-1 text-xs font-medium ring-1 ring-inset" :class="campaignPillClass(row.followUp)">
+                                </td>
+                                <td class="px-4 py-5 align-top">
+                                    <div class="text-sm/6 font-medium text-gray-900">Follow-Up</div>
+                                    <div class="mt-1">
+                                        <span class="inline-flex w-fit max-w-full min-w-0 items-center rounded-md px-2 py-1 text-xs font-medium ring-1 ring-inset" :class="campaignPillClass(row.followUp)">
                                             <span class="truncate" x-text="row.followUp || 'Pending'"></span>
                                         </span>
                                     </div>
                                 </td>
-                                <td class="sticky right-0 bg-white py-5 pr-6 pl-4 text-right font-medium whitespace-nowrap shadow-[-12px_0_18px_-18px_rgba(15,23,42,0.45)]">
-                                    <button type="button" class="mr-3 text-indigo-600 transition hover:text-indigo-900">Flow</button>
-                                    <button type="button" x-on:click="openLeadDetails(row)" class="text-indigo-600 transition hover:text-indigo-900">View</button>
+                                <td class="px-4 py-5 align-top text-right">
+                                    <span class="group relative inline-flex flex-col items-end">
+                                        <span class="text-sm/6 font-medium text-gray-900">Created</span>
+                                        <span class="text-xs/5 text-gray-500" x-text="campaignAge(row)"></span>
+                                        <span class="pointer-events-none absolute bottom-full right-0 z-50 mb-2 translate-y-1 whitespace-nowrap rounded-lg bg-gray-900 px-3 py-2 text-xs font-medium text-white opacity-0 shadow-sm transition group-hover:translate-y-0 group-hover:opacity-100">
+                                            <span x-text="row.ageTooltip"></span>
+                                            <span class="absolute right-6 top-full size-2 -translate-y-1 rotate-45 bg-gray-900"></span>
+                                        </span>
+                                    </span>
                                 </td>
                             </tr>
                         </template>
@@ -4298,7 +4912,7 @@ class OutreachPage extends Page
                                 <div>
                                     <div class="px-1 py-2 text-[15px] font-semibold" x-text="group.column"></div>
                                     <template x-for="value in group.values" :key="group.column + value">
-                                        <button x-on:click="addFilter(value)" class="block w-full rounded-lg px-1 py-2 text-left text-[15px] hover:bg-gray-200" x-text="value"></button>
+                                        <button x-on:click="addFilter(value)" class="block w-full rounded-lg px-1 py-2 text-left text-[15px] hover:bg-gray-50" x-text="value"></button>
                                     </template>
                                 </div>
                             </template>
@@ -4316,9 +4930,9 @@ class OutreachPage extends Page
                         <span class="outcraft-icon text-gray-600">keyboard_arrow_down</span>
                     </button>
                     <div x-cloak x-show="presetOpen" x-transition:enter="transition ease-out duration-200" x-transition:enter-start="opacity-0 translate-y-3" x-transition:enter-end="opacity-100 translate-y-0" x-transition:leave="transition ease-in duration-150" x-transition:leave-start="opacity-100 translate-y-0" x-transition:leave-end="opacity-0 translate-y-2" class="absolute right-0 top-12 z-40 w-[230px] overflow-hidden rounded-md bg-white p-1 text-sm text-gray-900 shadow-lg ring-1 ring-gray-900/5">
-                        <button type="button" x-on:click="clearFilters()" class="block w-full rounded-lg px-3 py-2 text-left font-semibold hover:bg-gray-200">Clear Filters</button>
+                        <button type="button" x-on:click="clearFilters()" class="block w-full rounded-lg px-3 py-2 text-left font-semibold hover:bg-gray-50">Clear Filters</button>
                         <template x-for="preset in presets" :key="preset.name">
-                            <div class="group flex items-center rounded-lg hover:bg-gray-200">
+                            <div class="group flex items-center rounded-lg hover:bg-gray-50">
                                 <button type="button" x-on:click="applyPreset(preset)" class="flex min-w-0 flex-1 items-center justify-between px-3 py-2 text-left">
                                     <span class="truncate" x-text="preset.name"></span>
                                     <span x-show="selectedPresetName === preset.name" class="outcraft-icon ml-3 shrink-0 text-blue-500">check</span>
@@ -4333,84 +4947,81 @@ class OutreachPage extends Page
             </div>
 
             <div class="overflow-x-auto">
-                <table class="w-full min-w-[1080px] table-fixed border-collapse text-[15px]">
-                    <thead>
-                        <tr class="border-y border-gray-200 bg-gray-50 text-left text-[14px] font-semibold text-gray-950">
-                            <th class="w-[240px] px-6 py-4">Name</th>
-                            <th class="w-[240px] px-4 py-4">Phone</th>
-                            <th class="w-[240px] px-4 py-4">Email</th>
-                            <th class="w-[90px] px-4 py-4">Country</th>
-                            <th class="w-[170px] px-4 py-4">Timezone</th>
-                            <th class="w-[120px] px-4 py-4">Created</th>
-                            <th class="w-[92px] px-4 py-4"></th>
-                            <th class="w-[112px] py-4 pr-6 pl-4"></th>
-                        </tr>
-                    </thead>
+                <table class="w-full min-w-[860px] table-fixed border-collapse text-[15px]">
+                    <colgroup>
+                        <col class="w-1/3">
+                        <col>
+                        <col>
+                        <col>
+                    </colgroup>
                     <tbody>
                         <tr x-show="isLoading" x-transition.opacity>
-                            <td colspan="8" class="h-[260px] bg-white px-8 py-12 text-center">
+                            <td colspan="4" class="h-[260px] bg-white px-8 py-12 text-center">
                                 <div class="mx-auto flex size-[56px] items-center justify-center rounded-xl bg-white" x-html="tableLoaderSvg()"></div>
                             </td>
                         </tr>
                         <template x-for="(row, rowIndex) in loadingRows()" :key="'handoff-' + row.name + row.phone + row.email + row.age">
-                            <tr :class="rowIndex === loadingRows().length - 1 ? '' : 'border-b border-gray-200'">
-                                <td class="px-6 py-4">
+                            <tr x-on:click="openLeadDetails(row)" class="cursor-pointer transition-colors hover:bg-gray-50" :class="rowIndex === loadingRows().length - 1 ? 'h-[96px]' : 'h-[96px] border-b border-gray-200'">
+                                <td class="px-6 py-5 align-top">
                                     <span class="group relative inline-flex max-w-full">
-                                        <span class="truncate" x-text="row.name"></span>
-                                        <span class="pointer-events-none absolute bottom-full left-1/2 z-50 mb-2 -translate-x-1/2 translate-y-1 whitespace-nowrap rounded-lg bg-gray-900 px-3 py-2 text-xs font-medium text-white opacity-0 shadow-sm transition group-hover:translate-y-0 group-hover:opacity-100">
-                                            <span x-text="row.name"></span>
+                                        <span class="truncate text-sm/6 font-medium" :class="row.name ? 'text-gray-900' : 'text-gray-400'" x-text="row.name || 'No Name'"></span>
+                                        <span class="pointer-events-none absolute bottom-full left-1/2 z-50 mb-2 -translate-x-1/2 translate-y-1 whitespace-nowrap rounded-lg bg-gray-900 px-3 py-2 text-[13px] font-medium text-white opacity-0 shadow-sm transition group-hover:translate-y-0 group-hover:opacity-100">
+                                            <span x-text="row.name || 'No Name'"></span>
                                             <span class="absolute left-1/2 top-full size-2 -translate-x-1/2 -translate-y-1 rotate-45 bg-gray-900"></span>
                                         </span>
                                     </span>
+                                    <div class="mt-1 min-h-[52px] space-y-1 text-[13px]/6 text-gray-500">
+                                        <button type="button" x-show="row.email" x-on:click.stop="copyContact(row.email)" class="group relative flex min-w-0 max-w-[260px] text-left transition hover:text-gray-900">
+                                            <span class="truncate" x-text="row.email"></span>
+                                            <span class="pointer-events-none absolute bottom-full left-1/2 z-50 mb-2 -translate-x-1/2 translate-y-1 whitespace-nowrap rounded-lg bg-gray-900 px-3 py-2 text-[13px] font-medium text-white opacity-0 shadow-sm transition group-hover:translate-y-0 group-hover:opacity-100">
+                                                <span x-text="row.email"></span>
+                                                <span class="ml-2 text-white/70">Click to Copy</span>
+                                                <span class="absolute left-1/2 top-full size-2 -translate-x-1/2 -translate-y-1 rotate-45 bg-gray-900"></span>
+                                            </span>
+                                        </button>
+                                        <button type="button" x-show="row.phone" x-on:click.stop="copyContact(row.phone)" class="group relative flex min-w-0 text-left transition hover:text-gray-900">
+                                            <span class="truncate" x-text="row.phone"></span>
+                                            <span class="pointer-events-none absolute bottom-full left-1/2 z-50 mb-2 -translate-x-1/2 translate-y-1 whitespace-nowrap rounded-lg bg-gray-900 px-3 py-2 text-[13px] font-medium text-white opacity-0 shadow-sm transition group-hover:translate-y-0 group-hover:opacity-100">
+                                                <span x-text="row.phone"></span>
+                                                <span class="ml-2 text-white/70">Click to Copy</span>
+                                                <span class="absolute left-1/2 top-full size-2 -translate-x-1/2 -translate-y-1 rotate-45 bg-gray-900"></span>
+                                            </span>
+                                        </button>
+                                        <span x-show="! row.email && ! row.phone" class="text-gray-300">No Contact</span>
+                                    </div>
                                 </td>
-                                <td class="px-4 py-4">
-                                    <span x-show="! row.phone" class="text-gray-300"></span>
-                                    <span x-show="row.phone" class="group relative inline-flex">
-                                        <span x-text="row.phone"></span>
-                                        <span class="pointer-events-none absolute bottom-full left-1/2 z-50 mb-2 -translate-x-1/2 translate-y-1 whitespace-nowrap rounded-lg bg-gray-900 px-3 py-2 text-xs font-medium text-white opacity-0 shadow-sm transition group-hover:translate-y-0 group-hover:opacity-100">
-                                            <span class="mr-1" x-text="row.phoneFlag"></span>
-                                            <span x-text="row.phoneCountry"></span>
-                                            <span class="absolute left-1/2 top-full size-2 -translate-x-1/2 -translate-y-1 rotate-45 bg-gray-900"></span>
+                                <td class="px-4 py-5 align-top">
+                                    <div class="flex items-center gap-x-2 text-sm/6 font-medium text-gray-900">
+                                        <span class="inline-flex size-4 shrink-0 overflow-hidden rounded-full ring-1 ring-gray-200">
+                                            <img :src="countryFlagUrl(row.countryFlagCode || row.country)" :alt="`${row.country || 'US'} flag`" class="size-full object-cover" loading="lazy">
                                         </span>
-                                    </span>
-                                </td>
-                                <td class="px-4 py-4">
-                                    <span x-show="! row.email" class="text-gray-300"></span>
-                                    <span x-show="row.email" class="group relative inline-flex max-w-full">
-                                        <span class="truncate" x-text="shortLeadEmail(row.email)"></span>
-                                        <span class="pointer-events-none absolute bottom-full left-1/2 z-50 mb-2 -translate-x-1/2 translate-y-1 whitespace-nowrap rounded-lg bg-gray-900 px-3 py-2 text-xs font-medium text-white opacity-0 shadow-sm transition group-hover:translate-y-0 group-hover:opacity-100">
-                                            <span x-text="row.email"></span>
-                                            <span class="absolute left-1/2 top-full size-2 -translate-x-1/2 -translate-y-1 rotate-45 bg-gray-900"></span>
-                                        </span>
-                                    </span>
-                                </td>
-                                <td class="px-4 py-4"><span class="mr-1" x-text="row.countryFlag"></span><span x-text="row.country"></span></td>
-                                <td class="px-4 py-4">
-                                    <span class="group relative block max-w-full">
+                                        <span x-text="row.phoneCountry"></span>
+                                    </div>
+                                    <span class="group relative mt-1 block max-w-full text-[13px]/5 text-gray-500">
                                         <span class="block truncate" x-text="row.timezone"></span>
-                                        <span class="pointer-events-none absolute bottom-full left-1/2 z-50 mb-2 -translate-x-1/2 translate-y-1 whitespace-nowrap rounded-lg bg-gray-900 px-3 py-2 text-xs font-medium text-white opacity-0 shadow-sm transition group-hover:translate-y-0 group-hover:opacity-100">
+                                        <span class="pointer-events-none absolute bottom-full left-1/2 z-50 mb-2 -translate-x-1/2 translate-y-1 whitespace-nowrap rounded-lg bg-gray-900 px-3 py-2 text-[13px] font-medium text-white opacity-0 shadow-sm transition group-hover:translate-y-0 group-hover:opacity-100">
                                             <span x-text="row.timezone"></span>
                                             <span class="absolute left-1/2 top-full size-2 -translate-x-1/2 -translate-y-1 rotate-45 bg-gray-900"></span>
                                         </span>
                                     </span>
                                 </td>
-                                <td class="px-4 py-4">
-                                    <span class="group relative inline-flex">
-                                        <span>Created </span><span x-text="leadAge(row)"></span>
-                                        <span class="pointer-events-none absolute bottom-full left-1/2 z-50 mb-2 -translate-x-1/2 translate-y-1 whitespace-nowrap rounded-lg bg-gray-900 px-3 py-2 text-xs font-medium text-white opacity-0 shadow-sm transition group-hover:translate-y-0 group-hover:opacity-100">
+                                <td class="px-4 py-5 align-top text-right">
+                                    <span class="group relative inline-flex flex-col items-end">
+                                        <span class="text-sm/6 font-medium text-gray-900">Created</span>
+                                        <span class="text-xs/5 text-gray-500" x-text="leadAge(row)"></span>
+                                        <span class="pointer-events-none absolute bottom-full right-0 z-50 mb-2 translate-y-1 whitespace-nowrap rounded-lg bg-gray-900 px-3 py-2 text-xs font-medium text-white opacity-0 shadow-sm transition group-hover:translate-y-0 group-hover:opacity-100">
                                             <span x-text="row.ageTooltip"></span>
-                                            <span class="absolute left-1/2 top-full size-2 -translate-x-1/2 -translate-y-1 rotate-45 bg-gray-900"></span>
+                                            <span class="absolute right-6 top-full size-2 -translate-y-1 rotate-45 bg-gray-900"></span>
                                         </span>
                                     </span>
                                 </td>
-                                <td class="px-4 py-4 text-right">
-                                    <button type="button" x-on:click="openLeadDetails(row)" class="font-semibold text-gray-600 transition hover:text-gray-950">View</button>
+                                <td class="py-5 pr-6 pl-4 align-top text-right">
+                                    <button type="button" x-on:click.stop class="inline-flex h-9 items-center justify-center rounded-md bg-indigo-50 px-3 text-sm font-semibold text-indigo-700 shadow-sm ring-1 ring-inset ring-indigo-200 transition hover:bg-indigo-100 hover:text-indigo-800">Resolve</button>
                                 </td>
-                                <td class="py-4 pr-6 pl-4 text-right font-semibold text-gray-600 transition hover:text-gray-950">Resolve</td>
                             </tr>
                         </template>
                         <tr x-show="! isLoading && filteredRows().length === 0">
-                            <td colspan="8" class="px-8 py-16 text-center text-gray-500">No handoff requests match these filters.</td>
+                            <td colspan="4" class="px-8 py-16 text-center text-gray-500">No handoff requests match these filters.</td>
                         </tr>
                     </tbody>
                 </table>
@@ -4496,7 +5107,7 @@ class OutreachPage extends Page
                                 <div>
                                     <div class="px-1 py-2 text-[15px] font-semibold" x-text="group.column"></div>
                                     <template x-for="value in group.values" :key="group.column + value">
-                                        <button x-on:click="addFilter(value)" class="block w-full rounded-lg px-1 py-2 text-left text-[15px] hover:bg-gray-200" x-text="value"></button>
+                                        <button x-on:click="addFilter(value)" class="block w-full rounded-lg px-1 py-2 text-left text-[15px] hover:bg-gray-50" x-text="value"></button>
                                     </template>
                                 </div>
                             </template>
@@ -4522,12 +5133,12 @@ class OutreachPage extends Page
                         <button
                             type="button"
                             x-on:click="clearFilters()"
-                            class="block w-full rounded-lg px-3 py-2 text-left font-semibold hover:bg-gray-200"
+                            class="block w-full rounded-lg px-3 py-2 text-left font-semibold hover:bg-gray-50"
                         >
                             Clear Filters
                         </button>
                         <template x-for="preset in presets" :key="preset.name">
-                            <div class="group flex items-center rounded-lg hover:bg-gray-200">
+                            <div class="group flex items-center rounded-lg hover:bg-gray-50">
                                 <button
                                     type="button"
                                     x-on:click="applyPreset(preset)"
@@ -4579,27 +5190,29 @@ class OutreachPage extends Page
                         </tr>
                         <template x-for="(row, rowIndex) in loadingRows()" :key="row.name + row.email + row.age + row.result">
                             <tr :class="rowIndex === loadingRows().length - 1 ? '' : 'border-b border-gray-200'">
-                                <td class="px-6 py-4">
+                                <td class="px-6 py-4 align-top">
                                     <span class="group relative inline-flex max-w-full">
-                                        <span class="truncate" x-text="row.name"></span>
+                                        <span class="truncate" :class="row.name ? 'text-gray-900' : 'text-gray-400'" x-text="row.name || 'No Name'"></span>
                                         <span class="pointer-events-none absolute bottom-full left-1/2 z-50 mb-2 -translate-x-1/2 translate-y-1 whitespace-nowrap rounded-lg bg-gray-900 px-3 py-2 text-xs font-medium text-white opacity-0 shadow-sm transition group-hover:translate-y-0 group-hover:opacity-100">
-                                            <span x-text="row.name"></span>
+                                            <span x-text="row.name || 'No Name'"></span>
                                             <span class="absolute left-1/2 top-full size-2 -translate-x-1/2 -translate-y-1 rotate-45 bg-gray-900"></span>
                                         </span>
                                     </span>
                                 </td>
-                                <td class="px-4 py-4">
+                                <td class="px-4 py-4 align-top">
                                     <span x-show="! row.phone" class="text-gray-300"></span>
                                     <span x-show="row.phone" class="group relative inline-flex">
                                         <span x-text="row.phone"></span>
                                         <span class="pointer-events-none absolute bottom-full left-1/2 z-50 mb-2 -translate-x-1/2 translate-y-1 whitespace-nowrap rounded-lg bg-gray-900 px-3 py-2 text-xs font-medium text-white opacity-0 shadow-sm transition group-hover:translate-y-0 group-hover:opacity-100">
-                                            <span class="mr-1" x-text="row.phoneFlag"></span>
+                                            <span class="mr-1 inline-flex size-4 shrink-0 overflow-hidden rounded-full ring-1 ring-white/20">
+                                                <img :src="countryFlagUrl(row.phoneFlagCode || row.country)" :alt="`${row.phoneCountry || 'Country'} flag`" class="size-full object-cover" loading="lazy">
+                                            </span>
                                             <span x-text="row.phoneCountry"></span>
                                             <span class="absolute left-1/2 top-full size-2 -translate-x-1/2 -translate-y-1 rotate-45 bg-gray-900"></span>
                                         </span>
                                     </span>
                                 </td>
-                                <td class="px-4 py-4">
+                                <td class="px-4 py-4 align-top">
                                     <span x-show="! row.email" class="text-gray-300"></span>
                                     <span x-show="row.email" class="group relative inline-flex max-w-full">
                                         <span class="truncate" x-text="shortEmail(row.email)"></span>
@@ -4609,8 +5222,8 @@ class OutreachPage extends Page
                                         </span>
                                     </span>
                                 </td>
-                                <td class="px-4 py-4" x-text="row.channel"></td>
-                                <td class="px-4 py-4">
+                                <td class="px-4 py-4 align-top" x-text="row.channel"></td>
+                                <td class="px-4 py-4 align-top">
                                     <button type="button" x-show="row.content === 'View'" x-on:click="openLeadDetails(row)" class="group relative inline-flex text-left">
                                         <span class="outcraft-label inline-flex max-w-[76px] cursor-pointer rounded-md bg-gray-50 px-2 py-1 text-xs font-medium text-gray-600 ring-1 ring-inset ring-gray-500/10 transition group-hover:text-gray-950">
                                             <span class="truncate">View</span>
@@ -4631,9 +5244,9 @@ class OutreachPage extends Page
                                         </span>
                                     </span>
                                 </td>
-                                <td class="px-4 py-4">
+                                <td class="px-4 py-4 align-top">
                                     <span class="group relative inline-flex">
-                                        <span class="outcraft-label inline-flex max-w-[112px] rounded-md bg-gray-50 px-2 py-1 text-xs font-medium text-gray-600 ring-1 ring-inset ring-gray-500/10">
+                                        <span class="outcraft-label inline-flex max-w-[112px] rounded-md bg-gray-50 px-2 py-1 text-[13px] font-medium text-gray-600 ring-1 ring-inset ring-gray-500/10">
                                             <span class="truncate" x-text="row.direction"></span>
                                         </span>
                                         <span class="pointer-events-none absolute bottom-full left-1/2 z-50 mb-2 -translate-x-1/2 translate-y-1 whitespace-nowrap rounded-lg bg-gray-900 px-3 py-2 text-xs font-medium text-white opacity-0 shadow-sm transition group-hover:translate-y-0 group-hover:opacity-100">
@@ -4642,7 +5255,7 @@ class OutreachPage extends Page
                                         </span>
                                     </span>
                                 </td>
-                                <td class="px-4 py-4">
+                                <td class="px-4 py-4 align-top">
                                     <span class="group relative inline-flex">
                                         <span class="outcraft-label inline-flex max-w-[138px] rounded-md px-2 py-1 text-xs font-medium ring-1 ring-inset" :class="pillClass(row.outcome)">
                                             <span class="truncate" x-text="row.outcome"></span>
@@ -4653,7 +5266,7 @@ class OutreachPage extends Page
                                         </span>
                                     </span>
                                 </td>
-                                <td class="px-4 py-4">
+                                <td class="px-4 py-4 align-top">
                                     <span class="group relative inline-flex">
                                         <span class="outcraft-label inline-flex max-w-[98px] rounded-md px-2 py-1 text-xs font-medium ring-1 ring-inset" :class="pillClass(row.result)">
                                             <span class="truncate" x-text="row.result"></span>
@@ -4664,7 +5277,7 @@ class OutreachPage extends Page
                                         </span>
                                     </span>
                                 </td>
-                                <td class="px-4 py-4">
+                                <td class="px-4 py-4 align-top">
                                     <span class="group relative inline-flex">
                                         <span>Created </span><span x-text="leadAge(row)"></span>
                                         <span class="pointer-events-none absolute bottom-full left-1/2 z-50 mb-2 -translate-x-1/2 translate-y-1 whitespace-nowrap rounded-lg bg-gray-900 px-3 py-2 text-xs font-medium text-white opacity-0 shadow-sm transition group-hover:translate-y-0 group-hover:opacity-100">
@@ -4673,7 +5286,7 @@ class OutreachPage extends Page
                                         </span>
                                     </span>
                                 </td>
-                                <td class="py-4 pr-6 pl-4 text-right">
+                                <td class="py-4 pr-6 pl-4 align-top text-right">
                                     <button type="button" x-on:click="openLeadDetails(row)" class="font-semibold text-gray-600 transition hover:text-gray-950">View</button>
                                 </td>
                             </tr>
@@ -4765,7 +5378,7 @@ class OutreachPage extends Page
                                 <div>
                                     <div class="px-1 py-2 text-[15px] font-semibold" x-text="group.column"></div>
                                     <template x-for="value in group.values" :key="group.column + value">
-                                        <button x-on:click="addFilter(value)" class="block w-full rounded-lg px-1 py-2 text-left text-[15px] hover:bg-gray-200" x-text="value"></button>
+                                        <button x-on:click="addFilter(value)" class="block w-full rounded-lg px-1 py-2 text-left text-[15px] hover:bg-gray-50" x-text="value"></button>
                                     </template>
                                 </div>
                             </template>
@@ -4783,9 +5396,9 @@ class OutreachPage extends Page
                         <span class="outcraft-icon text-gray-600">keyboard_arrow_down</span>
                     </button>
                     <div x-cloak x-show="presetOpen" x-transition:enter="transition ease-out duration-200" x-transition:enter-start="opacity-0 translate-y-3" x-transition:enter-end="opacity-100 translate-y-0" x-transition:leave="transition ease-in duration-150" x-transition:leave-start="opacity-100 translate-y-0" x-transition:leave-end="opacity-0 translate-y-2" class="absolute right-0 top-12 z-40 w-[230px] overflow-hidden rounded-md bg-white p-1 text-sm text-gray-900 shadow-lg ring-1 ring-gray-900/5">
-                        <button type="button" x-on:click="clearFilters()" class="block w-full rounded-lg px-3 py-2 text-left font-semibold hover:bg-gray-200">Clear Filters</button>
+                        <button type="button" x-on:click="clearFilters()" class="block w-full rounded-lg px-3 py-2 text-left font-semibold hover:bg-gray-50">Clear Filters</button>
                         <template x-for="preset in presets" :key="preset.name">
-                            <div class="group flex items-center rounded-lg hover:bg-gray-200">
+                            <div class="group flex items-center rounded-lg hover:bg-gray-50">
                                 <button type="button" x-on:click="applyPreset(preset)" class="flex min-w-0 flex-1 items-center justify-between px-3 py-2 text-left">
                                     <span class="truncate" x-text="preset.name"></span>
                                     <span x-show="selectedPresetName === preset.name" class="outcraft-icon ml-3 shrink-0 text-blue-500">check</span>
@@ -4800,38 +5413,50 @@ class OutreachPage extends Page
             </div>
 
             <div class="overflow-x-auto">
-                <table class="relative w-full min-w-[1080px] table-fixed border-collapse text-[15px]">
-                    <thead>
-                        <tr class="border-y border-gray-200 bg-gray-50 text-left text-[14px] font-semibold text-gray-950">
-                            <th class="w-[240px] px-6 py-4">Channel</th>
-                            <th class="w-[170px] px-4 py-4">Name</th>
-                            <th class="w-[290px] px-4 py-4">Contact</th>
-                            <th class="w-[240px] px-4 py-4">Outcome</th>
-                            <th class="w-[120px] px-4 py-4">
-                                <button type="button" x-on:click="toggleAgeSort()" class="flex items-center gap-1 rounded-md font-semibold hover:text-gray-600">
-                                    <span>Created</span>
-                                    <span class="outcraft-icon !text-[16px]" x-text="ageSortDirection === 'asc' ? 'arrow_upward' : 'arrow_downward'"></span>
-                                </button>
-                            </th>
-                            <th class="sticky right-0 z-10 w-[96px] bg-gray-50 py-4 pr-6 pl-4 text-right shadow-[-12px_0_18px_-18px_rgba(15,23,42,0.45)]"></th>
-                        </tr>
-                    </thead>
+                <table class="relative w-full min-w-[1040px] table-fixed border-collapse text-[15px]">
+                    <colgroup>
+                        <col class="w-1/3">
+                        <col>
+                        <col>
+                        <col>
+                        <col>
+                    </colgroup>
                     <tbody>
                         <tr x-show="isLoading" x-transition.opacity>
-                            <td colspan="6" class="h-[260px] bg-white px-8 py-12 text-center">
+                            <td colspan="5" class="h-[260px] bg-white px-8 py-12 text-center">
                                 <div class="mx-auto flex size-[56px] items-center justify-center rounded-xl bg-white" x-html="tableLoaderSvg()"></div>
                             </td>
                         </tr>
                         <template x-for="(row, rowIndex) in loadingRows()" :key="'outreach-review-' + row.name + row.email + row.age + row.result">
-                            <tr :class="rowIndex === loadingRows().length - 1 ? '' : 'border-b border-gray-200'">
-                                <td class="px-6 py-5">
-                                    <div class="flex min-w-0 items-center gap-2">
-                                        <span class="truncate font-medium text-gray-950" x-text="row.channel"></span>
+                            <tr x-on:click="openLeadDetails(row)" class="cursor-pointer transition-colors hover:bg-gray-50" :class="rowIndex === loadingRows().length - 1 ? 'h-[96px]' : 'h-[96px] border-b border-gray-200'">
+                                <td class="px-6 py-5 align-top">
+                                    <div class="truncate text-sm/6 font-medium" :class="row.name ? 'text-gray-900' : 'text-gray-400'" x-text="row.name || 'No Name'"></div>
+                                    <div class="mt-1 min-h-[52px] space-y-1 text-[13px]/6 text-gray-500">
+                                        <button type="button" x-on:click.stop="copyContact(row.email)" x-show="row.email" class="group relative flex min-w-0 max-w-[260px] cursor-pointer text-left transition hover:text-gray-900">
+                                            <span class="truncate" x-text="row.email"></span>
+                                            <span class="pointer-events-none absolute bottom-full left-1/2 z-50 mb-2 -translate-x-1/2 translate-y-1 whitespace-nowrap rounded-lg bg-gray-900 px-3 py-2 text-[13px] font-medium text-white opacity-0 shadow-sm transition group-hover:translate-y-0 group-hover:opacity-100">
+                                                <span x-text="row.email"></span>
+                                                <span class="ml-2 text-white/70">Click to Copy</span>
+                                                <span class="absolute left-1/2 top-full size-2 -translate-x-1/2 -translate-y-1 rotate-45 bg-gray-900"></span>
+                                            </span>
+                                        </button>
+                                        <button type="button" x-on:click.stop="copyContact(row.phone)" x-show="row.phone" class="group relative flex min-w-0 cursor-pointer text-left transition hover:text-gray-900">
+                                            <span class="truncate" x-text="row.phone"></span>
+                                            <span class="pointer-events-none absolute bottom-full left-1/2 z-50 mb-2 -translate-x-1/2 translate-y-1 whitespace-nowrap rounded-lg bg-gray-900 px-3 py-2 text-[13px] font-medium text-white opacity-0 shadow-sm transition group-hover:translate-y-0 group-hover:opacity-100">
+                                                <span x-text="row.phone"></span>
+                                                <span class="ml-2 text-white/70">Click to Copy</span>
+                                                <span class="absolute left-1/2 top-full size-2 -translate-x-1/2 -translate-y-1 rotate-45 bg-gray-900"></span>
+                                            </span>
+                                        </button>
+                                        <span x-show="! row.email && ! row.phone" class="text-gray-300">No Contact</span>
+                                    </div>
+                                </td>
+                                <td class="px-4 py-5 align-top">
+                                    <div class="truncate text-sm/6 font-medium text-gray-900" x-text="row.channel"></div>
+                                    <div class="mt-1 flex min-w-0 flex-wrap items-center gap-2">
                                         <span class="outcraft-label inline-flex max-w-[112px] rounded-md bg-gray-50 px-2 py-1 text-xs font-medium text-gray-600 ring-1 ring-inset ring-gray-500/10">
                                             <span class="truncate" x-text="row.direction"></span>
                                         </span>
-                                    </div>
-                                    <div class="mt-2">
                                         <button
                                             type="button"
                                             x-show="row.channel !== 'Call'"
@@ -4839,7 +5464,7 @@ class OutreachPage extends Page
                                             x-on:mouseleave="hideFloatingTooltip()"
                                             x-on:focus="showFloatingTooltip($event, row.contentPreview, 320)"
                                             x-on:blur="hideFloatingTooltip()"
-                                            x-on:click="openLeadDetails(row)"
+                                            x-on:click.stop="openLeadDetails(row)"
                                             class="inline-flex text-left"
                                         >
                                             <span class="outcraft-label inline-flex max-w-[92px] cursor-pointer rounded-md bg-gray-50 px-2 py-1 text-xs font-medium text-gray-600 ring-1 ring-inset ring-gray-500/10 transition group-hover:text-gray-950">
@@ -4850,6 +5475,7 @@ class OutreachPage extends Page
                                             x-show="row.channel === 'Call'"
                                             x-on:mouseenter="showFloatingTooltip($event, 'Listen', 104)"
                                             x-on:mouseleave="hideFloatingTooltip()"
+                                            x-on:click.stop
                                             class="inline-flex"
                                         >
                                             <span class="outcraft-label inline-flex max-w-[92px] cursor-pointer items-center gap-1 rounded-md bg-gray-50 px-2 py-1 text-xs font-medium text-gray-600 ring-1 ring-inset ring-gray-500/10 transition group-hover:text-gray-950">
@@ -4859,60 +5485,36 @@ class OutreachPage extends Page
                                         </span>
                                     </div>
                                 </td>
-                                <td class="px-4 py-5">
-                                    <div class="truncate font-medium text-gray-950" x-text="campaignLeadFirstName(row)"></div>
-                                    <div class="mt-1 truncate text-gray-500" x-text="campaignLeadLastName(row)"></div>
-                                </td>
-                                <td class="px-4 py-5">
-                                    <button type="button" x-on:click="copyContact(row.email)" x-show="row.email" class="group relative block max-w-full cursor-pointer text-left text-gray-950 transition hover:text-indigo-600">
-                                        <span class="block truncate" x-text="row.email"></span>
-                                        <span class="pointer-events-none absolute bottom-full left-1/2 z-50 mb-2 -translate-x-1/2 translate-y-1 whitespace-nowrap rounded-lg bg-gray-900 px-3 py-2 text-xs font-medium text-white opacity-0 shadow-sm transition group-hover:translate-y-0 group-hover:opacity-100">
-                                            <span x-text="row.email"></span>
-                                            <span class="ml-2 text-white/70">Click to Copy</span>
-                                            <span class="absolute left-1/2 top-full size-2 -translate-x-1/2 -translate-y-1 rotate-45 bg-gray-900"></span>
-                                        </span>
-                                    </button>
-                                    <div x-show="! row.email" class="truncate text-gray-300">No email</div>
-                                    <button type="button" x-on:click="copyContact(row.phone)" x-show="row.phone" class="group relative mt-1 block max-w-full cursor-pointer text-left text-gray-500 transition hover:text-indigo-600">
-                                        <span class="block truncate" x-text="row.phone"></span>
-                                        <span class="pointer-events-none absolute bottom-full left-1/2 z-50 mb-2 -translate-x-1/2 translate-y-1 whitespace-nowrap rounded-lg bg-gray-900 px-3 py-2 text-xs font-medium text-white opacity-0 shadow-sm transition group-hover:translate-y-0 group-hover:opacity-100">
-                                            <span x-text="row.phone"></span>
-                                            <span class="ml-2 text-white/70">Click to Copy</span>
-                                            <span class="absolute left-1/2 top-full size-2 -translate-x-1/2 -translate-y-1 rotate-45 bg-gray-900"></span>
-                                        </span>
-                                    </button>
-                                    <div x-show="! row.phone" class="mt-1 truncate text-gray-300">No phone</div>
-                                </td>
-                                <td class="px-4 py-5">
-                                    <div class="flex min-w-0 items-center gap-2">
-                                        <span class="w-[72px] shrink-0 whitespace-nowrap text-gray-500">Outcome</span>
-                                        <span class="outcraft-label inline-flex min-w-0 max-w-[140px] rounded-md px-2 py-1 text-xs font-medium ring-1 ring-inset" :class="pillClass(row.outcome)">
+                                <td class="px-4 py-5 align-top">
+                                    <div class="text-sm/6 font-medium text-gray-900">Outcome</div>
+                                    <div class="mt-1">
+                                        <span class="outcraft-label inline-flex w-fit max-w-full min-w-0 rounded-md px-2 py-1 text-xs font-medium ring-1 ring-inset" :class="pillClass(row.outcome)">
                                             <span class="truncate" x-text="row.outcome"></span>
                                         </span>
                                     </div>
-                                    <div class="mt-2 flex min-w-0 items-center gap-2">
-                                        <span class="w-[72px] shrink-0 whitespace-nowrap text-gray-500">Result</span>
-                                        <span class="outcraft-label inline-flex min-w-0 max-w-[140px] rounded-md px-2 py-1 text-xs font-medium ring-1 ring-inset" :class="pillClass(row.result)">
+                                </td>
+                                <td class="px-4 py-5 align-top">
+                                    <div class="text-sm/6 font-medium text-gray-900">Result</div>
+                                    <div class="mt-1">
+                                        <span class="outcraft-label inline-flex w-fit max-w-full min-w-0 rounded-md px-2 py-1 text-xs font-medium ring-1 ring-inset" :class="pillClass(row.result)">
                                             <span class="truncate" x-text="row.result"></span>
                                         </span>
                                     </div>
                                 </td>
-                                <td class="px-4 py-5">
-                                    <span class="group relative inline-flex">
-                                        <span>Created </span><span x-text="leadAge(row)"></span>
-                                        <span class="pointer-events-none absolute bottom-full left-1/2 z-50 mb-2 -translate-x-1/2 translate-y-1 whitespace-nowrap rounded-lg bg-gray-900 px-3 py-2 text-xs font-medium text-white opacity-0 shadow-sm transition group-hover:translate-y-0 group-hover:opacity-100">
+                                <td class="px-4 py-5 align-top text-right">
+                                    <span class="group relative inline-flex flex-col items-end">
+                                        <span class="text-sm/6 font-medium text-gray-900">Created</span>
+                                        <span class="text-xs/5 text-gray-500" x-text="leadAge(row)"></span>
+                                        <span class="pointer-events-none absolute bottom-full right-0 z-50 mb-2 translate-y-1 whitespace-nowrap rounded-lg bg-gray-900 px-3 py-2 text-xs font-medium text-white opacity-0 shadow-sm transition group-hover:translate-y-0 group-hover:opacity-100">
                                             <span x-text="row.ageTooltip"></span>
-                                            <span class="absolute left-1/2 top-full size-2 -translate-x-1/2 -translate-y-1 rotate-45 bg-gray-900"></span>
+                                            <span class="absolute right-6 top-full size-2 -translate-y-1 rotate-45 bg-gray-900"></span>
                                         </span>
                                     </span>
-                                </td>
-                                <td class="sticky right-0 bg-white py-5 pr-6 pl-4 text-right font-medium whitespace-nowrap shadow-[-12px_0_18px_-18px_rgba(15,23,42,0.45)]">
-                                    <button type="button" x-on:click="openLeadDetails(row)" class="text-indigo-600 transition hover:text-indigo-900">View</button>
                                 </td>
                             </tr>
                         </template>
                         <tr x-show="! isLoading && filteredRows().length === 0">
-                            <td colspan="6" class="px-8 py-16 text-center text-gray-500">No outreach records match these filters.</td>
+                            <td colspan="5" class="px-8 py-16 text-center text-gray-500">No outreach records match these filters.</td>
                         </tr>
                     </tbody>
                 </table>
@@ -5182,6 +5784,7 @@ class OutreachPage extends Page
             dock_to_left: 'panel-left-close',
             dock_to_right: 'panel-left-open',
             download: 'download',
+            drag_indicator: 'grip-vertical',
             drafts: 'mail-open',
             edit: 'pencil',
             emoji_events: 'trophy',
@@ -5245,6 +5848,7 @@ class OutreachPage extends Page
             volume_up: 'volume-2',
             waving_hand: 'hand',
         };
+        let outcraftIconGradientId = 0;
 
         function outcraftLucideKey(name) {
             const normalized = String(name || '').trim().replace(/_/g, '-');
@@ -5285,6 +5889,46 @@ class OutreachPage extends Page
                 'stroke-width': '1.5',
                 'aria-hidden': 'true',
             });
+
+            if (node.closest?.('.outcraft-ai-button')) {
+                const namespace = 'http://www.w3.org/2000/svg';
+                const gradientId = `outcraft-ai-icon-gradient-${++outcraftIconGradientId}`;
+                const defs = document.createElementNS(namespace, 'defs');
+                const gradient = document.createElementNS(namespace, 'linearGradient');
+                const animate = document.createElementNS(namespace, 'animateTransform');
+                const stops = [
+                    ['0%', '#4f46e5'],
+                    ['25%', '#ec4899'],
+                    ['50%', '#4f46e5'],
+                    ['75%', '#f472b6'],
+                    ['100%', '#4f46e5'],
+                ];
+
+                gradient.setAttribute('id', gradientId);
+                gradient.setAttribute('x1', '0%');
+                gradient.setAttribute('y1', '0%');
+                gradient.setAttribute('x2', '200%');
+                gradient.setAttribute('y2', '0%');
+                animate.setAttribute('attributeName', 'gradientTransform');
+                animate.setAttribute('type', 'translate');
+                animate.setAttribute('from', '1 0');
+                animate.setAttribute('to', '0 0');
+                animate.setAttribute('dur', '5.5s');
+                animate.setAttribute('repeatCount', 'indefinite');
+
+                stops.forEach(([offset, color]) => {
+                    const stop = document.createElementNS(namespace, 'stop');
+                    stop.setAttribute('offset', offset);
+                    stop.setAttribute('stop-color', color);
+                    gradient.appendChild(stop);
+                });
+
+                gradient.appendChild(animate);
+                defs.appendChild(gradient);
+                svg.prepend(defs);
+                svg.setAttribute('stroke', `url(#${gradientId})`);
+                svg.setAttribute('stroke-width', '2');
+            }
 
             node.dataset.iconSource = rawIcon;
             node.dataset.iconRendered = rawIcon;
@@ -5345,6 +5989,10 @@ class OutreachPage extends Page
                 leadDetailOpen: false,
                 leadDetailsEditing: false,
                 selectedLead: null,
+                selectedLeadIds: [],
+                leadAssignModalOpen: false,
+                leadAssignCampaignName: '',
+                leadAddMenuOpen: false,
                 leadDetailReturnContext: {
                     activeNav: 'Leads',
                     activeTab: 'Leads',
@@ -5418,6 +6066,13 @@ class OutreachPage extends Page
                     left: 0,
                     top: 0,
                     width: 320,
+                    arrowLeft: 160,
+                },
+                captureToast: {
+                    visible: false,
+                    title: 'Question Captured',
+                    message: 'Added to Conversation Intelligence for review.',
+                    timer: null,
                 },
                 ageSortDirection: 'asc',
                 page: 1,
@@ -5426,17 +6081,17 @@ class OutreachPage extends Page
                 leadStateOptions: ['Idle', 'Review Required'],
                 leadCalendarMonths: ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'],
                 leadCountryOptions: [
-                    { code: 'US', name: 'United States', flag: '🇺🇸' },
-                    { code: 'CA', name: 'Canada', flag: '🇨🇦' },
-                    { code: 'GB', name: 'United Kingdom', flag: '🇬🇧' },
-                    { code: 'DE', name: 'Germany', flag: '🇩🇪' },
-                    { code: 'FR', name: 'France', flag: '🇫🇷' },
-                    { code: 'ES', name: 'Spain', flag: '🇪🇸' },
-                    { code: 'IT', name: 'Italy', flag: '🇮🇹' },
-                    { code: 'NL', name: 'Netherlands', flag: '🇳🇱' },
-                    { code: 'LT', name: 'Lithuania', flag: '🇱🇹' },
-                    { code: 'PL', name: 'Poland', flag: '🇵🇱' },
-                    { code: 'AU', name: 'Australia', flag: '🇦🇺' },
+                    { code: 'US', name: 'United States', flagCode: 'us' },
+                    { code: 'CA', name: 'Canada', flagCode: 'ca' },
+                    { code: 'GB', name: 'United Kingdom', flagCode: 'gb' },
+                    { code: 'DE', name: 'Germany', flagCode: 'de' },
+                    { code: 'FR', name: 'France', flagCode: 'fr' },
+                    { code: 'ES', name: 'Spain', flagCode: 'es' },
+                    { code: 'IT', name: 'Italy', flagCode: 'it' },
+                    { code: 'NL', name: 'Netherlands', flagCode: 'nl' },
+                    { code: 'LT', name: 'Lithuania', flagCode: 'lt' },
+                    { code: 'PL', name: 'Poland', flagCode: 'pl' },
+                    { code: 'AU', name: 'Australia', flagCode: 'au' },
                 ],
 	                leadTimezoneOptions: [
 	                    'America / New York',
@@ -5478,7 +6133,59 @@ class OutreachPage extends Page
                     { label: 'A/B Tests', icon: 'science' },
                     { label: 'Archived', icon: 'archive' },
                 ],
+                companySetupSelectedCompany: 'new',
+                companySetupDemoCompanies: [
+                    {
+                        id: 'outcraft',
+                        name: 'Outcraft AI',
+                        website: 'outcraft.ai',
+                        industry: 'SaaS',
+                        description: 'AI outreach platform for campaign setup, lead conversations, and automated follow-up.',
+                        problem: 'Teams need faster outreach setup without losing context or personalization.',
+                        differentiators: 'AI-guided setup, reusable company context, custom fields, and multi-channel campaign orchestration.',
+                        icp: 'Growth teams, agencies, and sales-led SaaS companies running outbound or lifecycle campaigns.',
+                        faqs: 'Q: Can AI book meetings?\nA: Yes, when booking is enabled and a calendar link is provided.\n\nQ: Can it use merge tags?\nA: Yes, connected lead sources can provide custom fields.',
+                        supportEmail: 'support@outcraft.ai',
+                        termsUrl: 'https://outcraft.ai/terms-of-service',
+                        privacyUrl: 'https://outcraft.ai/privacy-policy',
+                        certifications: 'SOC2',
+                        compliance: 'GDPR, CCPA',
+                    },
+                    {
+                        id: 'pulsetto',
+                        name: 'Pulsetto',
+                        website: 'pulsetto.com',
+                        industry: 'Ecommerce',
+                        description: 'Wellness device brand helping customers manage stress, sleep, and relaxation routines.',
+                        problem: 'Customers need clear guidance before choosing a wellness device and may need help after checkout.',
+                        differentiators: 'Portable device, approachable education, fast customer support, and practical wellness routines.',
+                        icp: 'Health-conscious consumers, busy professionals, and customers researching stress or sleep support.',
+                        faqs: 'Q: Is Pulsetto easy to use?\nA: Yes, setup is designed to be simple.\n\nQ: Can customers get support?\nA: Yes, support can help with product and delivery questions.',
+                        supportEmail: 'support@pulsetto.com',
+                        termsUrl: 'https://pulsetto.com/terms-of-service',
+                        privacyUrl: 'https://pulsetto.com/privacy-policy',
+                        certifications: '',
+                        compliance: 'GDPR',
+                    },
+                    {
+                        id: 'nova-commerce',
+                        name: 'Nova Commerce',
+                        website: 'novacommerce.example',
+                        industry: 'Ecommerce',
+                        description: 'Retail brand selling curated home, lifestyle, and seasonal product bundles.',
+                        problem: 'Shoppers abandon carts when they need timing, delivery, or product-fit reassurance.',
+                        differentiators: 'Curated bundles, fast delivery, seasonal offers, and practical post-purchase support.',
+                        icp: 'Online shoppers who browse product bundles, abandon checkout, or respond to seasonal offers.',
+                        faqs: 'Q: Do you offer discounts?\nA: Campaign-specific discounts may be available.\n\nQ: Can shoppers recover their cart?\nA: Yes, abandoned cart links can be sent when enabled.',
+                        supportEmail: 'support@novacommerce.example',
+                        termsUrl: 'https://novacommerce.example/terms-of-service',
+                        privacyUrl: 'https://novacommerce.example/privacy-policy',
+                        certifications: '',
+                        compliance: 'GDPR, CCPA',
+                    },
+                ],
                 companySetupSteps: [
+                    { label: 'Create or Choose Company', description: 'Select an existing profile or start fresh.' },
                     { label: 'Company Identity', description: 'Name, website, and pronunciation.' },
                     { label: 'Industry & Market', description: 'Positioning, customers, and FAQs.' },
                     { label: 'Compliance & Legal', description: 'Support, policies, and standards.' },
@@ -5487,18 +6194,17 @@ class OutreachPage extends Page
 	                campaignSetupModeSelected: false,
 	                campaignSetupIntroStep: 'type',
 	                campaignSetupFastSteps: [
-	                    { id: 'agent', label: 'AI Agent', description: 'Identity, voice, work time, handoff and other settings.' },
+	                    { id: 'agent', label: 'AI Agent', description: 'Identity, voice, work time, and other settings.' },
 	                    { id: 'channels', label: 'Outreach Channels', description: 'Calls, SMS, email, WhatsApp.' },
 	                    { id: 'brief', label: 'Campaign Context', description: 'Describe goal and context.' },
-	                    { id: 'review', label: 'Review & Test', description: 'Test the draft campaign.' },
+	                    { id: 'review', label: 'Review & Launch', description: 'Validate and launch.' },
 	                ],
                 campaignSetupAdvancedSteps: [
-			                    { id: 'agent', label: 'AI Agent', description: 'Identity, voice, work time, handoff and other settings.', group: 'Agent' },
+		                    { id: 'agent', label: 'AI Agent', description: 'Identity, voice, work time, and other settings.', group: 'Agent' },
 			                    { id: 'channels', label: 'Outreach Channels', description: 'Transport settings.', group: 'Campaign' },
 		                    { id: 'sequence', label: 'Outreach Sequence', description: 'Timeline and actions.', group: 'Outreach' },
 		                    { id: 'followups', label: 'Follow-Ups', description: 'Response-based follow-up sequences.', group: 'Outreach' },
 		                    { id: 'brief', label: 'Campaign Context', description: 'Essence, goal, and qualification.', group: 'Campaign' },
-		                    { id: 'discounts', label: 'Discount Codes', description: 'Codes the AI can send.', group: 'Campaign' },
 		                    { id: 'booking', label: 'Booking', description: 'Meeting and calendar rules.', group: 'Campaign' },
 	                    { id: 'intelligence', label: 'Conversation Intelligence', description: 'Evaluation fields.', group: 'Intelligence' },
                     { id: 'review', label: 'Review & Launch', description: 'Validate and launch.', group: 'Finish' },
@@ -5538,12 +6244,13 @@ class OutreachPage extends Page
                     agentPersonality: "- Respectful\n- Confident\n- Solution-oriented, highlighting value\n- Slow speaking, calm, and not rushed\n- Bright, sociable, engaging",
                     agentSpeechStyle: "- Use natural long turns when explaining value.\n- Add micro-pacing before important questions.\n- Use natural hesitation only where it fits.\n- Keep delivery human-sounding.\n- Avoid reading from a script.",
                     discountCode: false,
-                    offerDiscountCode: '25OFF',
-                    discountCodes: [],
-                    newDiscountCode: '',
-                    abandonedCartLink: false,
-                    cartLinkSource: 'Dynamic - Use URL from Lead Data',
-                    customizeCartLink: false,
+	                    offerDiscountCode: '25OFF',
+	                    discountCodes: [],
+	                    newDiscountCode: '',
+	                    abandonedCartLink: true,
+	                    cartLinkSource: 'Dynamic (Use URL from lead data)',
+	                    cartLinkStructure: '@{{cart_url}}?utm_source=outcraft&utm_medium=email&utm_campaign=cart-recovery',
+	                    customizeCartLink: false,
                     cartPath: '/checkout',
                     utmSource: 'outcraft',
                     utmMedium: 'email',
@@ -5559,10 +6266,11 @@ class OutreachPage extends Page
 	                    outreachStartHour: '09:00',
 	                    outreachEndHour: '17:00',
 	                    calendarService: '',
+	                    calendarConnectionStatus: '',
 	                    bookingCallLink: 'https://calendly.com/outcraft/demo',
 	                    bookingEmailLink: '',
 	                    bookingSmsLink: '',
-		                    smsTrigger: 'Positive Response',
+		                    smsTriggers: ['Positive Response'],
 		                    callGuidelines: '',
 		                    smsGuidelines: 'Keep it under 1 sentence, add a full URL to the product: https://company.io/product, and attach a discount code.',
 	                    emailGuidelines: '',
@@ -5572,6 +6280,7 @@ class OutreachPage extends Page
 	                    followupPositive: false,
 	                    followupEngaged: false,
 	                    followupNegative: false,
+	                    activeFollowupSequence: 'positive',
 	                    handoffPositive: false,
 	                    handoffRequested: false,
 	                    handoffScenario: '',
@@ -5580,15 +6289,24 @@ class OutreachPage extends Page
 	                    knowledgePublished: false,
                     evaluationFormat: 'Text Summary',
                     sequenceModalOpen: false,
+                    sequenceActionOpen: '',
+                    sequenceEditingIndex: null,
                     followupModalOpen: false,
                     discountCodeModalOpen: false,
+                    integrationSkipModalOpen: false,
                     overrideModalOpen: false,
                     evaluationDrawerOpen: false,
+                    evaluationActionOpen: '',
+                    defaultSummaryEvaluationVisible: true,
+                    capturedConversationQuestions: [],
                     dispatchDrawerOpen: false,
                     customFieldsOpen: false,
                     customFieldsLayoutOpen: false,
                     customFieldSearch: '',
-                    briefTab: 'context',
+                    briefTab: 'builder',
+                    briefBuilderItemModalOpen: false,
+                    briefBuilderItemSearch: '',
+                    briefBuilderItemActionOpen: '',
                     needsQualification: false,
                     trackEmailLinkClicks: true,
                     channels: { calls: true, email: true, sms: true, whatsapp: false },
@@ -5599,8 +6317,24 @@ class OutreachPage extends Page
                         goal: 'Confirm whether the lead wants the resource and whether they want a quick consultation.',
                         leadSituation: 'Leads who requested a resource, engaged with the brand, or triggered a relevant customer event.',
                         findOut: '- What prompted their interest?\n- What problem are they trying to solve?\n- Are they ready for the next step?',
-                        nextStep: 'Offer the most relevant next step, resource, handoff, or booking path based on the conversation.',
-                        importantRules: '- Do not promise pricing, delivery, or legal terms unless available in source data.\n- Keep questions short and ask one thing at a time.',
+                        newFindOutQuestion: '',
+                        findOutAnswerFormatOpen: null,
+                        findOutAnswerFormats: ['Yes Or No', 'Text Summary', 'Classified', 'Score Answers'],
+	                        findOutQuestions: [
+	                            { id: 'find-out-1', text: 'What prompted their interest?', addToIntelligence: true, answerFormat: 'Text Summary' },
+	                            { id: 'find-out-2', text: 'What problem are they trying to solve?', addToIntelligence: true, answerFormat: 'Text Summary' },
+	                            { id: 'find-out-3', text: 'Are they ready for the next step?', addToIntelligence: false, answerFormat: null },
+	                        ],
+	                        builderItems: [],
+	                        nextStep: 'Offer the most relevant next step, resource, handoff, or booking path based on the conversation.',
+	                        pricingSource: 'Use Knowledge Base Pricing',
+	                        manualPricing: 'Pulsetto Fit - 251 EUR special offer.\nPulsetto Lite - 233 EUR special offer.',
+	                        canNegotiatePrice: false,
+	                        priceNegotiationPercent: '10',
+	                        neverAskFor: 'Credit card information\nBanking details\nPasswords or account credentials',
+	                        neverPromise: 'Specific discounts\nRefunds\nDelivery dates\nGuaranteed results',
+	                        neverDiscuss: 'Unrelated topics\nDetailed competitor breakdowns\nRefund approvals',
+	                        importantRules: '- Do not promise pricing, delivery, or legal terms unless available in source data.\n- Keep questions short and ask one thing at a time.',
                         role: 'Information and engagement specialist.',
                         reason: 'They requested a resource or triggered a Klaviyo event.',
                         offer: 'Share the guide, a product update, or a relevant discount code.',
@@ -5628,20 +6362,28 @@ class OutreachPage extends Page
                         { name: 'Provide Support', icon: 'headphones', description: 'Handles incoming customer service and troubleshooting queries.', example: 'I can help troubleshoot this and escalate if needed.' },
                     ] },
                 ],
+                leadSourceLogos: {
+                    Shopify: `<svg width="800" height="800" viewBox="0 0 800 800" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M662.395 157.096C661.844 153.096 658.34 150.882 655.444 150.638C652.553 150.397 591.381 145.863 591.381 145.863C591.381 145.863 548.896 103.685 544.233 99.0164C539.567 94.3507 530.455 95.7699 526.918 96.811C526.397 96.9644 517.636 99.6685 503.143 104.153C488.951 63.3151 463.904 25.7863 419.841 25.7863C418.625 25.7863 417.373 25.8356 416.121 25.9069C403.589 9.33425 388.066 2.13425 374.658 2.13425C272.014 2.13425 222.975 130.449 207.6 195.655C167.715 208.014 139.381 216.8 135.762 217.937C113.499 224.921 112.795 225.622 109.871 246.6C107.671 262.482 49.4192 712.973 49.4192 712.973L503.332 798.019L749.277 744.814C749.277 744.814 662.937 161.096 662.395 157.096ZM478.055 111.912L439.647 123.8C439.66 121.093 439.674 118.43 439.674 115.518C439.674 90.137 436.151 69.7014 430.499 53.5014C453.203 56.3507 468.323 82.1836 478.055 111.912ZM402.334 58.5342C408.647 74.3507 412.751 97.0493 412.751 127.679C412.751 129.247 412.737 130.679 412.723 132.129C387.745 139.866 360.603 148.266 333.4 156.693C348.674 97.7452 377.304 69.274 402.334 58.5342ZM371.838 29.6658C376.269 29.6658 380.732 31.1699 385.003 34.1096C352.107 49.589 316.847 88.5754 301.956 166.43L239.255 185.849C256.696 126.466 298.112 29.6658 371.838 29.6658Z" fill="#95BF46"/><path d="M655.444 150.638C652.554 150.397 591.381 145.863 591.381 145.863C591.381 145.863 548.896 103.685 544.233 99.0164C542.488 97.2795 540.134 96.3891 537.674 96.0055L503.354 798.014L749.277 744.814C749.277 744.814 662.937 161.096 662.395 157.096C661.844 153.096 658.34 150.882 655.444 150.638Z" fill="#5E8E3E"/><path d="M419.841 286.534L389.515 376.742C389.515 376.742 362.945 362.562 330.376 362.562C282.628 362.562 280.225 392.526 280.225 400.077C280.225 441.277 387.622 457.063 387.622 553.567C387.622 629.493 339.466 678.384 274.534 678.384C196.617 678.384 156.77 629.89 156.77 629.89L177.633 560.959C177.633 560.959 218.592 596.123 253.154 596.123C275.737 596.123 284.923 578.342 284.923 565.351C284.923 511.608 196.814 509.211 196.814 420.901C196.814 346.575 250.162 274.649 357.849 274.649C399.343 274.649 419.841 286.534 419.841 286.534Z" fill="white"/></svg>`,
+                    Klaviyo: `<svg width="1541" height="1032" viewBox="0 0 1541 1032" fill="none" xmlns="http://www.w3.org/2000/svg"><g clip-path="url(#clip0_16109_537)"><path fill-rule="evenodd" clip-rule="evenodd" d="M1541 1031.8H0.200195V0H1541L1217.8 516.3L1541 1031.8Z" fill="#232426"/></g><defs><clipPath id="clip0_16109_537"><rect width="1541" height="1032" fill="white"/></clipPath></defs></svg>`,
+                    HubSpot: `<svg xmlns="http://www.w3.org/2000/svg" shape-rendering="geometricPrecision" text-rendering="geometricPrecision" image-rendering="optimizeQuality" fill-rule="evenodd" clip-rule="evenodd" viewBox="0 0 489 511.8"><path fill="#FF7A59" fill-rule="nonzero" d="M375.25 168.45V107.5c16.43-7.68 26.97-24.15 27.08-42.29V63.8c0-25.95-21.05-46.99-47-46.99h-1.37c-25.95 0-46.99 21.04-46.99 46.99v1.41a46.985 46.985 0 0027.29 42.3v60.94c-23.13 3.53-44.98 13.18-63.19 27.84L103.88 66.16c1.19-4.29 1.83-8.73 1.89-13.17v-.11C105.77 23.68 82.09 0 52.88 0 23.68 0 0 23.68 0 52.88c0 29.18 23.64 52.85 52.81 52.89 9.17-.08 18.16-2.59 26.06-7.23l164.62 128.07a133.501 133.501 0 00-22.16 73.61c0 27.39 8.46 54.17 24.18 76.58l-50.06 50.06a43.926 43.926 0 00-12.43-1.81c-23.96 0-43.38 19.42-43.38 43.37 0 23.96 19.42 43.38 43.38 43.38 23.95 0 43.37-19.42 43.37-43.38v-.13a41.81 41.81 0 00-2.02-12.5l49.52-49.56a133.687 133.687 0 0081.54 27.78c73.76 0 133.57-59.81 133.57-133.57 0-66.05-48.3-122.2-113.61-132.06l-.14.07zm-20.39 200.4c-36.79-1.52-65.85-31.79-65.85-68.62 0-35.43 26.97-65.06 62.23-68.38h3.62c35.8 2.73 63.46 32.58 63.46 68.48 0 35.91-27.66 65.76-63.45 68.48l-.01.04zm0 0z"/></svg>`,
+                    Attio: `<svg width="150" height="150" viewBox="0 0 150 150" fill="none" xmlns="http://www.w3.org/2000/svg"><g clip-path="url(#clip0_16109_542)"><path d="M141.71 96.93L130.37 78.78C130.37 78.78 130.33 78.7 130.3 78.67L129.41 77.24C127.74 74.54 124.79 72.9 121.62 72.91L103.35 72.85L102.08 74.9L80.2499 109.82L79.0399 111.75L88.1899 126.35C89.8799 129.07 92.7899 130.69 96.0099 130.69H121.61C124.77 130.69 127.75 129.03 129.42 126.36L130.32 124.92C130.32 124.92 130.36 124.88 130.37 124.87L141.72 106.7C143.58 103.71 143.58 99.92 141.72 96.93H141.71ZM138.25 104.53L126.89 122.7C126.84 122.79 126.78 122.85 126.73 122.93C126.16 123.56 125.19 123.62 124.56 123.05C124.45 122.95 124.35 122.83 124.27 122.7L112.92 104.52C112.66 104.11 112.47 103.67 112.33 103.21C111.93 101.82 112.14 100.33 112.9 99.11L124.24 80.96L124.27 80.91C124.54 80.5 124.88 80.32 125.17 80.26C125.29 80.22 125.39 80.21 125.47 80.2H125.6C125.86 80.2 126.51 80.28 126.92 80.94L138.26 99.09C139.3 100.74 139.3 102.87 138.26 104.52H138.25V104.53ZM108.16 53.02C110.02 50.03 110.02 46.24 108.16 43.25L96.8199 25.1L95.8699 23.57C94.1899 20.87 91.2299 19.23 88.0499 19.24H62.4499C59.2599 19.24 56.3399 20.87 54.6399 23.57L8.8099 96.95C6.9299 99.93 6.9299 103.73 8.8099 106.71L21.0999 126.39C22.7699 129.09 25.7299 130.73 28.9099 130.72H54.5099C57.7199 130.72 60.6399 129.09 62.3299 126.39L63.2699 124.9V124.85L72.4199 110.24L99.4999 66.9L108.15 53.04H108.17L108.16 53.02ZM105.48 48.13C105.48 49.06 105.22 50.01 104.69 50.84L59.7999 122.71C59.5199 123.16 59.0199 123.44 58.4899 123.43C57.9599 123.43 57.4599 123.16 57.1699 122.71L45.8299 104.53C44.7999 102.87 44.7999 100.77 45.8299 99.1L90.7099 27.27C90.9899 26.81 91.4899 26.53 92.0299 26.53C92.2899 26.53 92.9399 26.61 93.3499 27.27L104.69 45.42C105.22 46.26 105.48 47.2 105.48 48.14V48.13Z" fill="black"/></g><defs><clipPath id="clip0_16109_542"><rect width="150" height="150" fill="white"/></clipPath></defs></svg>`,
+                    'Microsoft Dynamics': `<svg width="263" height="356" viewBox="0 0 263 356" fill="none" xmlns="http://www.w3.org/2000/svg"><mask id="mask0_16109_550" style="mask-type:luminance" maskUnits="userSpaceOnUse" x="0" y="0" width="263" height="356"><path d="M262.784 113.983C262.784 98.1046 252.83 83.9974 237.868 78.6232L20.0921 0.881107C10.3209 -2.59988 0 4.66745 0 15.0493V133.281C0 139.632 3.96958 145.312 9.95444 147.449L107.544 182.32C117.316 185.801 127.636 178.534 127.636 168.152V100.181C127.636 94.9289 132.888 91.3258 137.774 93.1579L163.362 102.807C178.019 108.303 187.668 122.288 187.668 137.922V167.48L77.4369 207.786C71.5131 209.924 67.6045 215.603 67.6045 221.893V340.064C67.6045 350.507 77.9865 357.774 87.7577 354.171L238.112 299.208C252.891 293.773 262.784 279.727 262.784 263.971V113.983Z" fill="white"/></mask><g mask="url(#mask0_16109_550)"><path d="M0 -6.3252L262.723 87.4783V216.336C262.723 226.718 252.464 233.985 242.692 230.504L187.668 210.84V137.922C187.668 122.288 177.958 108.303 163.362 102.807L137.774 93.2189C132.888 91.3868 127.636 94.9899 127.636 100.242V189.465L0 143.907V-6.3252Z" fill="url(#paint0_linear_16109_550)"/><path d="M262.723 115.326C262.723 131.082 252.891 145.189 238.051 150.625L67.5435 212.916V363.026L262.723 291.696V115.326Z" fill="black" fill-opacity="0.24"/><path d="M262.723 121.311C262.723 137.067 252.891 151.174 238.051 156.609L67.5435 218.901V369.011L262.723 297.681V121.311Z" fill="black" fill-opacity="0.32"/><path d="M262.723 113.799C262.723 129.555 252.891 143.663 238.051 149.098L67.5435 211.389V361.499L262.723 290.169V113.799Z" fill="url(#paint1_linear_16109_550)"/><path opacity="0.5" d="M262.723 113.799C262.723 129.555 252.891 143.663 238.051 149.098L67.5435 211.389V361.499L262.723 290.169V113.799Z" fill="url(#paint2_linear_16109_550)"/><path opacity="0.5" d="M187.668 167.541L127.575 189.526V277.589C127.575 282.841 132.827 286.444 137.713 284.612L163.362 274.963C178.019 269.467 187.668 255.482 187.668 239.848V167.541Z" fill="#B0ADFF"/></g><defs><linearGradient id="paint0_linear_16109_550" x1="86.4446" y1="-1.97457" x2="156.305" y2="180.897" gradientUnits="userSpaceOnUse"><stop stop-color="#0B53CE"/><stop offset="1" stop-color="#7252AA"/></linearGradient><linearGradient id="paint1_linear_16109_550" x1="165.169" y1="348.349" x2="165.169" y2="130.371" gradientUnits="userSpaceOnUse"><stop stop-color="#2266E3"/><stop offset="1" stop-color="#AE7FE2"/></linearGradient><linearGradient id="paint2_linear_16109_550" x1="262.753" y1="237.657" x2="187.975" y2="237.657" gradientUnits="userSpaceOnUse"><stop stop-color="#94B9FF"/><stop offset="0.2878" stop-color="#94B9FF" stop-opacity="0.5236"/><stop offset="1" stop-color="#538FFF" stop-opacity="0"/></linearGradient></defs></svg>`,
+                    Salesforce: `<svg width="273" height="191" viewBox="0 0 273 191" fill="none" xmlns="http://www.w3.org/2000/svg"><mask id="mask0_16109_586" style="mask-type:luminance" maskUnits="userSpaceOnUse" x="0" y="0" width="273" height="191"><path d="M0.0600586 0.5H272.06V190.5H0.0600586V0.5Z" fill="white"/></mask><g mask="url(#mask0_16109_586)"><path fill-rule="evenodd" clip-rule="evenodd" d="M113 21.2998C121.78 12.1598 134 6.49976 147.5 6.49976C165.5 6.49976 181.1 16.4998 189.5 31.3998C196.957 28.0665 205.033 26.3456 213.2 26.3498C245.6 26.3498 271.9 52.8498 271.9 85.5498C271.9 118.25 245.6 144.75 213.2 144.75C209.24 144.75 205.38 144.352 201.6 143.6C194.25 156.7 180.2 165.6 164.2 165.6C157.686 165.613 151.255 164.135 145.4 161.28C137.95 178.78 120.6 191.08 100.4 191.08C79.3003 191.08 61.4003 177.78 54.5003 159.08C51.4292 159.728 48.2989 160.054 45.1603 160.052C20.0603 160.052 -0.239746 139.452 -0.239746 114.152C-0.239746 97.1518 8.90025 82.3518 22.4603 74.3518C19.5835 67.7248 18.1027 60.5762 18.1103 53.3518C18.1103 24.1518 41.8103 0.551758 71.0103 0.551758C88.1103 0.551758 103.41 8.70176 113.01 21.3518" fill="#00A1E0"/></g><path fill-rule="evenodd" clip-rule="evenodd" d="M39.4002 99.2999C39.2292 99.7459 39.4612 99.8389 39.5162 99.9179C40.0272 100.288 40.5462 100.556 41.0662 100.857C43.8462 102.327 46.4662 102.757 49.2062 102.757C54.7862 102.757 58.2562 99.7869 58.2562 95.0069V94.9129C58.2562 90.4929 54.3362 88.8829 50.6762 87.7329L50.1972 87.5779C47.4272 86.6799 45.0372 85.8979 45.0372 84.0779V83.9849C45.0372 82.4249 46.4372 81.2749 48.5972 81.2749C50.9972 81.2749 53.8572 82.0739 55.6872 83.0849C55.6872 83.0849 56.2292 83.4349 56.4262 82.9119C56.5332 82.6289 57.4662 80.1319 57.5662 79.8519C57.6722 79.5589 57.4862 79.3379 57.2952 79.2239C55.1952 77.9439 52.2952 77.0739 49.2952 77.0739L48.7382 77.0759C43.6282 77.0759 40.0582 80.1659 40.0582 84.5859V84.6809C40.0582 89.3409 43.9982 90.8609 47.6782 91.9109L48.2702 92.0949C50.9502 92.9189 53.2702 93.6349 53.2702 95.5149V95.6089C53.2702 97.3389 51.7602 98.6289 49.3402 98.6289C48.3992 98.6289 45.4002 98.6129 42.1502 96.5589C41.7572 96.3299 41.5332 96.1649 41.2302 95.9799C41.0702 95.8829 40.6702 95.7079 40.4962 96.2319L39.3962 99.2919M121.096 99.2919C120.925 99.7379 121.157 99.8309 121.214 99.9099C121.723 100.28 122.244 100.548 122.764 100.849C125.544 102.319 128.164 102.749 130.904 102.749C136.484 102.749 139.954 99.7789 139.954 94.9989V94.9049C139.954 90.4849 136.044 88.8749 132.374 87.7249L131.895 87.5699C129.125 86.6719 126.735 85.8899 126.735 84.0699V83.9769C126.735 82.4169 128.135 81.2669 130.295 81.2669C132.695 81.2669 135.545 82.0659 137.385 83.0769C137.385 83.0769 137.927 83.4269 138.125 82.9039C138.231 82.6209 139.165 80.1239 139.255 79.8439C139.362 79.5509 139.175 79.3299 138.985 79.2159C136.885 77.9359 133.985 77.0659 130.985 77.0659L130.427 77.0679C125.317 77.0679 121.747 80.1579 121.747 84.5779V84.6729C121.747 89.3329 125.687 90.8529 129.367 91.9029L129.958 92.0869C132.648 92.9109 134.958 93.6269 134.958 95.5069V95.6009C134.958 97.3309 133.448 98.6209 131.028 98.6209C130.085 98.6209 127.078 98.6049 123.838 96.5509C123.445 96.3219 123.215 96.1639 122.917 95.9719C122.816 95.9079 122.345 95.7239 122.184 96.2239L121.084 99.2839M176.884 89.9239C176.884 92.6239 176.38 94.7539 175.394 96.2639C174.41 97.7539 172.924 98.4839 170.854 98.4839C168.784 98.4839 167.304 97.7599 166.334 96.2739C165.357 94.7739 164.864 92.6339 164.864 89.9339C164.864 87.2339 165.36 85.1139 166.334 83.6239C167.302 82.1439 168.774 81.4339 170.854 81.4339C172.934 81.4339 174.414 82.1509 175.394 83.6239C176.386 85.1139 176.884 87.2339 176.884 89.9339M181.544 84.9239C181.085 83.3739 180.374 82.0139 179.424 80.8739C178.473 79.7339 177.274 78.8139 175.844 78.1539C174.424 77.4889 172.744 77.1539 170.844 77.1539C168.944 77.1539 167.274 77.4909 165.844 78.1539C164.424 78.8179 163.214 79.7339 162.264 80.8739C161.316 82.0139 160.604 83.3739 160.144 84.9239C159.689 86.4639 159.458 88.1439 159.458 89.9339C159.458 91.7239 159.689 93.4039 160.144 94.9439C160.601 96.4939 161.314 97.8539 162.264 98.9939C163.215 100.134 164.424 101.044 165.844 101.694C167.274 102.342 168.954 102.672 170.844 102.672C172.734 102.672 174.414 102.342 175.834 101.694C177.254 101.046 178.464 100.134 179.414 98.9939C180.363 97.8539 181.074 96.4939 181.534 94.9439C181.988 93.4039 182.219 91.7239 182.219 89.9339C182.219 88.1539 181.988 86.4639 181.534 84.9239M219.834 97.7239C219.681 97.2709 219.239 97.4419 219.239 97.4419C218.562 97.7009 217.839 97.9409 217.069 98.0609C216.293 98.1829 215.429 98.2439 214.519 98.2439C212.269 98.2439 210.469 97.5729 209.189 96.2439C207.899 94.9139 207.179 92.7739 207.189 89.8739C207.196 87.2339 207.834 85.2539 208.979 83.7339C210.109 82.2339 211.849 81.4539 214.149 81.4539C216.069 81.4539 217.539 81.6769 219.079 82.1589C219.079 82.1589 219.444 82.3179 219.619 81.8369C220.028 80.7069 220.33 79.8969 220.769 78.6569C220.893 78.3019 220.589 78.1519 220.478 78.1089C219.874 77.8729 218.448 77.4859 217.368 77.3229C216.358 77.1689 215.188 77.0889 213.868 77.0889C211.908 77.0889 210.168 77.4239 208.678 78.0879C207.188 78.7509 205.928 79.6679 204.928 80.8079C203.928 81.9479 203.168 83.3079 202.658 84.8579C202.153 86.3979 201.898 88.0879 201.898 89.8779C201.898 93.7379 202.938 96.8679 204.998 99.1579C207.058 101.458 210.158 102.618 214.198 102.618C216.588 102.618 219.038 102.135 220.798 101.438C220.798 101.438 221.134 101.276 220.988 100.884L219.838 97.7239M227.988 87.3239C228.211 85.8239 228.622 84.5739 229.268 83.6039C230.235 82.1239 231.708 81.3139 233.778 81.3139C235.848 81.3139 237.218 82.1279 238.198 83.6039C238.848 84.5789 239.132 85.8739 239.238 87.3239L227.938 87.3219L227.988 87.3239ZM243.688 84.0239C243.291 82.5339 242.308 81.0239 241.668 80.3339C240.648 79.2439 239.658 78.4739 238.668 78.0539C237.239 77.4462 235.701 77.1342 234.148 77.1369C232.178 77.1369 230.388 77.4699 228.938 78.1469C227.488 78.8289 226.268 79.7569 225.308 80.9169C224.349 82.0769 223.628 83.4469 223.168 85.0169C222.708 86.5669 222.476 88.2669 222.476 90.0469C222.476 91.8669 222.717 93.5569 223.191 95.0869C223.67 96.6269 224.441 97.9769 225.481 99.0969C226.521 100.227 227.851 101.107 229.451 101.727C231.041 102.342 232.971 102.661 235.181 102.654C239.741 102.639 242.141 101.624 243.121 101.074C243.296 100.976 243.461 100.807 243.255 100.32L242.225 97.4299C242.067 96.9989 241.631 97.1549 241.631 97.1549C240.501 97.5769 238.901 98.3349 235.151 98.3249C232.701 98.3209 230.891 97.5979 229.751 96.4649C228.591 95.3049 228.011 93.6149 227.921 91.2149L243.721 91.2269C243.721 91.2269 244.137 91.2229 244.18 90.8169C244.197 90.6489 244.721 87.5769 243.709 84.0269L243.688 84.0239ZM101.688 87.3239C101.911 85.8239 102.323 84.5739 102.968 83.6039C103.936 82.1239 105.408 81.3139 107.478 81.3139C109.548 81.3139 110.918 82.1279 111.898 83.6039C112.547 84.5789 112.831 85.8739 112.938 87.3239L101.638 87.3219L101.688 87.3239ZM117.388 84.0239C116.992 82.5339 116.008 81.0239 115.368 80.3339C114.348 79.2439 113.358 78.4739 112.368 78.0539C110.939 77.4462 109.401 77.1342 107.848 77.1369C105.878 77.1369 104.088 77.4699 102.638 78.1469C101.188 78.8289 99.9682 79.7569 99.0082 80.9169C98.0512 82.0769 97.3282 83.4469 96.8682 85.0169C96.4092 86.5669 96.1782 88.2669 96.1782 90.0469C96.1782 91.8669 96.4172 93.5569 96.8942 95.0869C97.3722 96.6269 98.1442 97.9769 99.1742 99.0969C100.214 100.227 101.544 101.107 103.144 101.727C104.734 102.342 106.654 102.661 108.874 102.654C113.434 102.639 115.834 101.624 116.814 101.074C116.988 100.976 117.154 100.807 116.947 100.32L115.917 97.4299C115.758 96.9989 115.322 97.1549 115.322 97.1549C114.192 97.5769 112.592 98.3349 108.842 98.3249C106.402 98.3209 104.582 97.5979 103.442 96.4649C102.282 95.3049 101.702 93.6149 101.612 91.2149L117.412 91.2269C117.412 91.2269 117.828 91.2229 117.871 90.8169C117.888 90.6489 118.412 87.5769 117.399 84.0269L117.388 84.0239ZM67.5882 97.6239C66.9692 97.1299 66.8832 97.0089 66.6782 96.6879C66.3652 96.2049 66.2052 95.5179 66.2052 94.6379C66.2052 93.2579 66.6652 92.2579 67.6152 91.5879C67.6052 91.5899 68.9752 90.4079 72.1952 90.4479C73.6285 90.4736 75.0583 90.5955 76.4752 90.8129V97.9829H76.4772C76.4772 97.9829 74.4772 98.4139 72.2172 98.5499C69.0072 98.7429 67.5872 97.6259 67.5972 97.6289L67.5882 97.6239ZM73.8682 86.5239C73.2282 86.4769 72.3982 86.4539 71.4082 86.4539C70.0582 86.4539 68.7482 86.6219 67.5282 86.9519C66.2982 87.2839 65.1882 87.7979 64.2382 88.4819C63.2856 89.1615 62.5021 90.0511 61.9482 91.0819C61.3892 92.1219 61.1042 93.3419 61.1042 94.7219C61.1042 96.1219 61.3472 97.3319 61.8272 98.3219C62.2976 99.3039 63.0057 100.153 63.8872 100.792C64.7642 101.43 65.8472 101.902 67.0972 102.182C68.3372 102.465 69.7372 102.608 71.2772 102.608C72.8972 102.608 74.5072 102.472 76.0672 102.209C77.3959 101.98 78.7195 101.722 80.0372 101.437C80.5632 101.316 81.1472 101.157 81.1472 101.157C81.5372 101.058 81.5072 100.641 81.5072 100.641L81.4982 86.2409C81.4982 83.0809 80.6542 80.7309 78.9882 79.2809C77.3282 77.8309 74.8982 77.1009 71.7482 77.1009C70.5682 77.1009 68.6582 77.2609 67.5182 77.4899C67.5182 77.4899 64.0782 78.1579 62.6582 79.2699C62.6582 79.2699 62.3462 79.4619 62.5162 79.8969L63.6362 82.8969C63.7752 83.2859 64.1542 83.1529 64.1542 83.1529C64.1542 83.1529 64.2732 83.1059 64.4132 83.0229C67.4432 81.3729 71.2832 81.4229 71.2832 81.4229C72.9832 81.4229 74.3032 81.7679 75.1832 82.4429C76.0442 83.1039 76.4832 84.1029 76.4832 86.2029V86.8699C75.1332 86.6739 73.8832 86.5609 73.8832 86.5609L73.8682 86.5239ZM200.868 78.3939C200.891 78.3412 200.903 78.2844 200.903 78.227C200.904 78.1696 200.892 78.1126 200.87 78.0596C200.848 78.0066 200.816 77.9586 200.774 77.9185C200.733 77.8783 200.685 77.8468 200.631 77.8259C200.362 77.7239 199.021 77.4409 197.991 77.3769C196.011 77.2529 194.911 77.5869 193.921 78.0309C192.943 78.4719 191.861 79.1809 191.261 80.0009L191.259 78.0809C191.259 77.8169 191.072 77.6039 190.806 77.6039H186.766C186.504 77.6039 186.314 77.8169 186.314 78.0809V101.581C186.314 101.708 186.365 101.83 186.455 101.919C186.545 102.009 186.666 102.06 186.793 102.06H190.933C191.06 102.06 191.182 102.009 191.271 101.919C191.361 101.829 191.411 101.708 191.411 101.581V89.7809C191.411 88.2009 191.585 86.6309 191.932 85.6409C192.274 84.6619 192.739 83.8809 193.312 83.3209C193.859 82.78 194.528 82.3787 195.262 82.1509C195.952 81.9531 196.665 81.8528 197.382 81.8529C198.207 81.8529 199.112 82.0649 199.112 82.0649C199.416 82.0989 199.585 81.9129 199.688 81.6389C199.959 80.9179 200.728 78.7589 200.878 78.3289" fill="#FFFFFE"/><path fill-rule="evenodd" clip-rule="evenodd" d="M162.201 67.5479C161.689 67.3933 161.169 67.2697 160.642 67.178C159.934 67.0597 159.216 67.0042 158.498 67.0119C155.645 67.0119 153.396 67.818 151.817 69.41C150.249 70.99 149.182 73.397 148.647 76.564L148.454 77.633H144.873C144.873 77.633 144.436 77.615 144.344 78.092L143.756 81.372C143.715 81.686 143.85 81.8819 144.27 81.8799H147.756L144.219 101.623C143.942 103.213 143.625 104.521 143.274 105.512C142.928 106.49 142.59 107.223 142.174 107.755C141.771 108.27 141.389 108.649 140.73 108.87C140.186 109.053 139.56 109.137 138.874 109.137C138.492 109.137 137.984 109.073 137.609 108.998C137.234 108.924 137.039 108.84 136.758 108.722C136.758 108.722 136.349 108.566 136.188 108.976C136.057 109.311 135.128 111.866 135.018 112.182C134.906 112.494 135.063 112.74 135.261 112.811C135.725 112.977 136.07 113.083 136.702 113.232C137.58 113.439 138.32 113.452 139.013 113.452C140.465 113.452 141.788 113.248 142.885 112.852C143.989 112.453 144.95 111.758 145.8 110.817C146.719 109.802 147.297 108.739 147.85 107.289C148.397 105.852 148.863 104.068 149.236 101.989L152.79 81.8799H157.986C157.986 81.8799 158.424 81.8959 158.515 81.4209L159.103 78.1409C159.144 77.8269 159.01 77.631 158.588 77.633H153.545C153.57 77.519 153.799 75.7449 154.378 74.0749C154.625 73.3619 155.09 72.7869 155.484 72.3919C155.852 72.0157 156.305 71.7338 156.805 71.5699C157.353 71.4005 157.925 71.3182 158.498 71.3259C158.973 71.3259 159.439 71.3829 159.794 71.4569C160.283 71.5609 160.473 71.6159 160.601 71.6539C161.115 71.8109 161.184 71.659 161.285 71.41L162.491 68.0979C162.615 67.7419 162.313 67.5919 162.201 67.5479ZM91.7272 101.665C91.7272 101.929 91.5392 102.144 91.2752 102.144H87.0922C86.8272 102.144 86.6392 101.929 86.6392 101.665V67.997C86.6392 67.734 86.8272 67.521 87.0922 67.521H91.2752C91.5392 67.521 91.7272 67.734 91.7272 67.997V101.665Z" fill="#FFFFFE"/></svg>`,
+                },
                 leadSourceGroups: [
                     { label: 'Ecommerce', items: [
-                        { name: 'Shopify', requiresIntegration: true, description: 'Use store events to trigger campaigns based on customer behaviour. Import leads, track purchases, and automate follow-ups.' },
-                        { name: 'Klaviyo', requiresIntegration: true, description: 'Use Klaviyo events to create targeted campaigns based on customer interactions such as email opens, clicks, and purchases.' },
+                        { name: 'Shopify', icon: 'shopping_cart', requiresIntegration: true, description: 'Use store events to trigger campaigns based on customer behaviour. Import leads, track purchases, and automate follow-ups.' },
+                        { name: 'Klaviyo', icon: 'mail', requiresIntegration: true, description: 'Use Klaviyo events to create targeted campaigns based on customer interactions such as email opens, clicks, and purchases.' },
                     ] },
                     { label: 'CRM', items: [
-                        { name: 'HubSpot', requiresIntegration: true, description: 'Use contact property changes, CRM events, scheduling links, and meetings.' },
-                        { name: 'Attio', requiresIntegration: true, description: 'Connect Attio CRM to trigger campaigns based on customer data.' },
-                        { name: 'Microsoft Dynamics', requiresIntegration: true, description: 'Connect Microsoft Dynamics 365 to trigger campaigns based on CRM events and customer data.' },
-                        { name: 'Salesforce', requiresIntegration: true, description: 'Integrate Salesforce to trigger campaigns based on CRM events and customer data.' },
+                        { name: 'HubSpot', icon: 'apartment', requiresIntegration: true, description: 'Use contact property changes, CRM events, scheduling links, and meetings.' },
+                        { name: 'Attio', icon: 'fingerprint', requiresIntegration: true, description: 'Connect Attio CRM to trigger campaigns based on customer data.' },
+                        { name: 'Microsoft Dynamics', icon: 'deployed_code', requiresIntegration: true, description: 'Connect Microsoft Dynamics 365 to trigger campaigns based on CRM events and customer data.' },
+                        { name: 'Salesforce', icon: 'cloud', requiresIntegration: true, description: 'Integrate Salesforce to trigger campaigns based on CRM events and customer data.' },
                     ] },
                     { label: 'Manual & Developer', items: [
-                        { name: 'CSV File / Manual', requiresIntegration: false, description: 'Manually import leads via CSV or create them one by one.' },
-                        { name: 'Custom API', requiresIntegration: false, description: 'Use this if you have your own backend or unsupported service.' },
+                        { name: 'CSV File / Manual', icon: 'upload', requiresIntegration: false, description: 'Manually import leads via CSV or create them one by one.' },
+                        { name: 'Custom API', icon: 'extension', requiresIntegration: false, description: 'Use this if you have your own backend or unsupported service.' },
                     ] },
                 ],
                 campaignBriefFields: [
@@ -5663,19 +6405,20 @@ class OutreachPage extends Page
                     { title: 'Closing', content: 'Thank them warmly, wish them well. Wait for their closing phrase before saying goodbye.' },
                 ],
                 channelCards: [
-                    { key: 'calls', title: 'Enable AI Calls', description: 'Configure call-specific rules only.' },
-                    { key: 'email', title: 'Enable Email Sending', description: 'Configure email tone and sender identity.' },
-                    { key: 'sms', title: 'Enable SMS Sending', description: 'Configure SMS triggers and short-message rules.' },
-                    { key: 'whatsapp', title: 'Enable WhatsApp', description: 'Configure WhatsApp rules and triggers.' },
+                    { key: 'calls', title: 'Voice & Calls', description: 'Enable communication with leads through AI voice calls.' },
+                    { key: 'email', title: 'Email', description: 'Enable communication with leads through email.' },
+                    { key: 'sms', title: 'SMS', description: 'Enable communication with leads through SMS.' },
+                    { key: 'whatsapp', title: 'WhatsApp', description: 'Enable communication with leads through WhatsApp.' },
                 ],
+                smsTriggerOptions: ['Positive Response', 'No Decision'],
                 sequenceRows: [
-                    { channel: 'Call', label: 'initial_call', delay: '-', step: 'Initial outbound call to a lead introducing the company/product and the campaign offer' },
-                    { channel: 'Call', label: 'initial_call', delay: '4 hours', step: 'Initial outbound call to a lead introducing the company/product and the campaign offer' },
-                    { channel: 'SMS', label: 'initial_sms', delay: '1 day', step: 'Initial outbound sms to the lead regarding the campaign' },
-                    { channel: 'Call', label: 'initial_call', delay: '1 day', step: 'Initial outbound call to a lead introducing the company/product and the campaign offer' },
-                    { channel: 'Call', label: 'initial_call', delay: '2 days', step: 'Initial outbound call to a lead introducing the company/product and the campaign offer' },
-                    { channel: 'Call', label: 'initial_call', delay: '4 days', step: 'Initial outbound call to a lead introducing the company/product and the campaign offer' },
-                    { channel: 'None', label: 'campaign_end', delay: '2 days', step: 'Indicates the end of a campaign flow. No further actions will be taken for this lead in the current campaign.' },
+                    { id: 'sequence-step-1', channel: 'Call', label: 'initial_call', delay: '-', step: 'Initial outbound call to a lead introducing the company/product and the campaign offer' },
+                    { id: 'sequence-step-2', channel: 'Call', label: 'initial_call', delay: '4 hours', step: 'Initial outbound call to a lead introducing the company/product and the campaign offer' },
+                    { id: 'sequence-step-3', channel: 'SMS', label: 'initial_sms', delay: '1 day', step: 'Initial outbound SMS to the lead regarding the campaign' },
+                    { id: 'sequence-step-4', channel: 'Call', label: 'initial_call', delay: '1 day', step: 'Initial outbound call to a lead introducing the company/product and the campaign offer' },
+                    { id: 'sequence-step-5', channel: 'Call', label: 'initial_call', delay: '2 days', step: 'Initial outbound call to a lead introducing the company/product and the campaign offer' },
+                    { id: 'sequence-step-6', channel: 'Call', label: 'initial_call', delay: '4 days', step: 'Initial outbound call to a lead introducing the company/product and the campaign offer' },
+                    { id: 'sequence-step-7', channel: 'None', label: 'campaign_end', delay: '2 days', step: 'Indicates the end of a campaign flow. No further actions will be taken for this lead in the current campaign.' },
                 ],
                 followupRules: [
                     { title: 'Should AI Continue With Follow-Ups After Positive Response?', helper: 'Continue with a follow-up sequence to confirm the resource was received and check whether any further assistance is needed.' },
@@ -5731,9 +6474,7 @@ class OutreachPage extends Page
                 ],
                 tabs: [
                     { label: 'Leads', icon: 'group' },
-                    { label: 'Campaigns', displayLabel: 'Campaign Runs', icon: 'account_tree' },
                     { label: 'Lead Campaigns', displayLabel: 'Campaign Runs', icon: 'view_agenda' },
-                    { label: 'Outreach', displayLabel: 'Interactions', icon: 'phone_in_talk' },
                     { label: 'Outreach Review', displayLabel: 'Interaction', icon: 'forum' },
                     { label: 'Handoffs', icon: 'waving_hand' },
                 ],
@@ -5962,7 +6703,8 @@ class OutreachPage extends Page
 	                    this.campaignBuilderOpen = false;
 
 	                    if (nav === 'Campaigns' && builder === 'campaign') {
-	                        const normalizedBuilderStep = Number.isFinite(builderStep) ? Math.max(0, Math.min(3, builderStep)) : (setupStep ? 3 : 0);
+	                        const setupStartStep = this.companySetupStartStep();
+	                        const normalizedBuilderStep = Number.isFinite(builderStep) ? Math.max(0, Math.min(setupStartStep, builderStep)) : (setupStep ? setupStartStep : 0);
 
 	                        this.activeCampaignPageTab = 'Campaigns';
 	                        this.campaignBuilderOpen = true;
@@ -5986,8 +6728,8 @@ class OutreachPage extends Page
                             this.campaignSetupModeSelected = true;
                             this.campaignSetupIntroStep = '';
                             this.campaignSetup.current = setupStep;
-                            this.campaignBuilderStep = 3;
-                            this.campaignBuilderMaxStep = Math.max(this.campaignBuilderMaxStep, 3);
+                            this.campaignBuilderStep = setupStartStep;
+                            this.campaignBuilderMaxStep = Math.max(this.campaignBuilderMaxStep, setupStartStep);
                         } else {
                             this.campaignSetupModeSelected = false;
 	                            this.campaignSetupIntroStep = 'type';
@@ -6023,10 +6765,10 @@ class OutreachPage extends Page
 	                        url.searchParams.set('builder', 'campaign');
 	                        url.searchParams.set('builderStep', this.campaignBuilderStep);
 
-	                        if (this.campaignBuilderStep >= 3 && this.campaignSetupModeSelected) {
+	                        if (this.campaignBuilderStep >= this.companySetupStartStep() && this.campaignSetupModeSelected) {
 	                            url.searchParams.set('setupMode', this.campaignSetupMode);
 	                            url.searchParams.set('setupStep', this.campaignSetup.current);
-	                        } else if (this.campaignBuilderStep >= 3) {
+	                        } else if (this.campaignBuilderStep >= this.companySetupStartStep()) {
 	                            url.searchParams.set('setupStep', this.campaignSetupIntroStep);
 	                        }
 	                    }
@@ -6045,7 +6787,9 @@ class OutreachPage extends Page
                     this.filters = [];
                     this.searchOpen = false;
                     this.presetOpen = false;
+                    this.leadAddMenuOpen = false;
                     this.selectedPresetName = 'Filter Presets';
+                    this.clearLeadSelection();
                 },
                 settleSidebarAfterTransition() {
                     clearTimeout(this.sidebarTimer);
@@ -6164,8 +6908,78 @@ class OutreachPage extends Page
 	                    this.activeCampaignPageTab = 'Campaigns';
 	                    this.syncUrl(true);
 	                },
-	                campaignBuilderBackLabel() {
-	                    if (this.campaignBuilderStep < 3) {
+                companySetupStartStep() {
+                    return this.companySetupSteps.length;
+                },
+                companySetupFinalStepIndex() {
+                    return Math.max(0, this.companySetupStartStep() - 1);
+                },
+                resetCompanyForm() {
+                    Object.assign(this.companyForm, {
+                        name: '',
+                        website: '',
+                        pronunciationEnabled: false,
+                        pronunciation: '',
+                        industry: '',
+                        description: '',
+                        problem: '',
+                        differentiators: '',
+                        icp: '',
+                        faqs: '',
+                        supportEmail: '',
+                        termsUrl: '',
+                        privacyUrl: '',
+                        certifications: '',
+                        compliance: '',
+                    });
+                    this.campaignBuilderErrors = {};
+                },
+                selectCompanyForSetup(companyId) {
+                    this.companySetupSelectedCompany = companyId;
+
+                    if (companyId === 'new') {
+                        this.resetCompanyForm();
+                        this.scheduleCampaignBuilderLayoutUpdate();
+
+                        return;
+                    }
+
+                    const company = this.companySetupDemoCompanies.find((item) => item.id === companyId);
+
+                    if (! company) {
+                        return;
+                    }
+
+                    Object.assign(this.companyForm, {
+                        name: company.name,
+                        website: company.website,
+                        pronunciationEnabled: false,
+                        pronunciation: '',
+                        industry: company.industry,
+                        description: company.description,
+                        problem: company.problem,
+                        differentiators: company.differentiators,
+                        icp: company.icp,
+                        faqs: company.faqs,
+                        supportEmail: company.supportEmail,
+                        termsUrl: company.termsUrl,
+                        privacyUrl: company.privacyUrl,
+                        certifications: company.certifications,
+                        compliance: company.compliance,
+                    });
+                    this.campaignBuilderErrors = {};
+                    this.scheduleCampaignBuilderLayoutUpdate();
+                },
+                chooseNewCompanyForSetup() {
+                    this.selectCompanyForSetup('new');
+                    this.setCampaignBuilderStep(1, 180);
+                },
+                chooseExistingCompanyForSetup(companyId) {
+                    this.selectCompanyForSetup(companyId);
+                    this.transitionToCampaignSetup();
+                },
+		                campaignBuilderBackLabel() {
+	                    if (this.campaignBuilderStep < this.companySetupStartStep()) {
 	                        return 'Back to Campaigns';
 	                    }
 
@@ -6181,7 +6995,7 @@ class OutreachPage extends Page
 	                    }[this.campaignSetupIntroStep] || 'Back to Campaigns';
 	                },
 	                handleCampaignBuilderBack() {
-	                    if (this.campaignBuilderStep >= 3) {
+	                    if (this.campaignBuilderStep >= this.companySetupStartStep()) {
 	                        if (this.campaignSetupModeSelected) {
 	                            this.campaignSetupModeSelected = false;
 	                            this.campaignSetupIntroStep = 'integration';
@@ -6218,7 +7032,7 @@ class OutreachPage extends Page
 	                            return;
 	                        }
 
-	                        this.goToCampaignBuilderStep(2);
+	                        this.goToCampaignBuilderStep(this.companySetupFinalStepIndex());
 
                         return;
                     }
@@ -6236,27 +7050,28 @@ class OutreachPage extends Page
                 },
                 campaignBuilderContinueLabel() {
                     return [
+                        'Continue to Company Identity',
                         'Continue to Industry & Market',
                         'Continue to Compliance & Legal',
                         'Continue to Campaign',
                     ][this.campaignBuilderStep] || 'Continue';
                 },
                 campaignBuilderMobileContinueLabel() {
-                    return this.campaignBuilderStep === 2 ? 'Continue to Campaign' : 'Continue';
+                    return this.campaignBuilderStep === this.companySetupFinalStepIndex() ? 'Continue to Campaign' : 'Continue';
                 },
                 mobileCompanySetupLabel(index) {
-                    return ['Company', 'Market', 'Legal'][index] || `Step ${index + 1}`;
+                    return ['Choose', 'Company', 'Market', 'Legal'][index] || `Step ${index + 1}`;
                 },
                 nextCampaignBuilderStep() {
-                    this.setCampaignBuilderStep(Math.min(this.campaignBuilderStep + 1, 3), 220);
+                    this.setCampaignBuilderStep(Math.min(this.campaignBuilderStep + 1, this.companySetupStartStep()), 220);
                 },
                 previousCampaignBuilderStep() {
                     this.setCampaignBuilderStep(Math.max(this.campaignBuilderStep - 1, 0), 220);
                 },
                 goToCampaignBuilderStep(step) {
-                    const nextStep = Math.max(0, Math.min(step, 3));
+                    const nextStep = Math.max(0, Math.min(step, this.companySetupStartStep()));
 
-                    if (this.campaignBuilderStep < 3 && nextStep > this.campaignBuilderMaxStep) {
+                    if (this.campaignBuilderStep < this.companySetupStartStep() && nextStep > this.campaignBuilderMaxStep) {
                         return;
                     }
 
@@ -6264,11 +7079,12 @@ class OutreachPage extends Page
                 },
                 setCampaignBuilderStep(nextStep, loaderDuration = 180) {
                     const previousStep = this.campaignBuilderStep;
-                    const isCompanyStepTransition = previousStep < 3 && nextStep < 3 && previousStep !== nextStep;
-                    const preserveOutgoingStepPosition = previousStep < 3 && nextStep < previousStep && ! isCompanyStepTransition;
+                    const setupStartStep = this.companySetupStartStep();
+                    const isCompanyStepTransition = previousStep < setupStartStep && nextStep < setupStartStep && previousStep !== nextStep;
+                    const preserveOutgoingStepPosition = previousStep < setupStartStep && nextStep < previousStep && ! isCompanyStepTransition;
                     const outgoingStepTop = preserveOutgoingStepPosition ? this.campaignBuilderCompanyStepTop(previousStep) : null;
 
-	                    if (previousStep < 3 && nextStep >= 3) {
+	                    if (previousStep < setupStartStep && nextStep >= setupStartStep) {
 	                        this.campaignSetupModeSelected = false;
 	                        this.campaignSetupIntroStep = 'type';
 	                        this.campaignSetupActionBarStyle = '';
@@ -6346,15 +7162,15 @@ class OutreachPage extends Page
                 },
                 submitCampaignBuilderStep(step) {
                     const requiredFields = {
-                        0: [
+                        1: [
                             ['name', 'Enter your company name.'],
                             ['website', 'Enter your company website.'],
                         ],
-                        1: [
+                        2: [
                             ['industry', 'Select your industry vertical.'],
                             ['description', 'Enter your company description.'],
                         ],
-                        2: [],
+                        3: [],
                     };
 
                     const errors = {};
@@ -6378,7 +7194,7 @@ class OutreachPage extends Page
                         return;
                     }
 
-                    if (step === 2) {
+                    if (step === this.companySetupFinalStepIndex()) {
                         this.transitionToCampaignSetup();
 
                         return;
@@ -6393,8 +7209,10 @@ class OutreachPage extends Page
                     this.campaignBuilderTransitioning = true;
 
                     window.setTimeout(() => {
-                        this.campaignBuilderStep = 3;
-                        this.campaignBuilderMaxStep = Math.max(this.campaignBuilderMaxStep, 3);
+                        const setupStartStep = this.companySetupStartStep();
+
+                        this.campaignBuilderStep = setupStartStep;
+                        this.campaignBuilderMaxStep = Math.max(this.campaignBuilderMaxStep, setupStartStep);
                         this.campaignBuilderErrors = {};
                         this.campaignBuilderScrollFromStep = null;
                         this.campaignBuilderFadingStep = null;
@@ -6434,6 +7252,7 @@ class OutreachPage extends Page
                 },
                 campaignBuilderCompanyStepRefName(step) {
                     return [
+                        'companyChooseSection',
                         'companyIdentitySection',
                         'industryMarketSection',
                         'complianceLegalSection',
@@ -6473,7 +7292,7 @@ class OutreachPage extends Page
                     this.campaignBuilderActionBarFrame = requestAnimationFrame(() => {
                         const stage = this.$refs.companyDetailsFormStage;
 
-                        if (! stage || this.campaignBuilderStep >= 3 || window.innerWidth < 1024) {
+                        if (! stage || this.campaignBuilderStep >= this.companySetupStartStep() || window.innerWidth < 1024) {
                             this.campaignBuilderActionBarContentStyle = '';
                             this.campaignBuilderActionBarStyle = '';
                             this.campaignBuilderActionBarFrame = null;
@@ -6496,7 +7315,7 @@ class OutreachPage extends Page
                     this.campaignSetupActionBarFrame = requestAnimationFrame(() => {
                         const stage = this.$refs.campaignAgentSection;
 
-	                        if (! stage || ! this.campaignBuilderOpen || this.campaignBuilderStep < 3 || ! this.campaignSetupModeSelected || this.campaignSetupIntroStep || window.innerWidth < 1024) {
+	                        if (! stage || ! this.campaignBuilderOpen || this.campaignBuilderStep < this.companySetupStartStep() || ! this.campaignSetupModeSelected || this.campaignSetupIntroStep || window.innerWidth < 1024) {
                             this.campaignSetupActionBarContentStyle = '';
                             this.campaignSetupActionBarStyle = '';
                             this.campaignSetupActionBarFrame = null;
@@ -6521,6 +7340,7 @@ class OutreachPage extends Page
                 },
                 scheduleCampaignBuilderLayoutUpdate() {
                     const run = () => {
+                        renderOutcraftIcons(this.$root);
                         this.updateCampaignBuilderStickyLayout();
                         this.updateCampaignBuilderScrollScene();
                         this.updateCampaignBuilderBottomPadding();
@@ -6604,7 +7424,14 @@ class OutreachPage extends Page
                     });
                 },
                 updateCampaignBuilderBottomPadding() {
+                    if (this.campaignBuilderStep === 0) {
+                        this.campaignBuilderBottomPadding = 0;
+
+                        return;
+                    }
+
                     const companyStepRefs = [
+                        'companyChooseSection',
                         'companyIdentitySection',
                         'industryMarketSection',
                         'complianceLegalSection',
@@ -6647,7 +7474,7 @@ class OutreachPage extends Page
                     });
                 },
                 updateCampaignSetupBottomPadding() {
-                    if (! this.campaignBuilderOpen || this.campaignBuilderStep < 3 || ! this.campaignSetupModeSelected) {
+                    if (! this.campaignBuilderOpen || this.campaignBuilderStep < this.companySetupStartStep() || ! this.campaignSetupModeSelected) {
                         this.campaignSetupBottomPadding = 0;
 
                         return;
@@ -6681,12 +7508,13 @@ class OutreachPage extends Page
                 },
                 scrollCampaignBuilderToStep(step, behavior = 'smooth') {
                     const companyStepRefs = [
+                        'companyChooseSection',
                         'companyIdentitySection',
                         'industryMarketSection',
                         'complianceLegalSection',
                     ];
 
-                    this.$nextTick(() => this.scrollBuilderStageToTop(step >= 3 ? 'campaignAgentSection' : (companyStepRefs[step] || 'companyDetailsFormStage'), behavior));
+                    this.$nextTick(() => this.scrollBuilderStageToTop(step >= this.companySetupStartStep() ? 'campaignAgentSection' : (companyStepRefs[step] || 'companyDetailsFormStage'), behavior));
                 },
                 isBookAppointmentCampaign() {
                     return this.campaignSetup.type === 'Book Appointment';
@@ -6730,7 +7558,7 @@ class OutreachPage extends Page
                     const currentIndex = this.campaignSetupStepIndex();
 
                     if (currentIndex >= steps.length - 1) {
-                        return this.campaignSetupMode === 'fast' ? 'Test Campaign' : 'Launch Campaign';
+                        return 'Launch Campaign';
                     }
 
                     return `Continue to ${steps[currentIndex + 1]?.label || 'Next Step'}`;
@@ -6790,6 +7618,32 @@ class OutreachPage extends Page
 
                     return 'display: none;';
                 },
+                campaignSetupStepIcon(stepId = this.campaignSetup.current) {
+                    const icons = {
+                        start: 'add',
+                        type: 'target',
+                        source: 'database',
+                        integration: 'extension',
+                        brief: 'description',
+                        general: 'settings',
+                        resources: 'package_check',
+                        agent: 'support_agent',
+                        channels: 'forum',
+                        discounts: 'percent',
+                        booking: 'calendar_check',
+                        availability: 'schedule',
+                        sequence: 'timeline',
+                        followups: 'refresh_ccw',
+                        handoff: 'headphones',
+                        intelligence: 'fact_check',
+                        geo: 'travel_explore',
+                        dispatch: 'send',
+                        priority: 'trending_up',
+                        review: 'verified',
+                    };
+
+                    return icons[stepId] || 'settings';
+                },
                 campaignSetupHeading(stepId = this.campaignSetup.current) {
                     const headings = {
                         start: 'Create Campaign',
@@ -6811,7 +7665,7 @@ class OutreachPage extends Page
                         geo: 'Geo Permissions',
                         dispatch: 'Dispatch Conditions',
                         priority: 'Campaign Priority',
-                        review: this.campaignSetupMode === 'fast' ? 'Review & Test' : 'Review & Launch Your Campaign',
+                        review: 'Review & Launch Your Campaign',
                     };
 
                     return headings[stepId] || this.campaignSetupCurrentStep(stepId)?.label || 'Campaign Setup';
@@ -6837,10 +7691,13 @@ class OutreachPage extends Page
                         geo: 'Choose which countries or regions this campaign is allowed to contact.',
                         dispatch: 'Define when this campaign should be dispatched based on lead metadata.',
                         priority: 'Control what happens when a lead qualifies for multiple campaigns at the same time.',
-                        review: this.campaignSetupMode === 'fast' ? 'Your campaign draft is ready for a test. Connect your lead source before launching live outreach.' : 'Check the campaign setup, publish the latest knowledge updates, and test your AI agent before going live.',
+                        review: 'Before your AI agent starts working on this campaign, review the setup, run a test, and publish it. You can update the campaign again later if needed.',
                     };
 
                     return descriptions[stepId] || this.campaignSetupCurrentStep(stepId)?.description || '';
+                },
+                campaignTypeDirection(typeName) {
+                    return ['Send Information', 'Provide Support'].includes(typeName) ? 'Incoming' : 'Outgoing';
                 },
                 applyCampaignSetupMode(mode, forceFirstStep = false) {
                     const normalizedMode = mode === 'advanced' ? 'advanced' : 'fast';
@@ -6976,7 +7833,7 @@ class OutreachPage extends Page
 
                         const containerRect = container.getBoundingClientRect();
                         const stageRect = stage.getBoundingClientRect();
-                        const companyStepRefs = ['companyIdentitySection', 'industryMarketSection', 'complianceLegalSection'];
+                        const companyStepRefs = ['companyChooseSection', 'companyIdentitySection', 'industryMarketSection', 'complianceLegalSection'];
                         const alignmentRef = companyStepRefs.includes(refName) ? this.$refs.companySetupProgressNav : null;
                         const alignmentRect = alignmentRef?.getBoundingClientRect?.();
                         const targetTop = alignmentRect
@@ -7084,6 +7941,7 @@ class OutreachPage extends Page
                     }
 
                     if (this.campaignSetupStepIndex() >= this.campaignSetupStepsForMode().length - 1) {
+                        this.publishCampaignSetup();
                         return;
                     }
 
@@ -7119,7 +7977,7 @@ class OutreachPage extends Page
 	                    if (! this.campaignSetupStepsForMode().some((step) => step.id === this.campaignSetup.current)) {
 	                        this.campaignSetup.current = this.campaignSetupStepsForMode()[0]?.id || 'review';
 	                    }
-	                    if (this.campaignBuilderStep >= 3 && ! this.campaignSetupModeSelected) {
+	                    if (this.campaignBuilderStep >= this.companySetupStartStep() && ! this.campaignSetupModeSelected) {
 	                        this.campaignSetupActionBarStyle = '';
 	                        this.campaignSetupIntroStep = 'source';
 	                        this.syncUrl();
@@ -7129,12 +7987,30 @@ class OutreachPage extends Page
 	                    this.campaignSetup.source = source;
 	                    this.campaignSetup.integrationStatus = source === 'CSV File / Manual' ? 'No Integration Required' : 'Not Connected';
 	                    this.completeCampaignSetupStep('source');
-	                    if (this.campaignBuilderStep >= 3 && ! this.campaignSetupModeSelected) {
+	                    if (this.campaignBuilderStep >= this.companySetupStartStep() && ! this.campaignSetupModeSelected) {
 	                        this.campaignSetupActionBarStyle = '';
 	                        this.campaignSetupIntroStep = 'integration';
 	                        this.syncUrl();
 	                    }
 	                },
+                leadSourceIcon(sourceName) {
+                    return this.leadSourceGroups
+                        .flatMap((group) => group.items)
+                        .find((source) => source.name === sourceName)?.icon || 'hub';
+                },
+                leadSourceLogoContainerClass(sourceName) {
+                    return this.leadSourceLogos[sourceName] ? 'bg-gray-100 text-gray-700' : 'bg-indigo-50 text-indigo-600';
+                },
+                calendarServiceLogoHtml(serviceName) {
+                    if (serviceName === 'Calendly') {
+                        return `<svg width="526" height="536" viewBox="0 0 526 536" fill="none" xmlns="http://www.w3.org/2000/svg"><g clip-path="url(#clip0_16133_594)"><path d="M360.4 347.4C343.4 362.49 322.19 381.27 283.62 381.27H260.62C232.74 381.27 207.39 371.15 189.25 352.78C171.53 334.84 161.77 310.28 161.77 283.62V252.11C161.77 225.45 171.53 200.89 189.25 182.95C207.39 164.58 232.74 154.46 260.62 154.46H283.62C322.19 154.46 343.38 173.24 360.4 188.33C378.05 203.98 393.3 217.49 433.92 217.49C440.116 217.491 446.303 216.996 452.42 216.01C452.42 215.89 452.34 215.78 452.29 215.66C449.854 209.617 446.997 203.753 443.74 198.11L416.58 151.06C404.334 129.852 386.723 112.241 365.515 99.9954C344.307 87.7502 320.249 81.3024 295.76 81.3H241.43C216.941 81.3024 192.883 87.7502 171.675 99.9954C150.467 112.241 132.856 129.852 120.61 151.06L93.45 198.11C81.2064 219.319 74.7607 243.376 74.7607 267.865C74.7607 292.354 81.2064 316.411 93.45 337.62L120.61 384.67C132.856 405.877 150.468 423.487 171.676 435.73C192.884 447.974 216.941 454.42 241.43 454.42H295.76C320.249 454.42 344.306 447.974 365.514 435.73C386.722 423.487 404.334 405.877 416.58 384.67L443.74 337.62C446.997 331.977 449.854 326.113 452.29 320.07C452.29 319.95 452.38 319.84 452.42 319.72C446.303 318.734 440.116 318.239 433.92 318.24C393.3 318.24 378.05 331.75 360.4 347.4Z" fill="#006BFF"/><path d="M283.62 183H260.62C218.2 183 190.32 213.3 190.32 252.09V283.6C190.32 322.39 218.2 352.69 260.62 352.69H283.62C345.44 352.69 340.62 289.69 433.92 289.69C442.765 289.683 451.593 290.49 460.29 292.1C463.12 276.071 463.12 259.669 460.29 243.64C451.594 245.259 442.766 246.069 433.92 246.06C340.59 246.05 345.44 183 283.62 183Z" fill="#006BFF"/><path d="M513.91 315.13C498.006 303.506 479.673 295.642 460.29 292.13C460.29 292.29 460.24 292.45 460.21 292.6C458.546 301.895 455.936 310.996 452.42 319.76C468.434 322.238 483.629 328.49 496.75 338C496.75 338.14 496.67 338.28 496.62 338.43C489.184 362.579 477.946 385.388 463.33 406C448.881 426.421 431.337 444.464 411.33 459.48C362.897 495.915 302.443 512.616 242.175 506.209C181.907 499.803 126.315 470.767 86.6242 424.964C46.9333 379.161 26.1006 320.003 28.3327 259.437C30.5648 198.871 55.6953 141.407 98.65 98.65C127.831 69.4906 164.052 48.3656 203.799 37.3232C243.547 26.2807 285.474 25.6955 325.514 35.6241C365.555 45.5527 402.35 65.6584 432.334 93.9918C462.318 122.325 484.473 157.925 496.65 197.34C496.7 197.49 496.74 197.63 496.78 197.77C483.65 207.281 468.444 213.53 452.42 216C455.935 224.772 458.548 233.879 460.22 243.18C460.22 243.33 460.22 243.48 460.29 243.62C479.676 240.117 498.011 232.252 513.91 220.62C529.2 209.31 526.24 196.53 523.91 188.97C490.22 79.52 388.33 0 267.86 0C119.93 0 0 119.93 0 267.86C0 415.79 119.93 535.73 267.86 535.73C388.33 535.73 490.22 456.21 523.86 346.79C526.24 339.23 529.2 326.45 513.91 315.13Z" fill="#006BFF"/><path d="M452.42 216C446.303 216.986 440.116 217.481 433.92 217.48C393.3 217.48 378.05 203.97 360.4 188.32C343.4 173.23 322.19 154.45 283.62 154.45H260.62C232.74 154.45 207.39 164.57 189.25 182.94C171.53 200.88 161.77 225.44 161.77 252.1V283.61C161.77 310.27 171.53 334.83 189.25 352.77C207.39 371.14 232.74 381.26 260.62 381.26H283.62C322.19 381.26 343.38 362.48 360.4 347.39C378.05 331.74 393.3 318.23 433.92 318.23C440.116 318.229 446.303 318.724 452.42 319.71C455.936 310.946 458.546 301.845 460.21 292.55C460.21 292.4 460.27 292.24 460.29 292.08C451.593 290.47 442.765 289.663 433.92 289.67C340.59 289.67 345.44 352.67 283.62 352.67H260.62C218.2 352.67 190.32 322.37 190.32 283.58V252.11C190.32 213.32 218.2 183.02 260.62 183.02H283.62C345.44 183.02 340.62 246.02 433.92 246.02C442.766 246.029 451.594 245.219 460.29 243.6C460.29 243.46 460.29 243.31 460.22 243.16C458.547 233.866 455.934 224.766 452.42 216Z" fill="#0AE9EF"/><path d="M452.42 216C446.303 216.986 440.116 217.481 433.92 217.48C393.3 217.48 378.05 203.97 360.4 188.32C343.4 173.23 322.19 154.45 283.62 154.45H260.62C232.74 154.45 207.39 164.57 189.25 182.94C171.53 200.88 161.77 225.44 161.77 252.1V283.61C161.77 310.27 171.53 334.83 189.25 352.77C207.39 371.14 232.74 381.26 260.62 381.26H283.62C322.19 381.26 343.38 362.48 360.4 347.39C378.05 331.74 393.3 318.23 433.92 318.23C440.116 318.229 446.303 318.724 452.42 319.71C455.936 310.946 458.546 301.845 460.21 292.55C460.21 292.4 460.27 292.24 460.29 292.08C451.593 290.47 442.765 289.663 433.92 289.67C340.59 289.67 345.44 352.67 283.62 352.67H260.62C218.2 352.67 190.32 322.37 190.32 283.58V252.11C190.32 213.32 218.2 183.02 260.62 183.02H283.62C345.44 183.02 340.62 246.02 433.92 246.02C442.766 246.029 451.594 245.219 460.29 243.6C460.29 243.46 460.29 243.31 460.22 243.16C458.547 233.866 455.934 224.766 452.42 216Z" fill="#0AE9EF"/></g><defs><clipPath id="clip0_16133_594"><rect width="525.8" height="535.73" fill="white"/></clipPath></defs></svg>`;
+                    }
+
+                    return this.leadSourceLogos[serviceName] || '';
+                },
+                calendarServiceLogoContainerClass(serviceName) {
+                    return this.calendarServiceLogoHtml(serviceName) ? 'bg-gray-100 text-gray-700' : 'bg-indigo-50 text-indigo-600';
+                },
                 requiresIntegration() {
                     return Boolean(this.campaignSetup.source) && ! ['CSV File / Manual', 'Custom API'].includes(this.campaignSetup.source);
                 },
@@ -7151,6 +8027,26 @@ class OutreachPage extends Page
                     this.clearCampaignSetupAttention('integration');
                     this.continueAfterLeadSourceIntegration();
                 },
+                connectCalendarService() {
+                    if (! this.campaignSetup.calendarService) {
+                        return;
+                    }
+
+                    this.campaignSetup.calendarConnectionStatus = 'Connected';
+                    this.scheduleCampaignBuilderLayoutUpdate();
+                },
+                requestSkipCampaignIntegration() {
+                    if (! this.requiresIntegration()) {
+                        this.skipCampaignIntegration();
+                        return;
+                    }
+
+                    this.campaignSetup.integrationSkipModalOpen = true;
+                },
+                confirmSkipCampaignIntegration() {
+                    this.campaignSetup.integrationSkipModalOpen = false;
+                    this.skipCampaignIntegration();
+                },
                 skipCampaignIntegration() {
                     this.campaignSetup.integrationStatus = this.requiresIntegration() ? 'Skipped for Now' : 'No Integration Required';
                     if (this.requiresIntegration()) {
@@ -7161,11 +8057,275 @@ class OutreachPage extends Page
                     this.continueAfterLeadSourceIntegration();
                 },
                 continueAfterLeadSourceIntegration() {
-                    if (this.campaignBuilderStep >= 3 && ! this.campaignSetupModeSelected) {
+                    if (this.campaignBuilderStep >= this.companySetupStartStep() && ! this.campaignSetupModeSelected) {
                         this.campaignSetupIntroStep = 'mode';
                         this.campaignSetupActionBarStyle = '';
                         this.syncUrl();
                     }
+                },
+                briefBuilderItemOptions() {
+                    return [
+                        { type: 'find_out', group: 'Discovery & Qualification', title: 'Discovery Questions', description: 'Add questions or information the AI should collect during the conversation.', icon: 'manage_search' },
+                        { type: 'qualification', group: 'Discovery & Qualification', title: 'Qualification Questions', description: 'Ask questions in the exact order AI should ask them, and define which answers qualify the lead.', icon: 'filter_alt' },
+                        { type: 'guardrails', group: 'Campaign Instructions', title: 'Guardrails', description: 'Add required rules, forbidden asks, promises, topics, and mentions.', icon: 'shield' },
+                        { type: 'call_guidelines', group: 'Channel Specific Guidelines', title: 'Call Specific Guidelines', description: 'Define call tone, pacing, objection handling, and call-only edge cases.', icon: 'call' },
+                        { type: 'email_guidelines', group: 'Channel Specific Guidelines', title: 'Email Specific Guidelines', description: 'Define email tone, formatting, length, and compliance notes.', icon: 'mail' },
+                        { type: 'sms_guidelines', group: 'Channel Specific Guidelines', title: 'SMS Specific Guidelines', description: 'Define SMS triggers, structure, length, and short-message rules.', icon: 'sms' },
+                        { type: 'whatsapp_guidelines', group: 'Channel Specific Guidelines', title: 'WhatsApp Specific Guidelines', description: 'Define WhatsApp tone, length, and channel-specific follow-up notes.', icon: 'chat' },
+                        { type: 'pricing', group: 'Pricing and Discount Codes', title: 'Pricing', description: 'Choose the pricing source and whether AI may negotiate within a limit.', icon: 'payments' },
+                        { type: 'discount_codes', group: 'Pricing and Discount Codes', title: 'Discount Codes', description: 'Add codes the AI can send when the conversation calls for an offer.', icon: 'percent' },
+                        { type: 'handoff', group: 'Conversation Controls', title: 'Hand Offs', description: 'Configure when AI should pass the conversation to a human.', icon: 'support_agent' },
+                    ];
+                },
+                filteredBriefBuilderItemOptions() {
+                    const search = String(this.campaignSetup.briefBuilderItemSearch || '').trim().toLowerCase();
+
+                    return this.briefBuilderItemOptions().filter((option) => {
+                        if (! search) {
+                            return true;
+                        }
+
+                        return `${option.title} ${option.description}`.toLowerCase().includes(search);
+                    });
+                },
+                filteredBriefBuilderItemGroups() {
+                    const groups = [];
+
+                    this.filteredBriefBuilderItemOptions().forEach((option) => {
+                        const label = option.group || 'Other';
+                        let group = groups.find((item) => item.label === label);
+
+                        if (! group) {
+                            group = { label, options: [] };
+                            groups.push(group);
+                        }
+
+                        group.options.push(option);
+                    });
+
+	                    return groups;
+	                },
+		                cartLinkStructureExample() {
+		                    if (this.campaignSetup.cartLinkSource === 'Dynamic (Use URL from lead data)') {
+		                        return 'Example: @{{cart_url}}?utm_source=outcraft&utm_medium=email&utm_campaign=cart-recovery';
+		                    }
+
+		                    return 'Example: https://outcraft.ai/cart?utm_source=outcraft&utm_medium=email&utm_campaign=cart-recovery';
+		                },
+		                briefBuilderHasItem(type) {
+		                    return this.campaignSetup.brief.builderItems.some((item) => item.type === type);
+		                },
+                openBriefBuilderItemModal() {
+                    this.campaignSetup.briefBuilderItemSearch = '';
+                    this.campaignSetup.briefBuilderItemModalOpen = true;
+                },
+                addBriefBuilderItem(type) {
+                    if (this.briefBuilderHasItem(type)) {
+                        return;
+                    }
+
+                    this.campaignSetup.brief.builderItems.push(this.createBriefBuilderItem(type));
+                    this.closeCampaignSetupOverlays();
+                    this.scheduleCampaignBuilderLayoutUpdate();
+                },
+                createBriefBuilderItem(type) {
+                    const id = `brief-builder-${type}-${Date.now()}-${this.campaignSetup.brief.builderItems.length}`;
+                    const baseItem = { id, type, questions: [], newQuestion: '', newAnswers: '' };
+
+                    if (type === 'rules') {
+                        return { ...baseItem, rules: this.campaignSetup.brief.importantRules || '' };
+                    }
+
+                    if (type === 'qualification') {
+                        return baseItem;
+                    }
+
+                    if (this.briefBuilderIsGuidelineItem(type)) {
+                        return { ...baseItem, content: this.briefBuilderGuidelineInitialValue(type) };
+                    }
+
+                    if (['discount_codes', 'handoff', 'followups'].includes(type)) {
+                        return baseItem;
+                    }
+
+                    return baseItem;
+                },
+                briefBuilderItemTitle(type) {
+                    return this.briefBuilderItemOptions().find((option) => option.type === type)?.title || 'Campaign Context Item';
+                },
+                briefBuilderItemDescription(type) {
+                    return this.briefBuilderItemOptions().find((option) => option.type === type)?.description || '';
+                },
+                briefBuilderItemIcon(type) {
+                    return this.briefBuilderItemOptions().find((option) => option.type === type)?.icon || 'description';
+                },
+                briefBuilderItemSvgIcon(type) {
+                    if (type !== 'whatsapp_guidelines') {
+                        return '';
+                    }
+
+                    return '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 640" fill="currentColor" aria-hidden="true"><path d="M476.9 161.1C435 119.1 379.2 96 319.9 96C197.5 96 97.9 195.6 97.9 318C97.9 357.1 108.1 395.3 127.5 429L96 544L213.7 513.1C246.1 530.8 282.6 540.1 319.8 540.1L319.9 540.1C442.2 540.1 544 440.5 544 318.1C544 258.8 518.8 203.1 476.9 161.1zM319.9 502.7C286.7 502.7 254.2 493.8 225.9 477L219.2 473L149.4 491.3L168 423.2L163.6 416.2C145.1 386.8 135.4 352.9 135.4 318C135.4 216.3 218.2 133.5 320 133.5C369.3 133.5 415.6 152.7 450.4 187.6C485.2 222.5 506.6 268.8 506.5 318.1C506.5 419.9 421.6 502.7 319.9 502.7zM421.1 364.5C415.6 361.7 388.3 348.3 383.2 346.5C378.1 344.6 374.4 343.7 370.7 349.3C367 354.9 356.4 367.3 353.1 371.1C349.9 374.8 346.6 375.3 341.1 372.5C308.5 356.2 287.1 343.4 265.6 306.5C259.9 296.7 271.3 297.4 281.9 276.2C283.7 272.5 282.8 269.3 281.4 266.5C280 263.7 268.9 236.4 264.3 225.3C259.8 214.5 255.2 216 251.8 215.8C248.6 215.6 244.9 215.6 241.2 215.6C237.5 215.6 231.5 217 226.4 222.5C221.3 228.1 207 241.5 207 268.8C207 296.1 226.9 322.5 229.6 326.2C232.4 329.9 268.7 385.9 324.4 410C359.6 425.2 373.4 426.5 391 423.9C401.7 422.3 423.8 410.5 428.4 397.5C433 384.5 433 373.4 431.6 371.1C430.3 368.6 426.6 367.2 421.1 364.5z"/></svg>';
+                },
+                briefBuilderGuidelineTypes() {
+                    return ['call_guidelines', 'email_guidelines', 'sms_guidelines', 'whatsapp_guidelines'];
+                },
+                briefBuilderIsGuidelineItem(type) {
+                    return this.briefBuilderGuidelineTypes().includes(type);
+                },
+                briefBuilderGuidelineInitialValue(type) {
+                    return {
+                        call_guidelines: this.campaignSetup.callGuidelines,
+                        email_guidelines: this.campaignSetup.emailGuidelines,
+                        sms_guidelines: this.campaignSetup.smsGuidelines,
+                        whatsapp_guidelines: this.campaignSetup.whatsappGuidelines,
+                    }[type] || '';
+                },
+                briefBuilderGuidelinePlaceholder(type) {
+                    return {
+                        call_guidelines: 'Add call tone, pacing, objection handling, and compliance notes.',
+                        email_guidelines: 'Add email tone, formatting, length, and compliance notes.',
+                        sms_guidelines: 'Keep it short, include required links, and define SMS-only constraints.',
+                        whatsapp_guidelines: 'Add WhatsApp-specific tone, length, and follow-up notes.',
+                    }[type] || 'Add channel-specific instructions.';
+                },
+                briefBuilderGuidelineHelper(type) {
+                    return {
+                        call_guidelines: 'These instructions apply only when AI is speaking on calls.',
+                        email_guidelines: 'These instructions apply only to email messages.',
+                        sms_guidelines: 'These instructions apply only to SMS messages.',
+                        whatsapp_guidelines: 'These instructions apply only to WhatsApp messages.',
+                    }[type] || 'These instructions apply only to this channel.';
+                },
+                removeBriefBuilderItem(id) {
+                    this.campaignSetup.briefBuilderItemActionOpen = '';
+                    this.campaignSetup.brief.builderItems = this.campaignSetup.brief.builderItems.filter((item) => item.id !== id);
+                    this.scheduleCampaignBuilderLayoutUpdate();
+                },
+                moveBriefBuilderItem(index, direction) {
+                    this.campaignSetup.briefBuilderItemActionOpen = '';
+                    const nextIndex = index + direction;
+                    const items = this.campaignSetup.brief.builderItems;
+
+                    if (nextIndex < 0 || nextIndex >= items.length) {
+                        return;
+                    }
+
+                    [items[index], items[nextIndex]] = [items[nextIndex], items[index]];
+                    this.scheduleCampaignBuilderLayoutUpdate();
+                },
+                addBriefBuilderQuestion(item) {
+                    const text = String(item.newQuestion || '').trim();
+
+                    if (! text) {
+                        return;
+                    }
+
+                    item.questions.push({
+                        id: `${item.id}-question-${Date.now()}-${item.questions.length}`,
+                        text,
+                    });
+                    item.newQuestion = '';
+                    this.scheduleCampaignBuilderLayoutUpdate();
+                },
+                reorderBriefBuilderQuestions(item, ids) {
+                    const order = (ids || []).map(String).filter(Boolean);
+
+                    if (! item?.questions || order.length === 0) {
+                        return;
+                    }
+
+                    const questionsById = new Map(
+                        item.questions.map((question) => [String(question.id), question])
+                    );
+                    const orderedQuestions = order
+                        .map((id) => questionsById.get(id))
+                        .filter(Boolean);
+                    const orderedIds = new Set(order);
+                    const remainingQuestions = item.questions
+                        .filter((question) => ! orderedIds.has(String(question.id)));
+
+                    item.questions = [
+                        ...orderedQuestions,
+                        ...remainingQuestions,
+                    ];
+                    this.scheduleCampaignBuilderLayoutUpdate();
+                },
+                briefBuilderQualificationAnswerLines(value) {
+                    if (Array.isArray(value)) {
+                        return value
+                            .map((answer) => String(answer || '').replace(/^[-\u2022]\s*/, '').trim())
+                            .filter(Boolean);
+                    }
+
+                    return String(value || '')
+                        .split(/\r?\n/)
+                        .map((answer) => answer.replace(/^[-\u2022]\s*/, '').trim())
+                        .filter(Boolean);
+                },
+                addBriefBuilderQualificationQuestion(item) {
+                    const text = String(item.newQuestion || '').trim();
+                    const answers = this.briefBuilderQualificationAnswerLines(item.newAnswers);
+
+                    if (! text || answers.length === 0) {
+                        return;
+                    }
+
+                    item.questions.push({
+                        id: `${item.id}-question-${Date.now()}-${item.questions.length}`,
+                        text,
+                        answers,
+                    });
+                    item.newQuestion = '';
+                    item.newAnswers = '';
+                    this.scheduleCampaignBuilderLayoutUpdate();
+                },
+                briefBuilderCapturedQuestionId(item, question) {
+                    return `builder-${item.id}-${question.id}`;
+                },
+                briefBuilderQuestionCaptured(item, question) {
+                    const id = this.briefBuilderCapturedQuestionId(item, question);
+
+                    return this.campaignSetup.capturedConversationQuestions.some((entry) => entry.id === id);
+                },
+                showCaptureToast(message = 'Added to Conversation Intelligence for review.') {
+                    if (this.captureToast.timer) {
+                        window.clearTimeout(this.captureToast.timer);
+                    }
+
+                    this.captureToast.title = 'Question Captured';
+                    this.captureToast.message = message;
+                    this.captureToast.visible = true;
+                    this.captureToast.timer = window.setTimeout(() => {
+                        this.captureToast.visible = false;
+                    }, 2600);
+                },
+                captureBriefBuilderQuestion(item, question, source) {
+                    const id = this.briefBuilderCapturedQuestionId(item, question);
+
+                    if (! this.campaignSetup.capturedConversationQuestions.some((entry) => entry.id === id)) {
+                        this.campaignSetup.capturedConversationQuestions.push({
+                            id,
+                            name: question.text,
+                            description: `Captured from Campaign Context ${source}.`,
+                            format: 'Text Summary',
+                            review: true,
+                        });
+                    }
+
+                    this.showCaptureToast('Added to Conversation Intelligence for review.');
+                    this.scheduleCampaignBuilderLayoutUpdate();
+                },
+                removeBriefBuilderQuestion(item, index) {
+                    const question = item.questions[index];
+
+                    if (question) {
+                        const capturedId = this.briefBuilderCapturedQuestionId(item, question);
+                        this.campaignSetup.capturedConversationQuestions = this.campaignSetup.capturedConversationQuestions
+                            .filter((entry) => entry.id !== capturedId);
+                    }
+
+                    item.questions.splice(index, 1);
+                    this.scheduleCampaignBuilderLayoutUpdate();
                 },
                 toggleChannel(channel) {
                     this.campaignSetup.channels[channel] = ! this.campaignSetup.channels[channel];
@@ -7174,6 +8334,107 @@ class OutreachPage extends Page
                         this.campaignSetup.channelOpen[channel] = false;
                     }
 
+                    this.scheduleCampaignBuilderLayoutUpdate();
+                },
+                toggleSmsTrigger(trigger) {
+                    const currentTriggers = this.campaignSetup.smsTriggers || [];
+
+                    this.campaignSetup.smsTriggers = currentTriggers.includes(trigger)
+                        ? currentTriggers.filter((item) => item !== trigger)
+                        : [...currentTriggers, trigger];
+                },
+                removeSmsTrigger(trigger) {
+                    this.campaignSetup.smsTriggers = (this.campaignSetup.smsTriggers || []).filter((item) => item !== trigger);
+                },
+                syncFindOutQuestionsText() {
+                    this.campaignSetup.brief.findOut = this.campaignSetup.brief.findOutQuestions
+                        .map((question) => `- ${question.text}`)
+                        .join('\n');
+                },
+                addFindOutQuestion() {
+                    const text = String(this.campaignSetup.brief.newFindOutQuestion || '').trim();
+
+                    if (! text) {
+                        return;
+                    }
+
+                    this.campaignSetup.brief.findOutQuestions.push({
+                        id: `find-out-${Date.now()}-${this.campaignSetup.brief.findOutQuestions.length}`,
+                        text,
+                        addToIntelligence: false,
+                        answerFormat: null,
+                    });
+                    this.campaignSetup.brief.newFindOutQuestion = '';
+                    this.syncFindOutQuestionsText();
+                    this.scheduleCampaignBuilderLayoutUpdate();
+                },
+                removeFindOutQuestion(index) {
+                    const question = this.campaignSetup.brief.findOutQuestions[index];
+
+                    if (question && this.campaignSetup.brief.findOutAnswerFormatOpen === question.id) {
+                        this.campaignSetup.brief.findOutAnswerFormatOpen = null;
+                    }
+
+                    this.campaignSetup.brief.findOutQuestions.splice(index, 1);
+                    this.syncFindOutQuestionsText();
+                    this.scheduleCampaignBuilderLayoutUpdate();
+                },
+                selectFindOutQuestionAnswerFormat(index, format) {
+                    const question = this.campaignSetup.brief.findOutQuestions[index];
+
+                    if (! question) {
+                        return;
+                    }
+
+                    question.addToIntelligence = true;
+                    question.answerFormat = format;
+                    this.campaignSetup.brief.findOutAnswerFormatOpen = null;
+                    this.scheduleCampaignBuilderLayoutUpdate();
+                },
+                captureFindOutQuestion(index) {
+                    const question = this.campaignSetup.brief.findOutQuestions[index];
+
+                    if (! question) {
+                        return;
+                    }
+
+                    question.addToIntelligence = true;
+                    question.answerFormat = question.answerFormat || 'Text Summary';
+                    this.campaignSetup.brief.findOutAnswerFormatOpen = null;
+                    this.showCaptureToast('Added to Conversation Intelligence for review.');
+                    this.scheduleCampaignBuilderLayoutUpdate();
+                },
+                toggleFindOutQuestionIntelligence(index) {
+                    const question = this.campaignSetup.brief.findOutQuestions[index];
+
+                    if (! question) {
+                        return;
+                    }
+
+                    question.addToIntelligence = ! question.addToIntelligence;
+                },
+                reorderFindOutQuestionsByIds(ids) {
+                    const order = (ids || []).map(String).filter(Boolean);
+
+                    if (order.length === 0) {
+                        return;
+                    }
+
+                    const questionsById = new Map(
+                        this.campaignSetup.brief.findOutQuestions.map((question) => [String(question.id), question])
+                    );
+                    const orderedQuestions = order
+                        .map((id) => questionsById.get(id))
+                        .filter(Boolean);
+                    const orderedIds = new Set(order);
+                    const remainingQuestions = this.campaignSetup.brief.findOutQuestions
+                        .filter((question) => ! orderedIds.has(String(question.id)));
+
+                    this.campaignSetup.brief.findOutQuestions = [
+                        ...orderedQuestions,
+                        ...remainingQuestions,
+                    ];
+                    this.syncFindOutQuestionsText();
                     this.scheduleCampaignBuilderLayoutUpdate();
                 },
                 selectCampaignSetupLanguage(code) {
@@ -7194,7 +8455,19 @@ class OutreachPage extends Page
                 campaignSetupFlagUrl(language) {
                     const code = String(language?.flagCode || language?.code || '').toLowerCase();
 
-                    return code ? `https://cdn.jsdelivr.net/npm/flag-icons/flags/1x1/${code}.svg` : '';
+                    return this.flagUrl(code);
+                },
+                countryFlagUrl(country) {
+                    const code = typeof country === 'object'
+                        ? (country?.flagCode || country?.code || '')
+                        : country;
+
+                    return this.flagUrl(code || 'US');
+                },
+                flagUrl(code) {
+                    const normalized = String(code || '').toLowerCase();
+
+                    return normalized ? `https://hatscripts.github.io/circle-flags/flags/${normalized}.svg` : '';
                 },
                 filteredCampaignSetupLanguageOptions() {
                     const selectedCodes = new Set(this.campaignSetup.languages.map((language) => language.code));
@@ -7252,10 +8525,69 @@ class OutreachPage extends Page
 	                evaluationFormatDescription(format) {
 	                    return {
 	                        'Yes / No': 'Return a simple yes or no based on detected conversation signals.',
+	                        'Yes Or No': 'Return a simple yes or no based on detected conversation signals.',
 	                        'Text Summary': 'Extract important details and return them as structured short text.',
 	                        Classified: 'Define your own labels and let AI assign the best matching outcome.',
 	                        Score: 'Evaluate interaction quality using a numeric score.',
+	                        'Score Answers': 'Evaluate answers using a numeric score.',
 	                    }[format] || '';
+	                },
+	                conversationIntelligenceEvaluations() {
+	                    return [
+	                        ...(this.campaignSetup.defaultSummaryEvaluationVisible ? [{
+	                            id: 'default-summary',
+	                            name: 'Summary Of The Interaction',
+	                            description: 'Summarize the interaction in 1-2 short sentences.',
+	                            format: 'Text Summary',
+	                        }] : []),
+	                        ...this.campaignSetup.brief.findOutQuestions
+	                            .filter((question) => question.addToIntelligence && question.answerFormat)
+	                            .map((question) => ({
+	                                id: `find-out-${question.id}`,
+	                                name: question.text,
+	                                description: 'Collected from Campaign Context question.',
+	                                format: question.answerFormat,
+	                                review: true,
+	                            })),
+	                        ...this.campaignSetup.capturedConversationQuestions.map((question) => ({
+	                            id: `captured-${question.id}`,
+	                            name: question.name,
+	                            description: question.description,
+	                            format: question.format,
+	                            review: true,
+	                        })),
+	                    ];
+	                },
+	                editConversationEvaluation(evaluation) {
+	                    this.campaignSetup.evaluationActionOpen = '';
+	                    this.campaignSetup.evaluationDrawerOpen = true;
+	                },
+	                removeConversationEvaluation(evaluation) {
+	                    this.campaignSetup.evaluationActionOpen = '';
+
+	                    if (evaluation.id === 'default-summary') {
+	                        this.campaignSetup.defaultSummaryEvaluationVisible = false;
+	                        this.scheduleCampaignBuilderLayoutUpdate();
+	                        return;
+	                    }
+
+	                    if (String(evaluation.id || '').startsWith('find-out-')) {
+	                        const questionId = String(evaluation.id).replace('find-out-', '');
+	                        const question = this.campaignSetup.brief.findOutQuestions.find((item) => String(item.id) === questionId);
+
+	                        if (question) {
+	                            question.addToIntelligence = false;
+	                            question.answerFormat = null;
+	                        }
+	                    }
+
+	                    if (String(evaluation.id || '').startsWith('captured-')) {
+	                        const questionId = String(evaluation.id).replace('captured-', '');
+	                        this.campaignSetup.capturedConversationQuestions = this.campaignSetup.capturedConversationQuestions
+	                            .filter((question) => question.id !== questionId);
+	                    }
+
+	                    this.scheduleCampaignBuilderLayoutUpdate();
 	                },
 	                customFieldTextInputState(key) {
 	                    if (! this.customFieldTextInputs[key]) {
@@ -7335,13 +8667,20 @@ class OutreachPage extends Page
                 },
                 closeCampaignSetupOverlays() {
                     this.campaignSetup.sequenceModalOpen = false;
+                    this.campaignSetup.sequenceActionOpen = '';
+                    this.campaignSetup.sequenceEditingIndex = null;
                     this.campaignSetup.followupModalOpen = false;
                     this.campaignSetup.discountCodeModalOpen = false;
-                    this.campaignSetup.overrideModalOpen = false;
-                    this.campaignSetup.evaluationDrawerOpen = false;
-                    this.campaignSetup.dispatchDrawerOpen = false;
-                    this.campaignSetup.newDiscountCode = '';
-                },
+	                    this.campaignSetup.integrationSkipModalOpen = false;
+	                    this.campaignSetup.briefBuilderItemModalOpen = false;
+	                    this.campaignSetup.briefBuilderItemActionOpen = '';
+	                    this.campaignSetup.overrideModalOpen = false;
+	                    this.campaignSetup.evaluationDrawerOpen = false;
+	                    this.campaignSetup.evaluationActionOpen = '';
+	                    this.campaignSetup.dispatchDrawerOpen = false;
+	                    this.campaignSetup.newDiscountCode = '';
+	                    this.campaignSetup.briefBuilderItemSearch = '';
+	                },
                 addDiscountCode() {
                     const code = this.campaignSetup.newDiscountCode.trim();
                     if (code && ! this.campaignSetup.discountCodes.some((item) => item.value === code)) {
@@ -7353,11 +8692,75 @@ class OutreachPage extends Page
                     this.closeCampaignSetupOverlays();
                     this.scheduleCampaignBuilderLayoutUpdate();
                 },
+                sequenceChannelIcon(channel) {
+                    return {
+                        Call: 'call',
+                        SMS: 'sms',
+                        Email: 'mail',
+                        WhatsApp: 'chat',
+                        None: 'flag',
+                    }[channel] || 'timeline';
+                },
+                sequenceDelayLabel(delay) {
+                    return delay === '-' ? 'Immediately' : `After ${delay}`;
+                },
+                moveSequenceRow(index, direction) {
+                    const nextIndex = index + direction;
+
+                    if (nextIndex < 0 || nextIndex >= this.sequenceRows.length) {
+                        return;
+                    }
+
+                    [this.sequenceRows[index], this.sequenceRows[nextIndex]] = [this.sequenceRows[nextIndex], this.sequenceRows[index]];
+                    this.campaignSetup.sequenceActionOpen = '';
+                    this.scheduleCampaignBuilderLayoutUpdate();
+                },
+                editSequenceRow(index) {
+                    this.campaignSetup.sequenceEditingIndex = index;
+                    this.campaignSetup.sequenceActionOpen = '';
+                    this.campaignSetup.sequenceModalOpen = true;
+                },
+                deleteSequenceRow(index) {
+                    this.sequenceRows.splice(index, 1);
+                    this.campaignSetup.sequenceActionOpen = '';
+                    this.scheduleCampaignBuilderLayoutUpdate();
+                },
+                followupSequenceTabs() {
+                    return [
+                        { id: 'positive', label: 'Positive', enabled: this.campaignSetup.followupPositive },
+                        { id: 'engaged', label: 'Engaged but Undecided', enabled: this.campaignSetup.followupEngaged },
+                        { id: 'negative', label: 'Negative Response', enabled: this.campaignSetup.followupNegative },
+                    ].filter((tab) => tab.enabled);
+                },
+                ensureActiveFollowupSequence(preferredId = null) {
+                    const tabs = this.followupSequenceTabs();
+                    const preferredTab = preferredId ? tabs.find((tab) => tab.id === preferredId) : null;
+
+                    if (preferredTab) {
+                        this.campaignSetup.activeFollowupSequence = preferredTab.id;
+                        return;
+                    }
+
+                    if (! tabs.some((tab) => tab.id === this.campaignSetup.activeFollowupSequence)) {
+                        this.campaignSetup.activeFollowupSequence = tabs[0]?.id || 'positive';
+                    }
+                },
+                toggleFollowupSequence(field, tabId) {
+                    this.campaignSetup[field] = ! this.campaignSetup[field];
+                    this.ensureActiveFollowupSequence(this.campaignSetup[field] ? tabId : null);
+                    this.scheduleCampaignBuilderLayoutUpdate();
+                },
                 launchBlocked() {
                     return (this.requiresIntegration() && this.campaignSetup.integrationStatus !== 'Connected')
                         || ! this.campaignSetup.source
-                        || this.enabledCampaignChannels().length === 0
-                        || ! this.campaignSetup.knowledgePublished;
+                        || this.enabledCampaignChannels().length === 0;
+                },
+                publishCampaignSetup() {
+                    if (this.launchBlocked()) {
+                        return;
+                    }
+
+                    this.campaignSetup.knowledgePublished = true;
                 },
                 reviewBadge(status) {
                     const classes = {
@@ -7600,6 +9003,115 @@ class OutreachPage extends Page
                         this.syncUrl();
                     }
                 },
+                leadId(row) {
+                    return Number(row?.id || 0);
+                },
+                visibleLeadIds() {
+                    return this.paginatedRows()
+                        .map((row) => this.leadId(row))
+                        .filter(Boolean);
+                },
+                selectedLeadRows() {
+                    const selectedIds = new Set(this.selectedLeadIds.map(Number));
+
+                    return this.rows.filter((row) => selectedIds.has(this.leadId(row)));
+                },
+                selectedLeadCampaignNames() {
+                    return [...new Set(this.selectedLeadRows().map((row) => row.campaignName).filter(Boolean))];
+                },
+                campaignAssignmentOptions() {
+                    return [...this.pinnedCampaigns, ...this.abTestCampaigns, ...this.archivedCampaigns];
+                },
+                isLeadSelected(row) {
+                    return this.selectedLeadIds.includes(this.leadId(row));
+                },
+                allVisibleLeadsSelected() {
+                    const ids = this.visibleLeadIds();
+
+                    return ids.length > 0 && ids.every((id) => this.selectedLeadIds.includes(id));
+                },
+                someVisibleLeadsSelected() {
+                    const ids = this.visibleLeadIds();
+                    const selectedCount = ids.filter((id) => this.selectedLeadIds.includes(id)).length;
+
+                    return selectedCount > 0 && selectedCount < ids.length;
+                },
+                toggleLeadSelection(row) {
+                    const id = this.leadId(row);
+
+                    if (!id) {
+                        return;
+                    }
+
+                    if (this.selectedLeadIds.includes(id)) {
+                        this.selectedLeadIds = this.selectedLeadIds.filter((selectedId) => selectedId !== id);
+                    } else {
+                        this.selectedLeadIds = [...this.selectedLeadIds, id];
+                    }
+
+                    if (this.selectedLeadIds.length === 0) {
+                        this.closeLeadAssignModal();
+                    }
+                },
+                toggleVisibleLeadSelection() {
+                    const visibleIds = this.visibleLeadIds();
+
+                    if (visibleIds.length === 0) {
+                        return;
+                    }
+
+                    if (this.allVisibleLeadsSelected()) {
+                        this.selectedLeadIds = this.selectedLeadIds.filter((id) => !visibleIds.includes(id));
+                    } else {
+                        this.selectedLeadIds = [...new Set([...this.selectedLeadIds, ...visibleIds])];
+                    }
+
+                    if (this.selectedLeadIds.length === 0) {
+                        this.closeLeadAssignModal();
+                    }
+                },
+                clearLeadSelection() {
+                    this.selectedLeadIds = [];
+                    this.closeLeadAssignModal();
+                },
+                deleteSelectedLeadsByIds(ids) {
+                    const selectedIds = new Set((ids || []).map(Number));
+
+                    if (selectedIds.size === 0) {
+                        return;
+                    }
+
+                    this.rows = this.rows.filter((row) => !selectedIds.has(this.leadId(row)));
+                    this.clearLeadSelection();
+                    this.page = Math.min(this.page, this.totalPages());
+                },
+                openLeadAssignModal() {
+                    if (this.selectedLeadIds.length === 0) {
+                        return;
+                    }
+
+                    this.leadAssignCampaignName = this.selectedLeadCampaignNames()[0] || this.campaignAssignmentOptions()[0]?.name || '';
+                    this.leadAssignModalOpen = true;
+                },
+                closeLeadAssignModal() {
+                    this.leadAssignModalOpen = false;
+                    this.leadAssignCampaignName = '';
+                },
+                assignSelectedLeadsToCampaign(campaignName = this.leadAssignCampaignName) {
+                    if (this.selectedLeadIds.length === 0 || !campaignName) {
+                        return;
+                    }
+
+                    const selectedIds = new Set(this.selectedLeadIds.map(Number));
+
+                    this.rows.forEach((row) => {
+                        if (selectedIds.has(this.leadId(row))) {
+                            row.campaignName = campaignName;
+                        }
+                    });
+
+                    this.clearLeadSelection();
+                },
                 isInteractionExpanded(interactionId) {
                     return this.expandedInteractions.includes(interactionId);
                 },
@@ -7665,6 +9177,10 @@ class OutreachPage extends Page
                         margin + (tooltipWidth / 2),
                         Math.min(window.innerWidth - margin - (tooltipWidth / 2), centeredLeft),
                     );
+                    const arrowLeft = Math.max(
+                        16,
+                        Math.min(tooltipWidth - 16, centeredLeft - (left - (tooltipWidth / 2))),
+                    );
 
                     this.floatingTooltip = {
                         visible: true,
@@ -7672,6 +9188,7 @@ class OutreachPage extends Page
                         left,
                         top: Math.max(margin + 40, rect.top - 10),
                         width: tooltipWidth,
+                        arrowLeft,
                     };
                 },
                 hideFloatingTooltip() {
@@ -7708,7 +9225,7 @@ class OutreachPage extends Page
                 leadCountryLabel(code) {
                     const country = this.leadCountryOption(code);
 
-                    return `${country.flag} ${country.name} (${country.code})`;
+                    return `${country.name} (${country.code})`;
                 },
                 toggleLeadSelect(name) {
                     this.leadCreatedCalendarOpen = false;
@@ -7902,7 +9419,7 @@ class OutreachPage extends Page
                     this.selectedLead.email = String(this.leadEditForm.email || '').trim();
                     this.selectedLead.phone = String(this.leadEditForm.phone || '').trim();
                     this.selectedLead.country = country || 'US';
-                    this.selectedLead.countryFlag = this.leadCountryOption(this.selectedLead.country).flag;
+                    this.selectedLead.countryFlagCode = this.leadCountryOption(this.selectedLead.country).flagCode;
                     this.selectedLead.state = this.leadEditForm.state || 'Idle';
                     this.selectedLead.timezone = this.leadEditForm.timezone || 'America / New York';
                     this.selectedLead.ageTooltip = this.formatLeadCreatedTooltip(this.leadEditForm.createdDate);
@@ -8152,6 +9669,7 @@ class OutreachPage extends Page
                 },
                 addFilter(value) {
                     this.showLoader(3000);
+                    this.clearLeadSelection();
 
                     if (!this.filters.includes(value)) {
                         this.filters.push(value);
@@ -8163,12 +9681,14 @@ class OutreachPage extends Page
                 },
                 removeFilter(value) {
                     this.showLoader(3000);
+                    this.clearLeadSelection();
                     this.filters = this.filters.filter((filter) => filter !== value);
                     this.selectedPresetName = 'Filter Presets';
                     this.page = 1;
                 },
                 applyPreset(preset) {
                     this.showLoader(3000);
+                    this.clearLeadSelection();
                     this.filters = [...preset.filters];
                     this.selectedPresetName = preset.name;
                     this.searchOpen = false;
@@ -8184,6 +9704,7 @@ class OutreachPage extends Page
                 },
                 clearFilters() {
                     this.showLoader(3000);
+                    this.clearLeadSelection();
                     this.filters = [];
                     this.selectedPresetName = 'Filter Presets';
                     this.searchOpen = false;
@@ -8192,6 +9713,7 @@ class OutreachPage extends Page
                 },
                 clearSearchTags() {
                     this.showLoader(3000);
+                    this.clearLeadSelection();
                     this.filters = [];
                     this.selectedPresetName = 'Filter Presets';
                     this.query = '';

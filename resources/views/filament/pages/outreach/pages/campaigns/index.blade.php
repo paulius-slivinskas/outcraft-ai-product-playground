@@ -1,4 +1,4 @@
-        <section x-cloak x-show="! campaignBuilderOpen && activeNav === 'Campaigns'" x-on:wheel="handleTopNavWheel($event)" data-outcraft-tab-header class="sticky top-0 z-30 bg-white transition-transform duration-200 ease-out will-change-transform" :class="topNavHeaderClass()">
+        <section x-cloak x-show="! campaignBuilderOpen && ! campaignDetailOpen && ! abTestDetailOpen && activeNav === 'Campaigns'" x-on:wheel="handleTopNavWheel($event)" data-outcraft-tab-header class="sticky top-0 z-30 bg-white transition-transform duration-200 ease-out will-change-transform" :class="topNavHeaderClass()">
             <div :class="topNavTabShellClass()">
                 <div class="outcraft-tab-header-row flex items-stretch">
                     <button
@@ -28,20 +28,23 @@
             </div>
         </section>
 
-        <section x-cloak x-show="! campaignBuilderOpen && activeNav === 'Campaigns'" class="mx-6 mb-6 mt-5 bg-white">
-            <div class="mb-4 flex min-h-[54px] items-start justify-between gap-x-6">
+        <section x-cloak x-show="! campaignBuilderOpen && ! campaignDetailOpen && ! abTestDetailOpen && activeNav === 'Campaigns'" class="mx-6 mt-5">
+            <div class="flex min-h-[54px] items-start justify-between gap-x-6">
                 <div>
                     <h1 class="text-xl font-bold leading-tight text-gray-950" x-text="activeCampaignPageTab"></h1>
                     <p class="mt-1 max-w-2xl text-sm/6 text-gray-500" x-text="campaignPageDescription()"></p>
                 </div>
-                <button x-show="activeCampaignPageTab !== 'Archived'" type="button" x-on:click="startCampaignBuilder()" class="inline-flex h-10 shrink-0 items-center gap-2 rounded-md bg-indigo-600 px-3.5 text-sm font-semibold text-white shadow-sm transition hover:bg-indigo-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600">
+                <button x-show="activeCampaignPageTab !== 'Archived'" type="button" x-on:click="activeCampaignPageTab === 'A/B Tests' ? openAbTestCreateModal() : startCampaignBuilder()" class="inline-flex h-10 shrink-0 items-center gap-2 rounded-md bg-indigo-600 px-3.5 text-sm font-semibold text-white shadow-sm transition hover:bg-indigo-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600">
                     <span class="outcraft-icon !text-[18px] text-white">add</span>
-                    Create New
+                    <span x-text="activeCampaignPageTab === 'A/B Tests' ? 'Create New Test' : 'Create New'"></span>
                 </button>
             </div>
+        </section>
+
+        <section data-card-surface x-cloak x-show="! campaignBuilderOpen && ! campaignDetailOpen && ! abTestDetailOpen && activeNav === 'Campaigns' && activeCampaignPageTab !== 'A/B Tests'" class="mx-6 mb-6 mt-4 overflow-hidden rounded-lg bg-white shadow-sm ring-1 ring-gray-900/5">
             <ul role="list" class="divide-y divide-gray-100">
                 <template x-for="campaign in campaignsPageRows()" :key="activeCampaignPageTab + campaign.name">
-                    <li x-data="{ actionsOpen: false }" class="flex items-center justify-between gap-x-6 py-5">
+                    <li x-data="{ actionsOpen: false }" x-on:click="openCampaignDetail(campaign)" class="flex cursor-pointer items-center justify-between gap-x-6 px-6 py-5 transition hover:bg-gray-50">
                         <div class="flex min-w-0 items-center gap-x-4">
                             <span class="flex size-10 shrink-0 items-center justify-center rounded-md bg-indigo-50 text-indigo-600">
                                 <span class="outcraft-icon !text-[22px]" x-text="campaignAvatarIcon(campaign)"></span>
@@ -64,16 +67,14 @@
                                 </div>
                                 <div class="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1 text-xs leading-5 text-gray-500">
                                     <p class="whitespace-nowrap">Modified <span x-text="campaign.modified"></span></p>
-                                    <span class="size-0.5 rounded-full bg-gray-400"></span>
-                                    <p class="truncate" x-text="activeCampaignPageTab === 'A/B Tests' ? 'Variant campaign' : (activeCampaignPageTab === 'Archived' ? 'Archived campaign' : 'Pinned campaign')"></p>
                                 </div>
                             </div>
                         </div>
                         <div class="flex flex-none items-center gap-x-4 self-center">
-                            <button type="button" class="hidden h-9 items-center rounded-md bg-white px-2.5 text-sm font-semibold text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 transition hover:bg-gray-50 sm:inline-flex">
+                            <button type="button" x-on:click.stop="openCampaignDetail(campaign)" class="hidden h-9 items-center rounded-md bg-white px-2.5 text-sm font-semibold text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 transition hover:bg-gray-50 sm:inline-flex">
                                 Open<span class="sr-only" x-text="`, ${campaign.name}`"></span>
                             </button>
-                            <div class="relative flex h-9 flex-none items-center" x-on:keydown.escape.window="actionsOpen = false" x-on:click.outside="actionsOpen = false">
+                            <div class="relative flex h-9 flex-none items-center" x-on:click.stop="null" x-on:keydown.escape.window="actionsOpen = false" x-on:click.outside="actionsOpen = false">
                                 <button type="button" x-on:click="actionsOpen = !actionsOpen" class="relative inline-flex items-center text-gray-500 transition hover:text-gray-900" aria-label="Open options">
                                     <span class="absolute -inset-2.5"></span>
                                     <span class="outcraft-icon !text-[20px]">more_vert</span>
@@ -89,7 +90,7 @@
                                     x-transition:leave-end="opacity-0 translate-y-2"
                                     class="absolute -right-2.5 top-full z-40 mt-2 w-32 origin-top-right rounded-md bg-white py-2 shadow-lg ring-1 ring-gray-900/5"
                                 >
-                                    <button type="button" class="block w-full px-3 py-1 text-left text-sm leading-6 text-gray-900 transition hover:bg-gray-50">Edit</button>
+                                    <button type="button" x-on:click="actionsOpen = false; openCampaignDetail(campaign)" class="block w-full px-3 py-1 text-left text-sm leading-6 text-gray-900 transition hover:bg-gray-50">Edit</button>
                                     <button type="button" class="block w-full px-3 py-1 text-left text-sm leading-6 text-gray-900 transition hover:bg-gray-50">Duplicate</button>
                                     <button type="button" class="block w-full px-3 py-1 text-left text-sm leading-6 text-gray-900 transition hover:bg-gray-50" x-text="activeCampaignPageTab === 'Archived' ? 'Restore' : 'Archive'"></button>
                                 </div>
@@ -99,3 +100,52 @@
                 </template>
             </ul>
         </section>
+
+        <section data-card-surface x-cloak x-show="! campaignBuilderOpen && ! campaignDetailOpen && ! abTestDetailOpen && activeNav === 'Campaigns' && activeCampaignPageTab === 'A/B Tests'" class="mx-6 mb-6 mt-4 overflow-hidden rounded-lg bg-white shadow-sm ring-1 ring-gray-900/5">
+            <ul role="list" class="divide-y divide-gray-100">
+                <template x-for="test in abTestCampaigns" :key="test.name">
+                    <li x-on:click="openAbTestDetail(test)" class="flex cursor-pointer flex-col gap-4 px-4 py-5 transition hover:bg-gray-50 sm:px-6 lg:flex-row lg:items-start lg:gap-6">
+                        <div class="flex min-w-0 items-start gap-x-4 lg:flex-1">
+                            <span class="flex size-10 shrink-0 items-center justify-center rounded-md bg-indigo-50 text-indigo-600">
+                                <span class="outcraft-icon !text-[22px]">science</span>
+                            </span>
+                            <div class="min-w-0">
+                                <div class="flex flex-wrap items-center gap-x-3 gap-y-2">
+                                    <p class="truncate text-sm font-semibold leading-6 text-gray-950" x-text="test.name"></p>
+                                    <span class="outcraft-label inline-flex rounded-full px-2 py-1 text-xs font-medium ring-1 ring-inset" :class="abTestStatusClass(test)">
+                                        <span x-text="test.status"></span>
+                                    </span>
+                                </div>
+                                <p class="mt-1 whitespace-nowrap text-xs leading-5 text-gray-500">Modified <span x-text="test.modified"></span></p>
+                            </div>
+                        </div>
+
+                        <div class="lg:w-40 lg:flex-none">
+                            <p class="text-sm font-semibold leading-6 text-gray-950">Lead Count</p>
+                            <p class="mt-1 text-xs leading-5 text-gray-500" x-text="test.leadCount"></p>
+                        </div>
+
+                        <div class="min-w-0 lg:w-80 lg:flex-none">
+                            <p class="text-sm font-semibold leading-6 text-gray-950">Campaigns</p>
+                            <div class="mt-1 space-y-1">
+                                <template x-for="variant in test.variants" :key="test.name + variant">
+                                    <p class="truncate text-xs leading-5 text-gray-500" x-text="variant"></p>
+                                </template>
+                            </div>
+                        </div>
+
+                        <div class="flex justify-start lg:w-24 lg:flex-none lg:justify-end">
+                            <button type="button" x-on:click.stop="openAbTestDetail(test)" class="inline-flex h-9 items-center rounded-md bg-white px-2.5 text-sm font-semibold text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 transition hover:bg-gray-50">
+                                Open<span class="sr-only" x-text="`, ${test.name}`"></span>
+                            </button>
+                        </div>
+                    </li>
+                </template>
+            </ul>
+        </section>
+
+        @include('filament.pages.outreach.pages.campaigns.ab-test-create-modal')
+
+        @include('filament.pages.outreach.pages.campaigns.ab-test-detail')
+
+        @include('filament.pages.outreach.pages.campaigns.detail')

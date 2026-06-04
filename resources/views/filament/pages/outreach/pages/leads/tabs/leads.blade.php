@@ -3,7 +3,7 @@
             'focusWhen' => "activeTab === 'Leads'",
             'inputRef' => 'leadsOverlayInput',
             'title' => 'Leads',
-            'description' => 'Browse and manage all your leads',
+            'description' => 'Browse and manage your leads.',
         ])
 
         <section data-card-surface x-cloak x-show="activeNav === 'Leads' && activeTab === 'Leads' && ! leadDetailOpen" class="mx-6 mb-6 mt-4 overflow-hidden rounded-lg bg-white shadow-sm ring-1 ring-gray-900/5">

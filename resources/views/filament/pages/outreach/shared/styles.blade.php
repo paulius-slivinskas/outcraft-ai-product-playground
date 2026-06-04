@@ -901,15 +901,7 @@
             margin-right: 0 !important;
         }
         .outcraft-page main > section[data-outcraft-tab-header]::after {
-            content: "";
-            position: absolute;
-            left: 50%;
-            bottom: 0;
-            width: 100vw;
-            height: 1px;
-            transform: translateX(-50%);
-            background: rgb(229 231 235);
-            pointer-events: none;
+            display: none;
         }
         .outcraft-page main > section[data-campaign-builder] {
             width: 100% !important;

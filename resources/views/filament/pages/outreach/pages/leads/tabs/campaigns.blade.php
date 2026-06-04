@@ -3,7 +3,7 @@
             'focusWhen' => "activeTab === 'Campaigns'",
             'inputRef' => 'campaignsOverlayInput',
             'title' => 'Campaign Runs',
-            'description' => 'Browse and manage campaign runs for the selected campaign',
+            'description' => 'See campaign assignments, status, and outcomes for each lead.',
         ])
 
         <section data-card-surface x-cloak x-show="activeNav === 'Leads' && activeTab === 'Campaigns' && ! leadDetailOpen" class="mx-6 mb-6 mt-4 overflow-hidden rounded-lg bg-white shadow-sm ring-1 ring-gray-900/5">

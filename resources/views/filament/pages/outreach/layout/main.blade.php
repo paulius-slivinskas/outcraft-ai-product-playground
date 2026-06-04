@@ -5,7 +5,7 @@
         :class="[
             campaignBuilderOpen ? ((campaignBuilderUsesSidebarLayout() || campaignBuilderUsesIntroLayout()) ? 'ml-0 w-full bg-gray-50' : 'ml-0 w-full bg-white') : (sidebarOpen ? 'ml-72 w-[calc(100%-18rem)]' : 'ml-16 w-[calc(100%-4rem)]'),
             'overflow-y-auto overflow-x-hidden',
-            ! campaignBuilderOpen && activeNav === 'Campaigns' ? 'bg-white' : '',
+            ! campaignBuilderOpen && activeNav === 'Campaigns' ? 'bg-gray-50' : '',
             ! campaignBuilderOpen && activeNav !== 'Campaigns' ? 'bg-gray-50' : '',
         ]"
     >

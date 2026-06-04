@@ -202,7 +202,7 @@
             :class="assistantEngaged() ? 'min-h-[calc(100svh-4rem)]' : ''"
         >
             <div :class="assistantEngaged() ? 'min-h-[calc(100svh-4rem)]' : ''">
-                <div class="bg-white">
+                <div class="border-b border-gray-200 bg-white">
                     <div class="mx-auto max-w-7xl px-4 sm:px-6">
                         <div :class="assistantEngaged() ? 'min-h-[calc(100svh-7rem)] pb-36 pt-2 sm:min-h-[calc(100svh-7.5rem)] sm:pb-40 sm:pt-4' : 'pb-14 sm:pb-16'">
                     <div x-cloak x-show="assistantEngaged()" x-transition.opacity class="pointer-events-none sticky top-[4.25rem] z-20 mb-2 w-max lg:top-0">
@@ -222,7 +222,7 @@
                     >
                         <div class="mb-10 flex justify-center">
                             <div class="inline-flex max-w-full items-center rounded-full bg-indigo-50 px-4 py-2 text-xs text-indigo-700 ring-1 ring-indigo-100 sm:text-sm">
-                                <span class="truncate"><span class="font-semibold">New:</span> AI assistant is live. Build, inspect, and update outreach faster.</span>
+                                <span class="truncate"><span class="font-semibold">New:</span> AI assistant is live. Build, inspect, and update your campaigns faster.</span>
                             </div>
                         </div>
                         <h1 class="text-3xl font-bold leading-tight tracking-normal text-gray-950 sm:text-4xl">

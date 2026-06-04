@@ -2,8 +2,8 @@
             'show' => "activeNav === 'Leads' && activeTab === 'Handoffs' && ! leadDetailOpen",
             'focusWhen' => "activeTab === 'Handoffs'",
             'inputRef' => 'handoffsOverlayInput',
-            'title' => 'Handoff Requests',
-            'description' => 'Leads that have requested a handoff from AI to a human support.',
+            'title' => 'Handoffs',
+            'description' => 'Track and manage lead takeovers for your team.',
         ])
 
         <section data-card-surface x-cloak x-show="activeNav === 'Leads' && activeTab === 'Handoffs' && ! leadDetailOpen" class="mx-6 mb-6 mt-4 overflow-hidden rounded-lg bg-white shadow-sm ring-1 ring-gray-900/5">

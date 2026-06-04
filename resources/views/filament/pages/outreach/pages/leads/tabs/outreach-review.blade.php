@@ -2,8 +2,8 @@
             'show' => "activeNav === 'Leads' && activeTab === 'Outreach Review' && ! leadDetailOpen",
             'focusWhen' => "activeTab === 'Outreach Review'",
             'inputRef' => 'outreachReviewOverlayInput',
-            'title' => 'Interaction',
-            'description' => null,
+            'title' => 'Interactions',
+            'description' => 'Review all conversations and engagement across channels per lead.',
         ])
 
         <section data-card-surface x-cloak x-show="activeNav === 'Leads' && activeTab === 'Outreach Review' && ! leadDetailOpen" class="mx-6 mb-6 mt-4 overflow-hidden rounded-lg bg-white shadow-sm ring-1 ring-gray-900/5">

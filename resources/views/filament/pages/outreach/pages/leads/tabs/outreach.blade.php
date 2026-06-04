@@ -3,7 +3,7 @@
             'focusWhen' => "activeTab === 'Outreach'",
             'inputRef' => 'overlayInput',
             'title' => 'Interactions',
-            'description' => null,
+            'description' => 'Review all conversations and engagement across channels per lead.',
         ])
 
         <section data-card-surface x-cloak x-show="activeNav === 'Leads' && activeTab === 'Outreach' && ! leadDetailOpen" class="mx-6 mb-6 mt-4 overflow-hidden rounded-lg bg-white shadow-sm ring-1 ring-gray-900/5">

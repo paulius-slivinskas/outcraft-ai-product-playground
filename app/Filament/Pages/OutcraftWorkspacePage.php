@@ -27,11 +27,17 @@ class OutcraftWorkspacePage extends Page
         'end' => '2026-05-28',
     ];
 
+    public array $leadsDateRange = [
+        'start' => '2026-05-01',
+        'end' => '2026-05-28',
+    ];
+
     public function pageContent(): HtmlString
     {
         return new HtmlString(view('filament.pages.outreach.content', [
             'rows' => $this->rows(),
             'analyticsDateRangePicker' => $this->getSchema('analyticsDateRangeForm'),
+            'leadsDateRangePicker' => $this->getSchema('leadsDateRangeForm'),
         ])->render());
     }
 
@@ -39,20 +45,33 @@ class OutcraftWorkspacePage extends Page
     {
         return $schema
             ->components([
-                DateRangePicker::make('analyticsDateRange')
-                    ->hiddenLabel()
-                    ->singleField()
-                    ->displayFormat('M j, Y')
-                    ->format('Y-m-d')
-                    ->startPlaceholder('Select Date Range')
-                    ->endPlaceholder('End date')
-                    ->startPrefixIcon('heroicon-o-calendar')
-                    ->startPrefixIconColor('gray')
-                    ->weekStartsOnMonday()
-                    ->autoApply()
-                    ->extraAttributes(['data-outcraft-date-range-picker' => 'true'])
-                    ->live(),
+                $this->dateRangePicker('analyticsDateRange'),
             ]);
+    }
+
+    public function leadsDateRangeForm(Schema $schema): Schema
+    {
+        return $schema
+            ->components([
+                $this->dateRangePicker('leadsDateRange'),
+            ]);
+    }
+
+    private function dateRangePicker(string $statePath): DateRangePicker
+    {
+        return DateRangePicker::make($statePath)
+            ->hiddenLabel()
+            ->singleField()
+            ->displayFormat('M j, Y')
+            ->format('Y-m-d')
+            ->startPlaceholder('Select Date Range')
+            ->endPlaceholder('End date')
+            ->startPrefixIcon('heroicon-o-calendar')
+            ->startPrefixIconColor('gray')
+            ->weekStartsOnMonday()
+            ->autoApply()
+            ->extraAttributes(['data-outcraft-date-range-picker' => 'true'])
+            ->live();
     }
 
     public function deleteSelectedLeadsAction(): Action
@@ -117,7 +136,17 @@ class OutcraftWorkspacePage extends Page
         $canadianAreaCodes = [416, 438, 514, 604, 647, 778, 905];
         $timezones = ['America / New York', 'America / Chicago', 'America / Denver', 'America / Los Angeles', 'America / Toronto', 'America / Vancouver'];
         $leadStates = ['Idle', 'Idle', 'Idle', 'Review Required'];
-        $campaignNames = ['Abandoned Cart', 'Web Support'];
+        $campaignNames = [
+            'Book Appointment',
+            'Qualify Lead',
+            'Recover Abandoned Checkout',
+            'Client Reactivation',
+            'Upsell Post-Purchase',
+            'Post-Delivery Follow-Up',
+            'Inbound Refund Request',
+            'Send Information',
+            'Provide Support',
+        ];
         $campaignStatuses = ['Completed', 'Completed', 'Completed', 'Cancelled', 'Cancelled'];
         $interactionResults = ['No Response', 'Unreachable', 'No Decision'];
         $followUpResults = ['No Response', 'Positive', 'Positive', 'Ghosted'];

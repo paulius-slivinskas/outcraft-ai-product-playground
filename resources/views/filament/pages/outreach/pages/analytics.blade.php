@@ -1,6 +1,6 @@
         <section x-cloak x-show="activeNav === 'Analytics'" x-on:wheel="handleTopNavWheel($event)" data-outcraft-tab-header class="sticky top-0 z-30 bg-white transition-transform duration-200 ease-out will-change-transform" :class="topNavHeaderClass()">
             <div :class="topNavTabShellClass()">
-                <div class="mx-3 flex flex-col gap-3 sm:mx-6 xl:flex-row xl:items-center xl:justify-between">
+                <div class="flex flex-col gap-3 xl:flex-row xl:items-center xl:justify-between">
                     <div class="outcraft-tab-header-row flex min-w-0 flex-1 items-stretch">
                         <button
                             type="button"
@@ -55,10 +55,6 @@
                         >
                             {!! $analyticsDateRangePicker->toHtml() !!}
                         </div>
-                        <button type="button" class="hidden h-10 w-full items-center justify-center gap-2 rounded-lg border border-gray-200 bg-white px-4 text-sm font-semibold text-gray-800 shadow-sm transition hover:bg-gray-50 hover:text-gray-950 lg:inline-flex xl:w-auto">
-                            <span class="outcraft-icon !text-[18px] text-gray-500">download</span>
-                            Export
-                        </button>
                     </div>
                 </div>
             </div>
@@ -70,36 +66,6 @@
                     <h1 class="text-xl font-bold leading-tight text-gray-950" x-text="activeInsightsTab"></h1>
                     <p class="mt-1 text-sm text-gray-500" x-text="insightsSubtitle()"></p>
                 </div>
-                <div class="relative lg:hidden" x-on:click.outside="analyticsHeadingMenuOpen = false">
-                    <button
-                        type="button"
-                        x-on:click.stop="analyticsHeadingMenuOpen = ! analyticsHeadingMenuOpen"
-                        class="inline-flex size-10 items-center justify-center rounded-lg border border-gray-200 bg-white text-gray-500 shadow-sm transition hover:bg-gray-50 hover:text-gray-800"
-                        aria-label="Analytics actions"
-                        :aria-expanded="analyticsHeadingMenuOpen.toString()"
-                    >
-                        <span class="outcraft-icon !text-[21px]">more_vert</span>
-                    </button>
-                    <div
-                        x-cloak
-                        x-show="analyticsHeadingMenuOpen"
-                        x-on:click.stop
-                        x-transition:enter="transition ease-out duration-100"
-                        x-transition:enter-start="opacity-0 translate-y-1"
-                        x-transition:enter-end="opacity-100 translate-y-0"
-                        x-transition:leave="transition ease-in duration-75"
-                        x-transition:leave-start="opacity-100 translate-y-0"
-                        x-transition:leave-end="opacity-0 translate-y-1"
-                        data-dropdown-surface
-                        data-panel-surface
-                        class="absolute right-0 z-40 mt-2 w-44 rounded-md bg-white py-1 shadow-lg ring-1 ring-gray-900/10"
-                    >
-                        <button type="button" x-on:click="analyticsHeadingMenuOpen = false" class="flex w-full items-center gap-2 px-3 py-2 text-left text-sm font-semibold text-gray-700 transition hover:bg-gray-50 hover:text-gray-950">
-                            <span class="outcraft-icon !text-[18px] text-gray-500">download</span>
-                            <span>Export</span>
-                        </button>
-                    </div>
-                </div>
             </div>
 
             <div class="mb-5 flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
@@ -110,7 +76,9 @@
                         options="analyticsCampaignOptions()"
                         on-change="setAnalyticsCampaign(activeAnalyticsCampaign)"
                         button-class="h-10 font-semibold"
-                        menu-class="left-0 w-full lg:w-72"
+                        menu-class="left-0 w-full"
+                        searchable="true"
+                        search-placeholder="Start typing to search..."
                     />
                 </div>
                 <div x-ref="analyticsInlineControls" class="flex w-full flex-col gap-3 sm:flex-row lg:w-auto lg:items-center lg:justify-end">
@@ -136,10 +104,6 @@
                     >
                         {!! $analyticsDateRangePicker->toHtml() !!}
                     </div>
-                    <button type="button" class="hidden h-10 w-full items-center justify-center gap-2 rounded-lg border border-gray-200 bg-white px-4 text-sm font-semibold text-gray-800 shadow-sm transition hover:bg-gray-50 hover:text-gray-950 lg:inline-flex">
-                        <span class="outcraft-icon !text-[18px] text-gray-500">download</span>
-                        Export
-                    </button>
                 </div>
             </div>
 

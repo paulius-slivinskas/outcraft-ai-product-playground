@@ -1,0 +1,50 @@
+{
+  "name": "Outcraft AI Playground",
+  "description": "Laravel and Filament application configured for Heroku.",
+  "keywords": [
+    "laravel",
+    "filament",
+    "php"
+  ],
+  "buildpacks": [
+    {
+      "url": "heroku/nodejs"
+    },
+    {
+      "url": "heroku/php"
+    }
+  ],
+  "addons": [
+    "heroku-postgresql:essential-0"
+  ],
+  "env": {
+    "APP_ENV": {
+      "value": "production"
+    },
+    "APP_DEBUG": {
+      "value": "false"
+    },
+    "APP_KEY": {
+      "description": "Generate with `php artisan key:generate --show` before first deploy.",
+      "required": true
+    },
+    "LOG_CHANNEL": {
+      "value": "stderr"
+    },
+    "DB_CONNECTION": {
+      "value": "pgsql"
+    },
+    "SESSION_DRIVER": {
+      "value": "database"
+    },
+    "CACHE_STORE": {
+      "value": "database"
+    },
+    "QUEUE_CONNECTION": {
+      "value": "database"
+    }
+  },
+  "scripts": {
+    "postdeploy": "php artisan migrate --force"
+  }
+}

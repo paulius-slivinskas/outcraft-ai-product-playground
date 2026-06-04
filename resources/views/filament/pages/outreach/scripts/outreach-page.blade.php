@@ -224,6 +224,23 @@
             return selected?.label || placeholder;
         }
 
+        function outcraftFilterSelectOptions(options, query = '') {
+            const normalizedQuery = String(query || '').trim().toLowerCase();
+
+            if (! normalizedQuery) {
+                return options;
+            }
+
+            return options.filter((option) => {
+                if (option.disabled) {
+                    return true;
+                }
+
+                return String(option.label || '').toLowerCase().includes(normalizedQuery)
+                    || String(option.value || '').toLowerCase().includes(normalizedQuery);
+            });
+        }
+
         function renderOutcraftIcons(root = document) {
             root.querySelectorAll?.('.outcraft-icon').forEach(renderOutcraftIconNode);
         }
@@ -508,6 +525,26 @@
                 leadInteractionFeedbackRating: '',
                 leadInteractionFeedbackText: '',
                 activeCampaignPageTab: 'Campaigns',
+                campaignDetailOpen: false,
+                campaignDetailMobilePanelOpen: false,
+                selectedCampaign: null,
+                abTestDetailOpen: false,
+                selectedAbTest: null,
+                abTestCreateModalOpen: false,
+                abTestForm: {
+                    name: '',
+                    variantA: {
+                        campaign: '',
+                        name: '',
+                    },
+                    variantB: {
+                        campaign: '',
+                        name: '',
+                    },
+                    numberOfLeads: '',
+                },
+                activeCampaignDetailPanel: 'company-basics',
+                campaignDetailDirtyPanels: [],
                 campaignBuilderOpen: false,
                 campaignBuilderMobileProgressOpen: false,
                 campaignBuilderTransitioning: false,
@@ -560,6 +597,9 @@
                 activeAnalyticsRange: 'Last 7 Days',
                 analyticsCustomRangeStart: '2026-05-01',
                 analyticsCustomRangeEnd: '2026-05-28',
+                activeLeadRange: 'All Time',
+                leadsCustomRangeStart: '2026-05-01',
+                leadsCustomRangeEnd: '2026-05-28',
                 activeReplyTimingRegion: 'us-east',
                 activeReplyTimingHour: '09:00',
                 highlightedConversationMetrics: [],
@@ -586,8 +626,8 @@
                 engagementApexResizeObservers: {},
                 campaignOpen: false,
                 presetOpen: false,
-                campaign: 'Abandoned Cart',
-                campaigns: ['All Campaigns', 'Abandoned Cart', 'Web Support'],
+                campaign: 'All Leads',
+                campaigns: ['All Leads', 'Book Appointment', 'Qualify Lead', 'Recover Abandoned Checkout', 'Client Reactivation', 'Upsell Post-Purchase', 'Post-Delivery Follow-Up', 'Inbound Refund Request', 'Send Information', 'Provide Support'],
                 query: '',
                 searchOpen: false,
                 filters: [],
@@ -643,16 +683,104 @@
                     { label: 'Knowledge Base', icon: 'library_books' },
                 ],
                 pinnedCampaigns: [
-                    { name: 'Abandoned Cart', status: 'Running', change: 'Unpublished', modified: '2 hours ago', owner: 'Diana Ross' },
-                    { name: 'Late Shipping Notification', status: 'Running', change: '', modified: '4 days ago', owner: 'Mantas G.' },
-                    { name: 'Web Support', status: 'Running', change: '', modified: '4 days ago', owner: 'Support Ops' },
-                    { name: 'Onboarding Test Calls Batch', status: 'Paused', change: '', modified: '4 days ago', owner: 'Casey AI' },
-                    { name: 'Onboarding Calls Test Batch', status: 'Paused', change: '', modified: '4 days ago', owner: 'Casey AI' },
+                    { name: 'Book Appointment Campaign', icon: 'calendar_check', status: 'Running', change: '', modified: '2 hours ago', owner: 'Diana Ross' },
+                    { name: 'Qualify Lead Campaign', icon: 'filter_alt', status: 'Running', change: '', modified: '4 hours ago', owner: 'Mantas G.' },
+                    { name: 'Recover Abandoned Checkout Campaign', icon: 'shopping_cart', status: 'Running', change: 'Unpublished Changes', modified: '1 day ago', owner: 'Support Ops' },
+                    { name: 'Client Reactivation Campaign', icon: 'refresh_ccw', status: 'Running', change: '', modified: '2 days ago', owner: 'Casey AI' },
+                    { name: 'Upsell Post-Purchase Campaign', icon: 'gift', status: 'Running', change: '', modified: '3 days ago', owner: 'Diana Ross' },
+                    { name: 'Post-Delivery Follow-Up Campaign', icon: 'package_check', status: 'Running', change: '', modified: '4 days ago', owner: 'Mantas G.' },
+                    { name: 'Inbound Refund Request Campaign', icon: 'receipt_text', status: 'Paused', change: '', modified: '5 days ago', owner: 'Support Ops' },
+                    { name: 'Send Information Campaign', icon: 'send', status: 'Running', change: '', modified: '6 days ago', owner: 'Casey AI' },
+                    { name: 'Provide Support Campaign', icon: 'headphones', status: 'Running', change: '', modified: '1 week ago', owner: 'Support Ops' },
                 ],
                 abTestCampaigns: [
-                    { name: 'Checkout Follow-Up Variant Test', status: 'Running', change: 'Draft', modified: '1 day ago' },
-                    { name: 'Web Support Greeting Test', status: 'Running', change: 'Unpublished', modified: '3 days ago' },
-                    { name: 'Shipping Delay Tone Test', status: 'Paused', change: '', modified: '5 days ago' },
+                    {
+                        name: 'Regular VS New Prompt',
+                        status: 'Paused',
+                        change: '',
+                        modified: '2 hours ago',
+                        leadCount: '500 / 500',
+                        completedCampaigns: '415 / 500',
+                        variants: ['Regular Prompt, 10$ off', 'New Prompt, 10$ off EXTREME'],
+                        performances: [
+                            {
+                                label: 'Campaign A Engagement',
+                                campaignName: 'Regular Prompt, 10$ off',
+                                metrics: [
+                                    { label: 'Engagement Rate', value: '30.65%', helper: '76 leads replied out of 248 contacted' },
+                                    { label: 'Conversion Potential', value: '92.11%', helper: '70 of 76 replied leads showed potential to convert' },
+                                    { label: 'Total Revenue', value: '$22,041.98', helper: 'Revenue made from 83 leads' },
+                                ],
+                            },
+                            {
+                                label: 'Campaign B Engagement',
+                                campaignName: 'New Prompt, 10$ off EXTREME',
+                                metrics: [
+                                    { label: 'Engagement Rate', value: '33.47%', helper: '83 leads replied out of 248 contacted' },
+                                    { label: 'Conversion Potential', value: '85.54%', helper: '71 of 83 replied leads showed potential to convert' },
+                                    { label: 'Total Revenue', value: '$25,310.38', helper: 'Revenue made from 86 leads' },
+                                ],
+                            },
+                        ],
+                    },
+                    {
+                        name: 'Abandoned $20 VS $25',
+                        status: 'Paused',
+                        change: '',
+                        modified: '1 day ago',
+                        leadCount: '893 / 1000',
+                        completedCampaigns: '764 / 1000',
+                        variants: ['Discount 20$', 'Discount 25$'],
+                        performances: [
+                            {
+                                label: 'Campaign A Engagement',
+                                campaignName: 'Discount 20$',
+                                metrics: [
+                                    { label: 'Engagement Rate', value: '27.84%', helper: '124 leads replied out of 446 contacted' },
+                                    { label: 'Conversion Potential', value: '78.23%', helper: '97 of 124 replied leads showed potential to convert' },
+                                    { label: 'Total Revenue', value: '$31,840.00', helper: 'Revenue made from 118 leads' },
+                                ],
+                            },
+                            {
+                                label: 'Campaign B Engagement',
+                                campaignName: 'Discount 25$',
+                                metrics: [
+                                    { label: 'Engagement Rate', value: '31.12%', helper: '139 leads replied out of 447 contacted' },
+                                    { label: 'Conversion Potential', value: '81.29%', helper: '113 of 139 replied leads showed potential to convert' },
+                                    { label: 'Total Revenue', value: '$35,920.00', helper: 'Revenue made from 126 leads' },
+                                ],
+                            },
+                        ],
+                    },
+                    {
+                        name: '10% vs. 10$ Abandoned Cart Discount',
+                        status: 'Paused',
+                        change: '',
+                        modified: '3 days ago',
+                        leadCount: '301 / 350',
+                        completedCampaigns: '244 / 350',
+                        variants: ['10$ Discount', '10% Discount'],
+                        performances: [
+                            {
+                                label: 'Campaign A Engagement',
+                                campaignName: '10$ Discount',
+                                metrics: [
+                                    { label: 'Engagement Rate', value: '24.50%', helper: '37 leads replied out of 151 contacted' },
+                                    { label: 'Conversion Potential', value: '75.68%', helper: '28 of 37 replied leads showed potential to convert' },
+                                    { label: 'Total Revenue', value: '$9,842.15', helper: 'Revenue made from 31 leads' },
+                                ],
+                            },
+                            {
+                                label: 'Campaign B Engagement',
+                                campaignName: '10% Discount',
+                                metrics: [
+                                    { label: 'Engagement Rate', value: '29.33%', helper: '44 leads replied out of 150 contacted' },
+                                    { label: 'Conversion Potential', value: '79.55%', helper: '35 of 44 replied leads showed potential to convert' },
+                                    { label: 'Total Revenue', value: '$11,604.72', helper: 'Revenue made from 36 leads' },
+                                ],
+                            },
+                        ],
+                    },
                 ],
                 archivedCampaigns: [
                     { name: 'Holiday Winback 2025', status: 'Paused', change: '', modified: '2 months ago' },
@@ -1100,7 +1228,7 @@
                 tabs: [
                     { label: 'Leads', icon: 'group' },
                     { label: 'Lead Campaigns', displayLabel: 'Campaign Runs', icon: 'view_agenda' },
-                    { label: 'Outreach Review', displayLabel: 'Interaction', icon: 'forum' },
+                    { label: 'Outreach Review', displayLabel: 'Interactions', icon: 'forum' },
                     { label: 'Handoffs', icon: 'waving_hand' },
                 ],
                 presets: [
@@ -1365,12 +1493,9 @@
                     }
                 },
                 initializeTabsTheme() {
-                    const storedStyle = this.storedTopNavTabStyle();
                     const storedTopNavTabIcons = this.storedTopNavTabIconsEnabled();
 
-                    if (storedStyle && this.topNavTabStyleOptions.some((option) => option.key === storedStyle)) {
-                        this.topNavTabStyle = storedStyle;
-                    }
+                    this.topNavTabStyle = 'underline';
 
                     if (storedTopNavTabIcons !== null) {
                         this.topNavTabIconsEnabled = storedTopNavTabIcons === 'true';
@@ -1825,14 +1950,14 @@
                 },
                 topNavTabShellClass() {
                     if (this.topNavTabStyle === 'pills' || this.topNavTabStyle === 'bar') {
-                        return 'px-0 py-3';
+                        return 'border-b border-gray-200 px-0 py-3';
                     }
 
                     if (this.topNavTabStyle === 'pills-gray') {
-                        return 'bg-gray-50 px-0 py-3';
+                        return 'border-b border-gray-200 bg-gray-50 px-0 py-3';
                     }
 
-                    return '';
+                    return 'border-b border-gray-200';
                 },
                 topNavTabListClass() {
                     if (this.topNavTabStyle === 'full-width') {
@@ -1934,7 +2059,7 @@
                     return this.topNavHeaderVisible ? 'translate-y-0' : '-translate-y-full';
                 },
                 topNavSectionActive() {
-                    return this.activeNav === 'Campaigns'
+                    return (this.activeNav === 'Campaigns' && ! this.campaignDetailOpen && ! this.abTestDetailOpen)
                         || this.activeNav === 'Analytics'
                         || (this.activeNav === 'Leads' && ! this.leadDetailOpen);
                 },
@@ -2204,6 +2329,7 @@
 	                    const builderStep = Number(params.get('builderStep'));
 	                    const setupMode = String(params.get('setupMode') || '');
 	                    const setupStep = String(params.get('setupStep') || '');
+                    const campaignParam = String(params.get('campaign') || '');
 
 	                    this.activeNav = nav;
 	                    this.activeTab = nav === 'Leads' ? tab : this.activeTab;
@@ -2228,6 +2354,12 @@
 	                    this.presetOpen = false;
 	                    this.campaignOpen = false;
 	                    this.campaignBuilderOpen = false;
+                    this.campaignDetailOpen = false;
+                    this.campaignDetailMobilePanelOpen = false;
+                    this.selectedCampaign = null;
+                    this.abTestDetailOpen = false;
+                    this.selectedAbTest = null;
+                    this.abTestCreateModalOpen = false;
 
 	                    if (nav === 'Campaigns' && builder === 'campaign') {
 	                        const setupStartStep = this.companySetupStartStep();
@@ -2269,6 +2401,12 @@
 	                            this.updateCampaignBuilderActionBarPosition();
 	                            this.scrollCampaignBuilderToStep(this.campaignBuilderStep, 'auto');
 	                        });
+	                    } else if (nav === 'Campaigns' && campaignParam) {
+                        const campaign = this.campaignFromParam(campaignParam);
+
+                        if (campaign) {
+                            this.openCampaignDetail(campaign, false);
+                        }
 	                    }
 	                },
 	                syncUrl(replace = false) {
@@ -2290,6 +2428,11 @@
 	                    if (this.leadDetailOpen && this.selectedLead?.id) {
 	                        url.searchParams.set('lead', this.selectedLead.id);
 	                    }
+
+                    if (this.campaignDetailOpen && this.selectedCampaign?.name) {
+                        url.searchParams.set('nav', 'Campaigns');
+                        url.searchParams.set('campaign', this.campaignSlug(this.selectedCampaign.name));
+                    }
 
 	                    if (this.campaignBuilderOpen) {
 	                        url.searchParams.set('nav', 'Campaigns');
@@ -2358,11 +2501,17 @@
 		                    this.activeNav = section;
                     this.resetTopNavHeaderScroll();
 	                    this.campaignBuilderOpen = false;
+	                    this.campaignDetailOpen = false;
+                    this.campaignDetailMobilePanelOpen = false;
+                    this.abTestDetailOpen = false;
 	                    this.leadDetailOpen = false;
                     this.leadDetailsEditing = false;
                     this.leadDetailsActionOpen = false;
                     this.campaignRunsActionOpen = false;
                     this.selectedLead = null;
+                    this.selectedCampaign = null;
+                    this.selectedAbTest = null;
+                    this.abTestCreateModalOpen = false;
                     this.mobileNavOpen = false;
                     if (section === 'Leads') {
                         this.activeTab = 'Leads';
@@ -2385,6 +2534,9 @@
                 setCampaignPageTab(tab) {
                     this.showLoader();
                     this.activeCampaignPageTab = tab;
+                    this.abTestDetailOpen = false;
+                    this.selectedAbTest = null;
+                    this.abTestCreateModalOpen = false;
                     this.resetTopNavHeaderScroll();
                 },
                 startCampaignBuilder() {
@@ -2396,6 +2548,11 @@
                     this.activeNav = 'Campaigns';
                     this.activeCampaignPageTab = 'Campaigns';
                     this.campaignBuilderOpen = true;
+                    this.campaignDetailOpen = false;
+                    this.abTestDetailOpen = false;
+                    this.abTestCreateModalOpen = false;
+                    this.selectedCampaign = null;
+                    this.selectedAbTest = null;
                     this.campaignBuilderTransitioning = false;
                     this.campaignBuilderTransitionLabel = 'Preparing Campaign Setup...';
                     this.campaignBuilderStep = 0;
@@ -2880,10 +3037,14 @@
                             return;
                         }
 
-                        const rect = stage.getBoundingClientRect();
+                        const progressAside = this.$refs.campaignBuilderProgressAside;
+                        const progressAsideRect = progressAside?.getBoundingClientRect();
+                        const stageRect = stage.getBoundingClientRect();
+                        const contentLeft = progressAsideRect ? progressAsideRect.right : stageRect.left;
+                        const left = Math.max(0, contentLeft);
 
-                        this.campaignBuilderActionBarStyle = '';
-                        this.campaignBuilderActionBarContentStyle = `box-sizing: border-box; margin-left: ${Math.max(0, rect.left)}px; width: ${rect.width}px; max-width: 64rem;`;
+                        this.campaignBuilderActionBarStyle = `left: ${left}px; right: 0; width: auto;`;
+                        this.campaignBuilderActionBarContentStyle = 'box-sizing: border-box; width: 100%; max-width: 64rem; margin-left: auto; margin-right: auto; padding-left: 2rem; padding-right: 2rem;';
                         this.campaignBuilderActionBarFrame = null;
                     });
                 },
@@ -5091,10 +5252,18 @@
                 analyticsRanges() {
                     return ['Last 24 Hours', 'Last 7 Days', 'Last 14 Days', 'Last 30 Days', 'All Time', 'Custom range'];
                 },
+                leadRanges() {
+                    return this.analyticsRanges();
+                },
                 analyticsCampaignOptions() {
                     const campaignTypes = this.campaignTypeGroups.flatMap((group) => group.items.map((item) => item.name));
 
                     return ['All Campaigns', ...campaignTypes];
+                },
+                leadCampaignOptions() {
+                    const campaignTypes = this.campaignTypeGroups.flatMap((group) => group.items.map((item) => item.name));
+
+                    return ['All Leads', ...campaignTypes];
                 },
                 setAnalyticsCampaign(campaign) {
                     this.activeAnalyticsCampaign = campaign;
@@ -5103,6 +5272,19 @@
                     this.activeAnalyticsTimelineMetrics = this.demoAnalyticsDefaultTimelineMetrics();
                     this.activeAnalyticsTimelineMetricMenuOpen = false;
                     this.activeAnalyticsOutcomeMenuOpen = false;
+                    this.showLoader(500);
+                },
+                setLeadCampaign(campaign) {
+                    this.campaign = campaign;
+                    this.campaignOpen = false;
+                    this.clearLeadSelection();
+                    this.page = 1;
+                    this.showLoader(500);
+                },
+                setLeadRange(range) {
+                    this.activeLeadRange = range;
+                    this.clearLeadSelection();
+                    this.page = 1;
                     this.showLoader(500);
                 },
                 analyticsOutcomeMetricOptions() {
@@ -5916,11 +6098,379 @@
 
                     return this.pinnedCampaigns;
                 },
+                allCampaignPageRows() {
+                    return [
+                        ...this.pinnedCampaigns,
+                        ...this.abTestCampaigns,
+                        ...this.archivedCampaigns,
+                    ];
+                },
+                campaignSlug(value) {
+                    return String(value || '')
+                        .toLowerCase()
+                        .replace(/[^a-z0-9]+/g, '-')
+                        .replace(/^-+|-+$/g, '');
+                },
+                campaignFromParam(value) {
+                    const slug = this.campaignSlug(value);
+
+                    return this.allCampaignPageRows().find((campaign) => this.campaignSlug(campaign.name) === slug) || null;
+                },
+                campaignDetailCompanyPanels() {
+                    return [
+                        { id: 'company-basics', label: 'Company Profile', icon: 'fingerprint', description: 'Brand identity, website, and pronunciation.' },
+                        { id: 'company-market', label: 'Industry & Market', icon: 'analytics', description: 'Positioning, customer profile, differentiators, and FAQs.' },
+                        { id: 'company-compliance', label: 'Compliance & Legal', icon: 'gpp_good', description: 'Support contacts, terms, privacy, and compliance notes.' },
+                    ];
+                },
+                campaignDetailCampaignPanels() {
+                    return [
+                        { id: 'campaign-agent', label: 'AI Agent', icon: 'support_agent', description: 'Agent name, voice, personality, and speaking style.' },
+                        { id: 'campaign-channels', label: 'Outreach Channels', icon: 'forum', description: 'Calls, email, SMS, WhatsApp, and channel guidelines.' },
+                        { id: 'campaign-sequence', label: 'Outreach Sequence', icon: 'timeline', description: 'Initial touchpoints, timing, and campaign actions.' },
+                        { id: 'campaign-followups', label: 'Follow-Up Sequence', icon: 'refresh_ccw', description: 'Response-based follow-ups for positive, engaged, and negative leads.' },
+                        { id: 'campaign-context', label: 'Campaign Context', icon: 'description', description: 'Campaign goal, qualification questions, and message context.' },
+                        { id: 'campaign-booking', label: 'Booking & Schedule', icon: 'calendar_check', description: 'Booking links, outreach hours, and scheduling rules.' },
+                        { id: 'campaign-intelligence', label: 'Conversation Intelligence', icon: 'fact_check', description: 'Captured questions, evaluations, handoff, and knowledge settings.' },
+                    ];
+                },
+                campaignDetailPanelGroups() {
+                    return [
+                        { label: 'Company Details', panels: this.campaignDetailCompanyPanels() },
+                        { label: 'Campaign Details', panels: this.campaignDetailCampaignPanels() },
+                    ];
+                },
+                campaignDetailAllPanels() {
+                    return this.campaignDetailPanelGroups().flatMap((group) => group.panels);
+                },
+                activeCampaignDetailPanelMeta() {
+                    return this.campaignDetailAllPanels().find((panel) => panel.id === this.activeCampaignDetailPanel) || null;
+                },
+                activeCampaignDetailPanelGroupLabel() {
+                    const group = this.campaignDetailPanelGroups()
+                        .find((item) => item.panels.some((panel) => panel.id === this.activeCampaignDetailPanel));
+
+                    return group?.label || 'Campaign Settings';
+                },
+                campaignDetailCompanyStepMap() {
+                    return {
+                        'company-basics': 1,
+                        'company-market': 2,
+                        'company-compliance': 3,
+                    };
+                },
+                campaignDetailCampaignStepMap() {
+                    return {
+                        'campaign-agent': 'agent',
+                        'campaign-channels': 'channels',
+                        'campaign-sequence': 'sequence',
+                        'campaign-followups': 'followups',
+                        'campaign-context': 'brief',
+                        'campaign-booking': 'booking',
+                        'campaign-intelligence': 'intelligence',
+                    };
+                },
+                setCampaignDetailPanel(panel, scrollToTop = true, openMobilePanel = true) {
+                    const panels = this.campaignDetailAllPanels().map((item) => item.id);
+
+                    if (! panels.includes(panel)) {
+                        return;
+                    }
+
+                    this.activeCampaignDetailPanel = panel;
+                    this.campaignDetailMobilePanelOpen = Boolean(openMobilePanel);
+                    this.campaignBuilderScrollFromStep = null;
+                    this.campaignBuilderFadingStep = null;
+                    this.campaignBuilderEnteringStep = null;
+                    this.campaignSetupScrollFromStep = null;
+                    this.campaignSetupFadingStep = null;
+                    this.campaignSetupEnteringStep = null;
+
+                    if (this.campaignDetailCompanyStepMap()[panel]) {
+                        this.campaignBuilderStep = this.campaignDetailCompanyStepMap()[panel];
+                    } else {
+                        this.campaignBuilderStep = this.companySetupStartStep();
+                        this.campaignSetup.current = this.campaignDetailCampaignStepMap()[panel] || 'agent';
+                        this.campaignSetupMode = 'advanced';
+                        this.campaignSetupModeSelected = true;
+                        this.campaignSetupIntroStep = '';
+                    }
+
+                    if (scrollToTop) {
+                        this.$nextTick(() => {
+                            this.$refs.workspaceMain?.scrollTo?.({ top: 0, behavior: 'smooth' });
+                        });
+                    }
+                },
+                handleCampaignDetailMobileBack() {
+                    if (this.campaignDetailMobilePanelOpen) {
+                        this.campaignDetailMobilePanelOpen = false;
+
+                        this.$nextTick(() => {
+                            this.$refs.workspaceMain?.scrollTo?.({ top: 0, behavior: 'smooth' });
+                        });
+
+                        return;
+                    }
+
+                    this.closeCampaignDetail();
+                },
+                saveCampaignDetail() {
+                    this.campaignDetailDirtyPanels = [];
+                },
+                isCampaignDetailPanelChanged(panel = this.activeCampaignDetailPanel) {
+                    return this.campaignDetailDirtyPanels.includes(panel);
+                },
+                markCampaignDetailPanelChanged(panel = this.activeCampaignDetailPanel) {
+                    if (! panel || this.isCampaignDetailPanelChanged(panel)) {
+                        return;
+                    }
+
+                    this.campaignDetailDirtyPanels.push(panel);
+                },
+                markCampaignDetailClickChanged(event) {
+                    const button = event?.target?.closest?.('button');
+
+                    if (! button) {
+                        return;
+                    }
+
+                    if (button.closest('[data-campaign-detail-ignore-change]')) {
+                        return;
+                    }
+
+                    if (button.matches('[data-campaign-field]') || button.closest('[data-campaign-field]')) {
+                        return;
+                    }
+
+                    this.markCampaignDetailPanelChanged();
+                },
+                campaignTypeMeta(typeName = this.campaignSetup.type) {
+                    return this.campaignTypeGroups
+                        .flatMap((group) => group.items)
+                        .find((type) => type.name === typeName) || null;
+                },
+                leadSourceMeta(sourceName = this.campaignSetup.source) {
+                    return this.leadSourceGroups
+                        .flatMap((group) => group.items)
+                        .find((source) => source.name === sourceName) || null;
+                },
+                campaignTypeNameFromCampaign(campaign) {
+                    const name = String(campaign?.name || '').toLowerCase();
+                    const type = this.campaignTypeGroups
+                        .flatMap((group) => group.items)
+                        .find((item) => name.includes(item.name.toLowerCase()));
+
+                    if (type) {
+                        return type.name;
+                    }
+
+                    if (name.includes('cart') || name.includes('checkout')) {
+                        return 'Recover Abandoned Checkout';
+                    }
+
+                    if (name.includes('support') || name.includes('routing')) {
+                        return 'Provide Support';
+                    }
+
+                    if (name.includes('winback') || name.includes('reactivation')) {
+                        return 'Client Reactivation';
+                    }
+
+                    return 'Qualify Lead';
+                },
+                defaultLeadSourceForCampaignType(typeName) {
+                    return {
+                        'Book Appointment': 'HubSpot',
+                        'Qualify Lead': 'Salesforce',
+                        'Recover Abandoned Checkout': 'Shopify',
+                        'Client Reactivation': 'HubSpot',
+                        'Upsell Post-Purchase': 'Shopify',
+                        'Post-Delivery Follow-Up': 'Shopify',
+                        'Inbound Refund Request': 'Shopify',
+                        'Send Information': 'CSV File / Manual',
+                        'Provide Support': 'HubSpot',
+                    }[typeName] || 'CSV File / Manual';
+                },
+                defaultCompanyForCampaignType(typeName) {
+                    if (['Book Appointment', 'Qualify Lead', 'Send Information'].includes(typeName)) {
+                        return 'example-saas';
+                    }
+
+                    if (['Provide Support', 'Inbound Refund Request'].includes(typeName)) {
+                        return 'example-wellness';
+                    }
+
+                    return 'example-commerce';
+                },
+                openCampaignDetail(campaign, updateUrl = true) {
+                    if (! campaign) {
+                        return;
+                    }
+
+                    const type = this.campaignTypeNameFromCampaign(campaign);
+                    const source = campaign.source || this.defaultLeadSourceForCampaignType(type);
+
+                    this.showLoader(260);
+                    this.activeNav = 'Campaigns';
+                    this.campaignBuilderOpen = false;
+                    this.campaignDetailOpen = true;
+                    this.abTestDetailOpen = false;
+                    this.abTestCreateModalOpen = false;
+                    this.selectedCampaign = { ...campaign };
+                    this.selectedAbTest = null;
+                    this.activeCampaignPageTab = this.activeCampaignPageTab || 'Campaigns';
+                    this.campaignDetailDirtyPanels = [];
+                    this.campaignDetailMobilePanelOpen = false;
+                    this.mobileNavOpen = false;
+                    this.resetTopNavHeaderScroll();
+
+                    this.selectCompanyForSetup(this.defaultCompanyForCampaignType(type));
+                    this.campaignSetupMode = 'advanced';
+                    this.campaignSetupModeSelected = true;
+                    this.campaignSetupIntroStep = '';
+                    this.campaignSetup.current = 'agent';
+                    this.campaignSetup.name = campaign.name;
+                    this.campaignSetup.type = type;
+                    this.campaignSetup.source = source;
+                    this.campaignSetup.integrationStatus = source === 'CSV File / Manual' ? 'No Integration Required' : 'Connected';
+                    this.campaignSetup.completed = [...new Set([...this.campaignSetup.completed, 'type', 'source', 'agent', 'channels'])];
+                    this.setCampaignDetailPanel('company-basics', false, false);
+                    this.campaignDetailDirtyPanels = [];
+
+                    if (updateUrl) {
+                        this.syncUrl();
+                    }
+                },
+                closeCampaignDetail(updateUrl = true) {
+                    this.showLoader(220);
+                    this.campaignDetailOpen = false;
+                    this.campaignDetailMobilePanelOpen = false;
+                    this.selectedCampaign = null;
+                    this.activeCampaignDetailPanel = 'company-basics';
+                    this.campaignDetailDirtyPanels = [];
+                    this.resetTopNavHeaderScroll();
+
+                    if (updateUrl) {
+                        this.syncUrl();
+                    }
+                },
+                resetAbTestForm() {
+                    this.abTestForm = {
+                        name: '',
+                        variantA: {
+                            campaign: '',
+                            name: '',
+                        },
+                        variantB: {
+                            campaign: '',
+                            name: '',
+                        },
+                        numberOfLeads: '',
+                    };
+                },
+                abTestBaseCampaignOptions() {
+                    return [
+                        { value: '', label: 'Select an option' },
+                        ...this.pinnedCampaigns.map((campaign) => ({
+                            value: campaign.name,
+                            label: campaign.name,
+                        })),
+                    ];
+                },
+                openAbTestCreateModal() {
+                    this.showLoader(160);
+                    this.activeNav = 'Campaigns';
+                    this.activeCampaignPageTab = 'A/B Tests';
+                    this.campaignBuilderOpen = false;
+                    this.campaignDetailOpen = false;
+                    this.campaignDetailMobilePanelOpen = false;
+                    this.abTestDetailOpen = false;
+                    this.selectedCampaign = null;
+                    this.selectedAbTest = null;
+                    this.mobileNavOpen = false;
+                    this.resetAbTestForm();
+                    this.abTestCreateModalOpen = true;
+                    this.resetTopNavHeaderScroll();
+                },
+                closeAbTestCreateModal() {
+                    this.abTestCreateModalOpen = false;
+                },
+                submitAbTestCreateModal() {
+                    const totalLeads = Math.max(0, Number(String(this.abTestForm.numberOfLeads || '').replace(/\D/g, '')) || 0);
+                    const variantAName = String(this.abTestForm.variantA.name || this.abTestForm.variantA.campaign || 'Variant A').trim();
+                    const variantBName = String(this.abTestForm.variantB.name || this.abTestForm.variantB.campaign || 'Variant B').trim();
+                    const testName = String(this.abTestForm.name || `${variantAName} VS ${variantBName}`).trim();
+                    const leadCount = totalLeads > 0 ? `0 / ${totalLeads}` : '0 / 0';
+
+                    this.abTestCampaigns.unshift({
+                        name: testName,
+                        status: 'Paused',
+                        change: '',
+                        modified: 'just now',
+                        leadCount,
+                        completedCampaigns: leadCount,
+                        variants: [variantAName, variantBName],
+                        performances: [
+                            {
+                                label: 'Campaign A Engagement',
+                                campaignName: variantAName,
+                                metrics: [
+                                    { label: 'Engagement Rate', value: '0%', helper: '0 leads replied out of 0 contacted' },
+                                    { label: 'Conversion Potential', value: '0%', helper: '0 of 0 replied leads showed potential to convert' },
+                                    { label: 'Total Revenue', value: '$0.00', helper: 'Revenue made from 0 leads' },
+                                ],
+                            },
+                            {
+                                label: 'Campaign B Engagement',
+                                campaignName: variantBName,
+                                metrics: [
+                                    { label: 'Engagement Rate', value: '0%', helper: '0 leads replied out of 0 contacted' },
+                                    { label: 'Conversion Potential', value: '0%', helper: '0 of 0 replied leads showed potential to convert' },
+                                    { label: 'Total Revenue', value: '$0.00', helper: 'Revenue made from 0 leads' },
+                                ],
+                            },
+                        ],
+                    });
+
+                    this.abTestCreateModalOpen = false;
+                    this.resetAbTestForm();
+                    this.showLoader(220);
+                },
+                openAbTestDetail(test) {
+                    if (! test) {
+                        return;
+                    }
+
+                    this.showLoader(220);
+                    this.activeNav = 'Campaigns';
+                    this.activeCampaignPageTab = 'A/B Tests';
+                    this.campaignBuilderOpen = false;
+                    this.campaignDetailOpen = false;
+                    this.campaignDetailMobilePanelOpen = false;
+                    this.abTestCreateModalOpen = false;
+                    this.selectedCampaign = null;
+                    this.selectedAbTest = test;
+                    this.abTestDetailOpen = true;
+                    this.mobileNavOpen = false;
+                    this.resetTopNavHeaderScroll();
+
+                    this.$nextTick(() => {
+                        this.$refs.workspaceMain?.scrollTo?.({ top: 0, behavior: 'smooth' });
+                    });
+                },
+                closeAbTestDetail() {
+                    this.showLoader(180);
+                    this.abTestDetailOpen = false;
+                    this.selectedAbTest = null;
+                    this.activeCampaignPageTab = 'A/B Tests';
+                    this.resetTopNavHeaderScroll();
+                },
                 campaignPageDescription() {
                     return {
-                        Campaigns: 'Active and pinned campaigns your team is monitoring, editing, and opening most often.',
-                        'A/B Tests': 'Variant campaigns used to compare messaging, timing, and outreach performance.',
-                        Archived: 'Paused legacy campaigns kept for review, reporting, and historical context.',
+                        Campaigns: 'All your campaigns in one place. Manage, group, and optimise your outreach.',
+                        'A/B Tests': 'Compare campaign variants and measure performance differences.',
+                        Archived: 'List of past campaigns.',
                     }[this.activeCampaignPageTab] || '';
                 },
                 campaignAvatarType(campaign) {
@@ -5957,6 +6507,10 @@
                     return 'default';
                 },
                 campaignAvatarIcon(campaign) {
+                    if (campaign?.icon) {
+                        return campaign.icon;
+                    }
+
                     return {
                         cart: 'shopping-cart',
                         support: 'headset',
@@ -5967,6 +6521,14 @@
                         archived: 'archive',
                         default: 'megaphone',
                     }[this.campaignAvatarType(campaign)] || 'megaphone';
+                },
+                campaignPageRowCount() {
+                    return this.campaignsPageRows().length;
+                },
+                abTestStatusClass(test) {
+                    return test?.status === 'Running'
+                        ? 'bg-green-50 text-green-700 ring-green-600/20'
+                        : 'bg-gray-50 text-gray-600 ring-gray-500/10';
                 },
                 insightsSubtitle() {
                     return {
@@ -8004,7 +8566,8 @@
                     ];
                 },
                 resolvedLeadInteractions() {
-                    const campaignName = this.selectedLead?.campaignName || this.campaign || 'Abandoned Cart';
+                    const fallbackCampaign = this.campaign === 'All Leads' ? 'Recover Abandoned Checkout' : this.campaign;
+                    const campaignName = this.selectedLead?.campaignName || fallbackCampaign || 'Abandoned Cart';
 
                     return this.leadInteractions.map((interaction) => ({
                         ...interaction,
@@ -8162,6 +8725,30 @@
                         this.addFilter(group.values[0]);
                     }
                 },
+                filterPresetOptions() {
+                    return [
+                        { value: '__clear_filters', label: 'Clear Filters' },
+                        ...this.presets.map((preset) => ({
+                            value: preset.name,
+                            label: preset.name,
+                        })),
+                    ];
+                },
+                setFilterPresetFromSelect(value) {
+                    if (value === '__clear_filters') {
+                        this.clearFilters();
+                        return;
+                    }
+
+                    const preset = this.presets.find((item) => item.name === value);
+
+                    if (preset) {
+                        this.applyPreset(preset);
+                        return;
+                    }
+
+                    this.selectedPresetName = 'Filter Presets';
+                },
                 addFilter(value) {
                     this.showLoader(3000);
                     this.clearLeadSelection();
@@ -8235,9 +8822,52 @@
                     this.ageSortDirection = this.ageSortDirection === 'asc' ? 'desc' : 'asc';
                     this.page = 1;
                 },
+                leadRangeMaxAgeSeconds() {
+                    return {
+                        'Last 24 Hours': 86400,
+                        'Last 7 Days': 7 * 86400,
+                        'Last 14 Days': 14 * 86400,
+                        'Last 30 Days': 30 * 86400,
+                    }[this.activeLeadRange] || null;
+                },
+                leadMatchesCustomDateRange(row) {
+                    const start = this.analyticsDateAtLocalNoon(this.leadsCustomRangeStart);
+                    const end = this.analyticsDateAtLocalNoon(this.leadsCustomRangeEnd);
+                    const created = this.parseLeadCreatedDate(row?.ageTooltip || '');
+
+                    if (Number.isNaN(start.getTime()) || Number.isNaN(end.getTime()) || Number.isNaN(created.getTime())) {
+                        return true;
+                    }
+
+                    const startTime = Math.min(start.getTime(), end.getTime());
+                    const endTime = Math.max(start.getTime(), end.getTime());
+
+                    return created.getTime() >= startTime && created.getTime() <= endTime;
+                },
+                leadMatchesDateRange(row) {
+                    if (this.activeLeadRange === 'All Time') {
+                        return true;
+                    }
+
+                    if (this.activeLeadRange === 'Custom range') {
+                        return this.leadMatchesCustomDateRange(row);
+                    }
+
+                    const maxAgeSeconds = this.leadRangeMaxAgeSeconds();
+
+                    if (maxAgeSeconds === null) {
+                        return true;
+                    }
+
+                    return Number(row?.ageSeconds || 0) <= maxAgeSeconds;
+                },
                 filteredRows() {
                     const rows = this.rows.filter((row) => {
-                        if (this.campaign !== 'All Campaigns' && row.campaignName !== this.campaign) {
+                        if (this.campaign !== 'All Leads' && row.campaignName !== this.campaign) {
+                            return false;
+                        }
+
+                        if (! this.leadMatchesDateRange(row)) {
                             return false;
                         }
 

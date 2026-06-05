@@ -182,9 +182,13 @@
 
             <div data-campaign-detail-mobile-action-bar class="fixed inset-x-0 bottom-0 z-[60] border-t border-gray-200 bg-white/95 px-4 py-3 shadow-[0_-12px_30px_rgba(15,23,42,0.08)] backdrop-blur lg:hidden">
                 <div class="flex items-center gap-3">
-                    <button type="button" x-on:click="handleCampaignDetailMobileBack()" class="inline-flex h-11 flex-1 items-center justify-center gap-2 rounded-md bg-white px-3 text-sm font-semibold text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 transition hover:bg-gray-50">
+                    <button x-cloak x-show="campaignDetailMobilePanelOpen" type="button" x-on:click="handleCampaignDetailMobileBack()" class="inline-flex h-11 flex-1 items-center justify-start gap-2 px-1 text-sm font-semibold text-gray-700 transition hover:text-gray-950">
                         <span class="outcraft-icon !text-[18px] text-gray-500">arrow_back</span>
                         Back
+                    </button>
+                    <button x-cloak x-show="! campaignDetailMobilePanelOpen" type="button" class="inline-flex h-11 flex-1 items-center justify-center gap-2 rounded-md bg-white px-3 text-sm font-semibold text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 transition hover:bg-gray-50">
+                        <span class="outcraft-icon !text-[18px] text-gray-500">phone_in_talk</span>
+                        Test
                     </button>
                     <button type="button" x-on:click="saveCampaignDetail()" class="inline-flex h-11 flex-1 items-center justify-center rounded-md bg-indigo-600 px-3 text-sm font-semibold text-white shadow-sm transition hover:bg-indigo-500">
                         Save & Publish

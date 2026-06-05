@@ -1401,30 +1401,30 @@
                                         </div>
                                     </div>
 
-	                                <div x-show="campaignSetupMode === 'advanced'" class="overflow-hidden rounded-lg border border-gray-200 bg-white">
-	                                    <button type="button" x-on:click="channelsAdvancedOpen = ! channelsAdvancedOpen; scheduleCampaignBuilderLayoutUpdate()" class="flex w-full items-center justify-between gap-4 px-5 py-4 text-left transition hover:bg-gray-50">
-                                            <span>
-                                                <span class="block text-base/7 font-semibold text-gray-900">Advanced</span>
-                                                <span class="mt-1 block text-sm leading-6 text-gray-600">Settings for how links are formatted when they are sent as text in messages.</span>
-                                            </span>
-                                            <span class="outcraft-icon shrink-0 !text-[18px] text-gray-400 transition" :class="channelsAdvancedOpen ? 'rotate-180' : ''">keyboard_arrow_down</span>
-                                        </button>
-		                                    <div x-show="channelsAdvancedOpen" x-transition:enter="transition ease-out duration-200" x-transition:enter-start="opacity-0 translate-y-3" x-transition:enter-end="opacity-100 translate-y-0" x-transition:leave="transition ease-in duration-150" x-transition:leave-start="opacity-100 translate-y-0" x-transition:leave-end="opacity-0 translate-y-2" class="divide-y divide-gray-200 border-t border-gray-200">
-		                                        <div class="px-6 py-6">
-	                                            <button type="button" x-on:click="campaignSetup.shortenLinks = ! campaignSetup.shortenLinks; scheduleCampaignBuilderLayoutUpdate()" role="switch" :aria-checked="campaignSetup.shortenLinks" class="flex w-full items-center justify-between gap-4 rounded-md text-left focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600">
-	                                                <span class="min-w-0">
-	                                                    <span class="block text-sm font-semibold leading-6 text-gray-950">Shorten Links in Messages</span>
-	                                                    <span class="mt-1 block text-sm leading-6 text-gray-600">Shortens message links for cleaner tracking and delivery-friendly formatting. Links will resolve through ocrft.co/...</span>
+		                                <div x-show="campaignSetupMode === 'advanced'" class="space-y-5">
+		                                    <button type="button" x-on:click="channelsAdvancedOpen = ! channelsAdvancedOpen; scheduleCampaignBuilderLayoutUpdate()" class="flex w-full items-center justify-between gap-4 text-left transition hover:text-gray-950">
+	                                            <span>
+	                                                <span class="block text-base/7 font-semibold text-gray-900">Advanced</span>
+	                                                <span class="mt-1 block text-sm leading-6 text-gray-600">Settings for how links are formatted when they are sent as text in messages.</span>
+	                                            </span>
+	                                            <span class="outcraft-icon shrink-0 !text-[18px] text-gray-400 transition" :class="channelsAdvancedOpen ? 'rotate-180' : ''">keyboard_arrow_down</span>
+	                                        </button>
+			                                    <div x-show="channelsAdvancedOpen" x-transition:enter="transition ease-out duration-200" x-transition:enter-start="opacity-0 translate-y-3" x-transition:enter-end="opacity-100 translate-y-0" x-transition:leave="transition ease-in duration-150" x-transition:leave-start="opacity-100 translate-y-0" x-transition:leave-end="opacity-0 translate-y-2" class="space-y-6">
+			                                        <div>
+		                                            <button type="button" x-on:click="campaignSetup.shortenLinks = ! campaignSetup.shortenLinks; scheduleCampaignBuilderLayoutUpdate()" role="switch" :aria-checked="campaignSetup.shortenLinks" class="flex w-full items-center justify-between gap-4 rounded-md text-left focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600">
+		                                                <span class="min-w-0">
+		                                                    <span class="block text-sm font-semibold leading-6 text-gray-950">Shorten Links in Messages</span>
+		                                                    <span class="mt-1 block text-sm leading-6 text-gray-600">Shortens message links for cleaner tracking and delivery-friendly formatting. Links will resolve through ocrft.co/...</span>
 	                                                </span>
 	                                                <span class="relative inline-flex h-6 w-11 shrink-0 self-center rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out" :class="campaignSetup.shortenLinks ? 'bg-indigo-600' : 'bg-gray-200'">
 	                                                    <span class="pointer-events-none inline-block size-5 rounded-full bg-white shadow transition duration-200 ease-in-out" :class="campaignSetup.shortenLinks ? 'translate-x-5' : 'translate-x-0'"></span>
 	                                                </span>
-	                                            </button>
-	                                        </div>
+		                                            </button>
+		                                        </div>
 
-		                                        <div class="px-6 py-6">
-		                                            <div>
-		                                                <h4 class="text-sm font-semibold leading-6 text-gray-950">Link Tracking Structure</h4>
+			                                        <div class="border-t border-gray-200 pt-6">
+			                                            <div>
+			                                                <h4 class="text-sm font-semibold leading-6 text-gray-950">Link Tracking Structure</h4>
 		                                                <p class="mt-1 text-sm leading-6 text-gray-600">Configure abandoned cart link tracking.</p>
 		                                            </div>
 		                                            <div class="mt-5 space-y-5">

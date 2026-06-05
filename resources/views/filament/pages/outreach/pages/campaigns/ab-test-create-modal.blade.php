@@ -83,10 +83,11 @@
                             </section>
                         </div>
 
-                        <section data-card-surface class="rounded-lg bg-white p-5 shadow-sm ring-1 ring-gray-900/5">
+                        <section>
                             <label class="block max-w-xs">
                                 <span class="text-sm font-medium text-gray-900">Number of Leads<span class="text-indigo-400">*</span></span>
                                 <input x-model="abTestForm.numberOfLeads" type="text" inputmode="numeric" pattern="[0-9]*" x-on:keydown="['e', 'E', '+', '-', '.'].includes($event.key) && $event.preventDefault()" class="mt-2 block h-10 w-full rounded-md border-0 bg-white px-3 text-sm/6 text-gray-900 shadow-sm outline outline-1 -outline-offset-1 outline-gray-300 placeholder:text-gray-400 focus:outline-2 focus:-outline-offset-2 focus:outline-indigo-600">
+                                <span class="mt-2 block text-sm leading-6 text-gray-500">Sample size for this A/B test. Leads will be split across Variant A and Variant B.</span>
                             </label>
                         </section>
                     </div>

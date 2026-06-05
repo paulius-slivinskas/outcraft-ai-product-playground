@@ -56,8 +56,8 @@
                         <div data-card-surface class="rounded-lg bg-white px-5 py-5 shadow-sm ring-1 ring-gray-900/5 lg:px-6">
                             <div class="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
                                 <div class="min-w-0">
-                                    <h3 class="text-base/7 font-semibold text-gray-950" x-text="performance.label"></h3>
-                                    <p class="mt-2 text-sm leading-6 text-gray-700" x-text="performance.campaignName"></p>
+                                    <h3 class="text-2xl font-bold leading-8 text-gray-950" x-text="performance.label"></h3>
+                                    <p class="mt-3 text-lg leading-7 text-gray-500" x-text="performance.campaignName"></p>
                                 </div>
                                 <button type="button" x-on:click="openCampaignDetail({ name: performance.campaignName, status: 'Running', change: '', modified: selectedAbTest.modified || 'recently' })" class="inline-flex h-9 w-fit items-center justify-center rounded-md bg-white px-3 text-sm font-semibold text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 transition hover:bg-gray-50">
                                     View Campaign

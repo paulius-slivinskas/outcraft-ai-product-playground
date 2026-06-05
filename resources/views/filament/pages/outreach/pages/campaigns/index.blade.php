@@ -1,4 +1,4 @@
-        <section x-cloak x-show="! campaignBuilderOpen && ! campaignDetailOpen && ! abTestDetailOpen && activeNav === 'Campaigns'" x-on:wheel="handleTopNavWheel($event)" data-outcraft-tab-header class="sticky top-0 z-30 bg-white transition-transform duration-200 ease-out will-change-transform" :class="topNavHeaderClass()">
+        <section x-cloak x-show="! campaignBuilderOpen && ! campaignDetailOpen && ! campaignCreationV2Open && ! abTestDetailOpen && activeNav === 'Campaigns'" x-on:wheel="handleTopNavWheel($event)" data-outcraft-tab-header class="sticky top-0 z-30 bg-white transition-transform duration-200 ease-out will-change-transform" :class="topNavHeaderClass()">
             <div :class="topNavTabShellClass()">
                 <div class="outcraft-tab-header-row flex items-stretch">
                     <button
@@ -28,20 +28,26 @@
             </div>
         </section>
 
-        <section x-cloak x-show="! campaignBuilderOpen && ! campaignDetailOpen && ! abTestDetailOpen && activeNav === 'Campaigns'" class="mx-6 mt-5">
+        <section x-cloak x-show="! campaignBuilderOpen && ! campaignDetailOpen && ! campaignCreationV2Open && ! abTestDetailOpen && activeNav === 'Campaigns'" class="mx-6 mt-5">
             <div class="flex min-h-[54px] items-start justify-between gap-x-6">
                 <div>
                     <h1 class="text-xl font-bold leading-tight text-gray-950" x-text="activeCampaignPageTab"></h1>
                     <p class="mt-1 max-w-2xl text-sm/6 text-gray-500" x-text="campaignPageDescription()"></p>
                 </div>
-                <button x-show="activeCampaignPageTab !== 'Archived'" type="button" x-on:click="activeCampaignPageTab === 'A/B Tests' ? openAbTestCreateModal() : startCampaignBuilder()" class="inline-flex h-10 shrink-0 items-center gap-2 rounded-md bg-indigo-600 px-3.5 text-sm font-semibold text-white shadow-sm transition hover:bg-indigo-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600">
-                    <span class="outcraft-icon !text-[18px] text-white">add</span>
-                    <span x-text="activeCampaignPageTab === 'A/B Tests' ? 'Create New Test' : 'Create New'"></span>
-                </button>
+                <div x-show="activeCampaignPageTab !== 'Archived'" class="flex shrink-0 flex-wrap items-center justify-end gap-3">
+                    <button type="button" x-on:click="activeCampaignPageTab === 'A/B Tests' ? openAbTestCreateModal() : startCampaignBuilder()" class="inline-flex h-10 shrink-0 items-center gap-2 rounded-md bg-indigo-600 px-3.5 text-sm font-semibold text-white shadow-sm transition hover:bg-indigo-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600">
+                        <span class="outcraft-icon !text-[18px] text-white">add</span>
+                        <span x-text="activeCampaignPageTab === 'A/B Tests' ? 'Create New Test' : 'Create New'"></span>
+                    </button>
+                    <button x-show="activeCampaignPageTab === 'Campaigns'" type="button" x-on:click="startCampaignCreationV2()" class="inline-flex h-10 shrink-0 items-center gap-2 rounded-md bg-white px-3.5 text-sm font-semibold text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 transition hover:bg-gray-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600">
+                        <span class="outcraft-icon !text-[18px] text-gray-500">rocket</span>
+                        Create New Campaign #2
+                    </button>
+                </div>
             </div>
         </section>
 
-        <section data-card-surface x-cloak x-show="! campaignBuilderOpen && ! campaignDetailOpen && ! abTestDetailOpen && activeNav === 'Campaigns' && activeCampaignPageTab !== 'A/B Tests'" class="mx-6 mb-6 mt-4 overflow-hidden rounded-lg bg-white shadow-sm ring-1 ring-gray-900/5">
+        <section data-card-surface x-cloak x-show="! campaignBuilderOpen && ! campaignDetailOpen && ! campaignCreationV2Open && ! abTestDetailOpen && activeNav === 'Campaigns' && activeCampaignPageTab !== 'A/B Tests'" class="mx-6 mb-6 mt-4 overflow-hidden rounded-lg bg-white shadow-sm ring-1 ring-gray-900/5">
             <ul role="list" class="divide-y divide-gray-100">
                 <template x-for="campaign in campaignsPageRows()" :key="activeCampaignPageTab + campaign.name">
                     <li x-data="{ actionsOpen: false }" x-on:click="openCampaignDetail(campaign)" class="flex cursor-pointer items-center justify-between gap-x-6 px-6 py-5 transition hover:bg-gray-50">
@@ -101,7 +107,7 @@
             </ul>
         </section>
 
-        <section data-card-surface x-cloak x-show="! campaignBuilderOpen && ! campaignDetailOpen && ! abTestDetailOpen && activeNav === 'Campaigns' && activeCampaignPageTab === 'A/B Tests'" class="mx-6 mb-6 mt-4 overflow-hidden rounded-lg bg-white shadow-sm ring-1 ring-gray-900/5">
+        <section data-card-surface x-cloak x-show="! campaignBuilderOpen && ! campaignDetailOpen && ! campaignCreationV2Open && ! abTestDetailOpen && activeNav === 'Campaigns' && activeCampaignPageTab === 'A/B Tests'" class="mx-6 mb-6 mt-4 overflow-hidden rounded-lg bg-white shadow-sm ring-1 ring-gray-900/5">
             <ul role="list" class="divide-y divide-gray-100">
                 <template x-for="test in abTestCampaigns" :key="test.name">
                     <li x-on:click="openAbTestDetail(test)" class="flex cursor-pointer flex-col gap-4 px-4 py-5 transition hover:bg-gray-50 sm:px-6 lg:flex-row lg:items-start lg:gap-6">

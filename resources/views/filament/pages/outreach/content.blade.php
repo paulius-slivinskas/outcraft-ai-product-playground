@@ -1,7 +1,7 @@
 <div
     x-data="outreachPage(@js($rows))"
     x-init="initializePrimaryTheme(); initializeRadiusTheme(); initializeIconStrokeTheme(); initializeTabsTheme(); initializeTypographyTheme(); initializeShadowTheme(); initializeProgressBarStyle(); initializeFromUrl()"
-    x-on:keydown.window="handlePrimaryThemeShortcut($event); handleRadiusShortcut($event); handleIconStrokeShortcut($event); handleTabsShortcut($event); handleTypographyShortcut($event); handleShadowShortcut($event)"
+    x-on:keydown.window="handlePrimaryThemeShortcut($event); handleRadiusShortcut($event); handleIconStrokeShortcut($event); handleTabsShortcut($event); handleTypographyShortcut($event); handleShadowShortcut($event); handleDashboardOnboardingShortcut($event)"
     x-on:outreach-delete-selected-leads.window="deleteSelectedLeadsByIds($event.detail.ids)"
     x-on:outreach-reorder-find-out-questions.window="reorderFindOutQuestionsByIds($event.detail.ids)"
     class="outcraft-page fixed inset-0 z-50 overflow-hidden bg-white text-[#1f2024]"

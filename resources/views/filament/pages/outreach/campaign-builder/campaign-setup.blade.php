@@ -1,13 +1,13 @@
 			                    <div x-show="campaignBuilderStep >= companySetupStartStep()" x-ref="campaignAgentSection" :class="campaignSetupModeSelected && ! campaignSetupIntroStep ? '' : 'space-y-6'" :style="`padding-bottom: ${campaignSetupBottomPadding}px;`">
 			                        <div x-show="! campaignSetupModeSelected" class="relative mx-auto flex min-h-[calc(100vh-96px)] w-full max-w-7xl flex-col items-center justify-center px-0 lg:px-4">
-		                            <div x-show="campaignSetupIntroStep === 'type'" class="mx-auto w-full space-y-8 lg:max-w-[calc(80rem-18rem-3rem)] xl:max-w-[calc(80rem-18rem-4rem)]">
-                                <div class="flex justify-start">
-                                    <button type="button" x-on:click="handleCampaignBuilderBack()" class="inline-flex h-9 w-fit items-center gap-2 rounded-md px-2 text-sm font-semibold text-gray-600 transition hover:bg-gray-50 hover:text-gray-950">
-                                        <span class="outcraft-icon !text-[18px]">arrow_back</span>
-                                        <span x-text="campaignBuilderBackLabel()"></span>
+                                    <button x-cloak x-show="! onboardingCampaignFlow" type="button" x-on:click="exitCampaignBuilder()" class="fixed right-[30px] top-[30px] z-40 inline-flex size-9 items-center justify-center rounded-md text-gray-400 transition hover:bg-gray-100 hover:text-gray-700 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600" aria-label="Close campaign setup">
+                                        <span class="outcraft-icon !text-[20px]">close</span>
                                     </button>
-                                </div>
+		                            <div x-show="campaignSetupIntroStep === 'type'" class="mx-auto w-full space-y-8 lg:max-w-[calc(80rem-18rem-3rem)] xl:max-w-[calc(80rem-18rem-4rem)]">
                                 <div class="text-center">
+                                    <span class="mx-auto mb-4 flex size-10 items-center justify-center rounded-md bg-indigo-50 text-indigo-600">
+                                        <span class="outcraft-icon !text-[21px]">goal</span>
+                                    </span>
                                     <h2 class="text-2xl font-bold leading-8 tracking-tight text-gray-950" x-text="campaignSetupHeading('type')"></h2>
                                     <p class="mx-auto mt-2 max-w-2xl text-sm leading-6 text-gray-600" x-text="campaignSetupDescription('type')"></p>
                                 </div>
@@ -31,13 +31,10 @@
                             </div>
 
 	                            <div x-show="campaignSetupIntroStep === 'source'" class="mx-auto w-full space-y-8 lg:max-w-[calc(80rem-18rem-3rem)] xl:max-w-[calc(80rem-18rem-4rem)]">
-                                <div class="flex justify-start">
-                                    <button type="button" x-on:click="handleCampaignBuilderBack()" class="inline-flex h-9 w-fit items-center gap-2 rounded-md px-2 text-sm font-semibold text-gray-600 transition hover:bg-gray-50 hover:text-gray-950">
-                                        <span class="outcraft-icon !text-[18px]">arrow_back</span>
-                                        <span x-text="campaignBuilderBackLabel()"></span>
-                                    </button>
-                                </div>
                                 <div class="text-center">
+                                    <span class="mx-auto mb-4 flex size-10 items-center justify-center rounded-md bg-indigo-50 text-indigo-600">
+                                        <span class="outcraft-icon !text-[21px]">blocks</span>
+                                    </span>
                                     <h2 class="text-2xl font-bold leading-8 tracking-tight text-gray-950" x-text="campaignSetupHeading('source')"></h2>
                                     <p class="mx-auto mt-2 max-w-2xl text-sm leading-6 text-gray-600" x-text="campaignSetupDescription('source')"></p>
                                 </div>
@@ -60,17 +57,11 @@
                                 </template>
                             </div>
 
-	                            <div x-show="campaignSetupIntroStep === 'integration' || campaignSetupIntroStep === 'mode'" class="absolute inset-x-0 top-0 z-10 mx-auto w-full lg:max-w-[calc(80rem-18rem-3rem)] xl:max-w-[calc(80rem-18rem-4rem)]">
-                                <div class="flex justify-start">
-                                    <button type="button" x-on:click="handleCampaignBuilderBack()" class="inline-flex h-9 w-fit items-center gap-2 rounded-md px-2 text-sm font-semibold text-gray-600 transition hover:bg-gray-50 hover:text-gray-950">
-                                        <span class="outcraft-icon !text-[18px]">arrow_back</span>
-                                        <span x-text="campaignBuilderBackLabel()"></span>
-                                    </button>
-                                </div>
-                            </div>
-
 	                            <div x-show="campaignSetupIntroStep === 'integration'" class="mx-auto w-full space-y-8 lg:max-w-[calc(80rem-18rem-3rem)] xl:max-w-[calc(80rem-18rem-4rem)]">
                                 <div class="text-center">
+                                    <span class="mx-auto mb-4 flex size-10 items-center justify-center rounded-md bg-indigo-50 text-indigo-600">
+                                        <span class="outcraft-icon !text-[21px]">unplug</span>
+                                    </span>
                                     <h2 class="text-2xl font-bold leading-8 tracking-tight text-gray-950" x-text="campaignSetupHeading('integration')"></h2>
                                     <p class="mx-auto mt-2 max-w-2xl text-sm leading-6 text-gray-600" x-text="campaignSetupDescription('integration')"></p>
                                 </div>
@@ -86,15 +77,30 @@
                                             <p class="mt-2 text-sm leading-6 text-gray-600">Connect your source to use real customer data, merge tags, and event triggers. You can skip this step, but AI will have less context to personalize conversations.</p>
                                         </div>
                                     </div>
-                                    <div class="mt-6 flex flex-wrap gap-3">
-                                        <button type="button" x-on:click="connectCampaignSource()" class="inline-flex h-9 items-center rounded-md bg-indigo-600 px-3 text-sm font-semibold text-white shadow-sm transition hover:bg-indigo-500" x-text="`Connect ${campaignSetup.source || 'Lead Source'}`"></button>
-                                        <button type="button" x-on:click="requestSkipCampaignIntegration()" class="inline-flex h-9 items-center rounded-md bg-white px-3 text-sm font-semibold text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 transition hover:bg-gray-50">Setup Later</button>
-                                    </div>
-                                </div>
-                            </div>
+	                                    <div class="mt-6 flex flex-wrap gap-3">
+	                                        <button type="button" x-on:click="connectCampaignSource()" class="inline-flex h-9 items-center rounded-md bg-indigo-600 px-3 text-sm font-semibold text-white shadow-sm transition hover:bg-indigo-500" x-text="`Connect ${campaignSetup.source || 'Lead Source'}`"></button>
+	                                        <button type="button" x-on:click="requestSkipCampaignIntegration()" class="inline-flex h-9 items-center rounded-md bg-white px-3 text-sm font-semibold text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 transition hover:bg-gray-50">Setup Later</button>
+	                                    </div>
+	                                    <button
+	                                        x-show="campaignSetup.source === 'Klaviyo'"
+	                                        type="button"
+	                                        x-on:click="campaignSetup.klaviyoEventsGuideOpen = true"
+	                                        class="mt-6 flex w-full items-center justify-between gap-4 rounded-lg bg-white p-5 text-left shadow-sm outline outline-1 -outline-offset-1 outline-gray-300 transition hover:outline-2 hover:-outline-offset-2 hover:outline-indigo-600 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600"
+	                                    >
+	                                        <span class="min-w-0">
+	                                            <span class="block text-sm font-bold text-gray-950">How to connect Klaviyo events</span>
+	                                            <span class="mt-1 block text-sm leading-6 text-gray-500">Create Checkout Started and Order Placed flows with webhook actions.</span>
+	                                        </span>
+	                                        <span class="outcraft-icon shrink-0 !text-[20px] text-gray-400">arrow_forward</span>
+	                                    </button>
+	                                </div>
+	                            </div>
 
 	                            <div x-show="campaignSetupIntroStep === 'mode'" class="mx-auto w-full space-y-8 lg:max-w-[calc(80rem-18rem-3rem)] xl:max-w-[calc(80rem-18rem-4rem)]">
                                 <div class="text-center">
+                                    <span class="mx-auto mb-4 flex size-10 items-center justify-center rounded-md bg-indigo-50 text-indigo-600">
+                                        <span class="outcraft-icon !text-[21px]">rocket</span>
+                                    </span>
                                     <h2 class="text-2xl font-bold leading-8 tracking-tight text-gray-950">Choose How You Want to Set Up Your Campaign</h2>
                                     <p class="mx-auto mt-2 max-w-2xl text-sm leading-6 text-gray-600">Pick a guided path. You can move faster with recommended defaults or configure every campaign setting manually.</p>
                                 </div>
@@ -255,6 +261,18 @@
                                             <button type="button" x-on:click="connectCampaignSource()" class="inline-flex h-9 items-center rounded-md bg-indigo-600 px-3 text-sm font-semibold text-white shadow-sm transition hover:bg-indigo-500" x-text="`Connect ${campaignSetup.source || 'Source'}`"></button>
                                             <button type="button" x-on:click="requestSkipCampaignIntegration()" class="inline-flex h-9 items-center rounded-md bg-white px-3 text-sm font-semibold text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 transition hover:bg-gray-50">Setup Later</button>
                                         </div>
+                                        <button
+                                            x-show="campaignSetup.source === 'Klaviyo'"
+                                            type="button"
+                                            x-on:click="campaignSetup.klaviyoEventsGuideOpen = true"
+                                            class="mt-6 flex w-full items-center justify-between gap-4 rounded-lg bg-white p-5 text-left shadow-sm outline outline-1 -outline-offset-1 outline-gray-300 transition hover:outline-2 hover:-outline-offset-2 hover:outline-indigo-600 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600"
+                                        >
+                                            <span class="min-w-0">
+                                                <span class="block text-sm font-bold text-gray-950">How to connect Klaviyo events</span>
+                                                <span class="mt-1 block text-sm leading-6 text-gray-500">Create Checkout Started and Order Placed flows with webhook actions.</span>
+                                            </span>
+                                            <span class="outcraft-icon shrink-0 !text-[20px] text-gray-400">arrow_forward</span>
+                                        </button>
                                     </div>
                                 </template>
                             </section>
@@ -936,7 +954,7 @@
                                 data-campaign-setup-step
                                 class="space-y-6 pr-2 pb-4">
                                 <div class="mb-1">
-                                    <p class="text-sm font-semibold text-indigo-600" x-text="`${campaignSetupMode === 'fast' ? 'Fast Setup' : 'Advanced Setup'} · Step ${campaignSetupStepIndex('agent') + 1} of ${campaignSetupStepsForMode().length}`"></p>
+                                    <p class="text-sm font-semibold text-indigo-600" x-text="campaignSetupStepIndex('agent') >= 0 ? `${campaignSetupMode === 'fast' ? 'Fast Setup' : 'Advanced Setup'} · Step ${campaignSetupStepIndex('agent') + 1} of ${campaignSetupStepsForMode().length}` : 'Campaign Details'"></p>
                                     <div data-step-icon-row>
                                         <span class="flex size-10 items-center justify-center rounded-md bg-indigo-50 text-indigo-600">
                                             <span class="outcraft-icon !text-[21px]" x-text="campaignSetupStepIcon('agent')"></span>
@@ -946,7 +964,52 @@
                                     <p class="mt-2 max-w-3xl text-sm leading-6 text-gray-600" x-text="campaignSetupDescription('agent')"></p>
                                 </div>
 
-                                <div class="space-y-6">
+                                <div class="space-y-3">
+                                            <div x-show="campaignBuilderAiAgentOptions().length === 0" class="rounded-lg bg-white p-6 text-center shadow-sm outline outline-1 -outline-offset-1 outline-gray-300">
+                                                <span class="mx-auto flex size-10 items-center justify-center rounded-full bg-gray-50 text-gray-400 ring-1 ring-inset ring-gray-200">
+                                                    <span class="outcraft-icon !text-[20px]">support_agent</span>
+                                                </span>
+                                                <p class="mt-3 text-sm font-semibold text-gray-950">No AI agents yet</p>
+                                                <p class="mt-1 text-sm text-gray-500">Create an agent before continuing this campaign.</p>
+                                            </div>
+
+                                            <template x-for="agent in campaignBuilderAiAgentOptions()" :key="`campaign-agent-${agent.id}`">
+                                                <button
+                                                    type="button"
+                                                    x-on:click="selectCampaignAiAgent(agent)"
+                                                    class="flex w-full items-center gap-4 rounded-lg bg-white p-4 text-left shadow-sm outline outline-1 -outline-offset-1 transition hover:outline-2 hover:-outline-offset-2 hover:outline-indigo-600 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600"
+                                                    :class="campaignSetup.selectedAiAgentId === agent.id ? 'outline-2 -outline-offset-2 outline-indigo-600' : 'outline-gray-300'"
+                                                >
+                                                    <span class="inline-flex size-10 shrink-0 items-center justify-center">
+                                                        <img :src="aiAgentFlagUrl(agent)" :alt="`${aiAgentTitle(agent)} flag`" class="size-[34px] object-contain" loading="lazy">
+                                                    </span>
+                                                    <span class="min-w-0">
+                                                        <span class="block text-sm font-semibold leading-6 text-gray-950" x-text="aiAgentTitle(agent)"></span>
+                                                        <span class="block text-sm leading-6 text-gray-500">
+                                                            <span x-text="agent.name"></span>
+                                                            <span aria-hidden="true"> &middot; </span>
+                                                            <span x-text="aiAgentVoiceStyle(agent)"></span>
+                                                        </span>
+                                                    </span>
+                                                </button>
+                                            </template>
+
+                                            <button
+                                                type="button"
+                                                x-on:click="openAiAgentCreateModalFromCampaignSetup()"
+                                                class="flex w-full items-center gap-4 rounded-lg bg-white p-4 text-left shadow-sm outline outline-1 -outline-offset-1 outline-gray-300 transition hover:outline-2 hover:-outline-offset-2 hover:outline-indigo-600 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600"
+                                            >
+                                                <span class="flex size-10 shrink-0 items-center justify-center rounded-md oc-primary-bg text-white">
+                                                    <span class="outcraft-icon !text-[20px] text-white">plus</span>
+                                                </span>
+                                                <span class="min-w-0">
+                                                    <span class="block text-sm font-semibold leading-6 text-gray-950">Create New Agent</span>
+                                                    <span class="block text-sm leading-6 text-gray-500">Start a fresh AI agent profile for this campaign setup.</span>
+                                                </span>
+                                            </button>
+                                </div>
+
+                                <div x-show="false" class="space-y-6">
                                 <div data-card-surface class="overflow-hidden rounded-lg border border-gray-200 bg-white">
                                     <template x-for="(language, languageIndex) in campaignSetup.languages" :key="language.code">
                                         <div class="border-b border-gray-200 last:border-b-0">
@@ -1204,7 +1267,7 @@
 	                                                <table class="min-w-full divide-y divide-gray-200 text-left text-sm">
 	                                                    <thead class="bg-gray-50"><tr><th class="px-4 py-3 font-semibold text-gray-600">Phone Number</th><th class="px-4 py-3 font-semibold text-gray-600">Country</th><th class="px-4 py-3"><span class="sr-only">Actions</span></th></tr></thead>
 	                                                    <tbody class="divide-y divide-gray-100">
-	                                                        <template x-for="phone in campaignSetup.phoneNumbers" :key="phone.number"><tr><td class="min-w-0 px-4 py-3"><button type="button" x-on:click.stop="copyContact(phone.number)" class="group relative flex max-w-[220px] text-left text-sm font-semibold text-gray-950 transition hover:text-gray-700"><span class="truncate" x-text="phone.number"></span><span class="pointer-events-none absolute bottom-full left-1/2 z-50 mb-2 -translate-x-1/2 translate-y-1 whitespace-nowrap rounded-lg bg-gray-900 px-3 py-2 text-xs font-medium text-white opacity-0 shadow-sm transition group-hover:translate-y-0 group-hover:opacity-100"><span x-text="phone.number"></span><span class="ml-2 text-white/70">Click to Copy</span><span class="absolute left-1/2 top-full size-2 -translate-x-1/2 -translate-y-1 rotate-45 bg-gray-900"></span></span></button><span class="mt-1 inline-flex rounded-md bg-green-50 px-2 py-1 text-xs font-medium text-green-700 ring-1 ring-inset ring-green-600/20" x-text="phone.status"></span></td><td class="px-4 py-3"><p class="font-medium text-gray-900" x-text="phone.country"></p><p class="mt-1 text-xs leading-5 text-gray-500" x-text="phone.state"></p></td><td class="px-4 py-3 text-right"><button type="button" x-on:click="removePhoneNumber(phone.number)" class="inline-flex size-8 items-center justify-center rounded-md text-gray-400 transition hover:bg-gray-50 hover:text-red-600" aria-label="Remove Phone Number"><span class="outcraft-icon !text-[17px]">delete</span></button></td></tr></template>
+	                                                        <template x-for="phone in campaignSetup.phoneNumbers" :key="phone.number"><tr><td class="min-w-0 px-4 py-3"><button type="button" x-on:click.stop="copyContact(phone.number)" class="group relative flex max-w-[220px] text-left text-sm font-semibold text-gray-950 transition hover:text-gray-700"><span class="truncate" x-text="phone.number"></span><span class="pointer-events-none absolute bottom-full left-1/2 z-50 mb-2 -translate-x-1/2 translate-y-1 whitespace-nowrap rounded-lg bg-gray-900 px-3 py-2 text-xs font-medium text-white opacity-0 shadow-sm transition group-hover:translate-y-0 group-hover:opacity-100"><span x-text="phone.number"></span><span class="ml-2 text-white/70" x-text="copyTooltipLabel($el.previousElementSibling?.textContent)"></span><span class="absolute left-1/2 top-full size-2 -translate-x-1/2 -translate-y-1 rotate-45 bg-gray-900"></span></span></button><span class="mt-1 inline-flex rounded-md bg-green-50 px-2 py-1 text-xs font-medium text-green-700 ring-1 ring-inset ring-green-600/20" x-text="phone.status"></span></td><td class="px-4 py-3"><p class="font-medium text-gray-900" x-text="phone.country"></p><p class="mt-1 text-xs leading-5 text-gray-500" x-text="phone.state"></p></td><td class="px-4 py-3 text-right"><button type="button" x-on:click="removePhoneNumber(phone.number)" class="inline-flex size-8 items-center justify-center rounded-md text-gray-400 transition hover:bg-gray-50 hover:text-red-600" aria-label="Remove Phone Number"><span class="outcraft-icon !text-[17px]">delete</span></button></td></tr></template>
 	                                                        <tr x-show="campaignSetup.phoneNumbers.length === 0">
 	                                                            <td colspan="3" class="px-4 py-10">
 	                                                                <div class="flex flex-col items-center justify-center text-center">
@@ -1260,7 +1323,7 @@
 	                                                                        <span class="truncate" x-text="mailbox.email"></span>
 	                                                                        <span class="pointer-events-none absolute bottom-full left-1/2 z-50 mb-2 -translate-x-1/2 translate-y-1 whitespace-nowrap rounded-lg bg-gray-900 px-3 py-2 text-xs font-medium text-white opacity-0 shadow-sm transition group-hover:translate-y-0 group-hover:opacity-100">
 	                                                                            <span x-text="mailbox.email"></span>
-	                                                                            <span class="ml-2 text-white/70">Click to Copy</span>
+	                                                                            <span class="ml-2 text-white/70" x-text="copyTooltipLabel($el.previousElementSibling?.textContent)"></span>
 	                                                                            <span class="absolute left-1/2 top-full size-2 -translate-x-1/2 -translate-y-1 rotate-45 bg-gray-900"></span>
 	                                                                        </span>
 	                                                                    </button>
@@ -1401,17 +1464,17 @@
                                         </div>
                                     </div>
 
-		                                <div x-show="campaignSetupMode === 'advanced'" class="space-y-5">
-		                                    <button type="button" x-on:click="channelsAdvancedOpen = ! channelsAdvancedOpen; scheduleCampaignBuilderLayoutUpdate()" class="flex w-full items-center justify-between gap-4 text-left transition hover:text-gray-950">
+			                                <div x-show="campaignSetupMode === 'advanced'" class="overflow-hidden rounded-lg border border-gray-200 bg-white">
+			                                    <button type="button" x-on:click="channelsAdvancedOpen = ! channelsAdvancedOpen; scheduleCampaignBuilderLayoutUpdate()" class="flex w-full items-center justify-between gap-4 px-5 py-4 text-left transition hover:bg-gray-50">
 	                                            <span>
 	                                                <span class="block text-base/7 font-semibold text-gray-900">Advanced</span>
 	                                                <span class="mt-1 block text-sm leading-6 text-gray-600">Settings for how links are formatted when they are sent as text in messages.</span>
 	                                            </span>
 	                                            <span class="outcraft-icon shrink-0 !text-[18px] text-gray-400 transition" :class="channelsAdvancedOpen ? 'rotate-180' : ''">keyboard_arrow_down</span>
 	                                        </button>
-			                                    <div x-show="channelsAdvancedOpen" x-transition:enter="transition ease-out duration-200" x-transition:enter-start="opacity-0 translate-y-3" x-transition:enter-end="opacity-100 translate-y-0" x-transition:leave="transition ease-in duration-150" x-transition:leave-start="opacity-100 translate-y-0" x-transition:leave-end="opacity-0 translate-y-2" class="space-y-6">
-			                                        <div>
-		                                            <button type="button" x-on:click="campaignSetup.shortenLinks = ! campaignSetup.shortenLinks; scheduleCampaignBuilderLayoutUpdate()" role="switch" :aria-checked="campaignSetup.shortenLinks" class="flex w-full items-center justify-between gap-4 rounded-md text-left focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600">
+				                                    <div x-show="channelsAdvancedOpen" x-transition:enter="transition ease-out duration-200" x-transition:enter-start="opacity-0 translate-y-3" x-transition:enter-end="opacity-100 translate-y-0" x-transition:leave="transition ease-in duration-150" x-transition:leave-start="opacity-100 translate-y-0" x-transition:leave-end="opacity-0 translate-y-2" class="border-t border-gray-200">
+				                                        <div class="px-6 py-6">
+			                                            <button type="button" data-shadow-control data-card-ignore x-on:click="campaignSetup.shortenLinks = ! campaignSetup.shortenLinks; scheduleCampaignBuilderLayoutUpdate()" role="switch" :aria-checked="campaignSetup.shortenLinks" class="flex w-full items-center justify-between gap-4 text-left shadow-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600">
 		                                                <span class="min-w-0">
 		                                                    <span class="block text-sm font-semibold leading-6 text-gray-950">Shorten Links in Messages</span>
 		                                                    <span class="mt-1 block text-sm leading-6 text-gray-600">Shortens message links for cleaner tracking and delivery-friendly formatting. Links will resolve through ocrft.co/...</span>
@@ -1422,7 +1485,7 @@
 		                                            </button>
 		                                        </div>
 
-			                                        <div class="border-t border-gray-200 pt-6">
+				                                        <div class="border-t border-gray-200 px-6 py-6">
 			                                            <div>
 			                                                <h4 class="text-sm font-semibold leading-6 text-gray-950">Link Tracking Structure</h4>
 		                                                <p class="mt-1 text-sm leading-6 text-gray-600">Configure abandoned cart link tracking.</p>
@@ -1446,12 +1509,84 @@
 		                                        </div>
 	                                    </div>
 	                                </div>
-                                </div>
+	                                </div>
+		                            </section>
+
+	                            <section x-cloak x-show="campaignSetup.current === 'availability' || campaignSetupScrollFromStep === 'availability'" x-ref="campaignSetupStep_availability"
+	                                :style="campaignSetupStepStyle('availability')"
+	                                data-campaign-setup-step
+	                                class="space-y-6 pr-2 pb-4">
+	                                <div class="mb-1">
+	                                    <p class="text-sm font-semibold text-indigo-600" x-text="`${campaignSetupMode === 'fast' ? 'Fast Setup' : 'Advanced Setup'} · Step ${campaignSetupStepIndex('availability') + 1} of ${campaignSetupStepsForMode().length}`"></p>
+	                                    <span class="mb-4 flex size-10 items-center justify-center rounded-md bg-indigo-50 text-indigo-600">
+	                                        <span class="outcraft-icon !text-[21px]" x-text="campaignSetupStepIcon('availability')"></span>
+	                                    </span>
+	                                    <h2 class="mt-2 text-2xl font-bold leading-8 tracking-tight text-gray-950" x-text="campaignSetupHeading('availability')"></h2>
+	                                    <p class="mt-2 max-w-3xl text-sm leading-6 text-gray-600" x-text="campaignSetupDescription('availability')"></p>
+	                                </div>
+
+	                                <div class="rounded-lg border border-gray-200 bg-white p-6">
+	                                    <label class="block max-w-xl">
+	                                        <span class="block text-sm/6 font-semibold text-gray-900">Outreach Schedule</span>
+	                                        <x-outcraft.select
+	                                            class="mt-2"
+	                                            model="campaignSetup.scheduleMode"
+	                                            :options="[
+	                                                ['value' => 'business', 'label' => 'Local Business Hours'],
+	                                                ['value' => 'extended', 'label' => 'Local Extended Hours'],
+	                                                ['value' => 'all-day', 'label' => 'Always On'],
+	                                                ['value' => 'custom', 'label' => 'Custom Schedule'],
+	                                            ]"
+	                                            on-change="campaignSetup.allDay = campaignSetup.scheduleMode === 'all-day'; scheduleCampaignBuilderLayoutUpdate()"
+	                                        />
+	                                        <span class="mt-2 block text-sm leading-6 text-gray-600" x-text="campaignScheduleDescription()"></span>
+	                                    </label>
+
+	                                    <fieldset x-show="campaignSetup.scheduleMode === 'custom'" x-transition:enter="transition ease-out duration-200" x-transition:enter-start="opacity-0 translate-y-3" x-transition:enter-end="opacity-100 translate-y-0" x-transition:leave="transition ease-in duration-150" x-transition:leave-start="opacity-100 translate-y-0" x-transition:leave-end="opacity-0 translate-y-2" class="mt-7">
+	                                        <div class="flex items-center justify-between gap-4">
+	                                            <h3 class="text-sm font-semibold leading-6 text-gray-950">Outreach Days</h3>
+	                                            <button type="button" x-on:click="selectAllOutreachDays()" class="text-sm font-semibold text-indigo-600 hover:text-indigo-500">Select All</button>
+	                                        </div>
+
+	                                        <div class="mt-4 flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center sm:gap-x-6 sm:gap-y-3">
+	                                            <template x-for="day in outreachWeekdays" :key="day">
+	                                                <button type="button" x-on:click="toggleOutreachDay(day)" role="checkbox" :aria-checked="campaignSetup.outreachDays.includes(day)" class="inline-flex w-fit items-center gap-3 rounded-md text-sm font-semibold leading-6 text-gray-900 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600">
+	                                                    <span class="inline-flex size-4 items-center justify-center rounded border transition" :class="campaignSetup.outreachDays.includes(day) ? 'border-indigo-600 bg-indigo-600 text-white' : 'border-gray-300 bg-white text-transparent shadow-sm'">
+	                                                        <span class="outcraft-icon !text-[12px]">check</span>
+	                                                    </span>
+	                                                    <span x-text="day"></span>
+	                                                </button>
+	                                            </template>
+	                                        </div>
+
+	                                        <div class="mt-7 grid gap-6 lg:grid-cols-2">
+	                                            <label class="block">
+	                                                <span class="block text-sm/6 font-semibold text-gray-900">Outreach Start Hour<span class="text-indigo-400">*</span></span>
+	                                                <x-outcraft.select
+	                                                    class="mt-2"
+	                                                    model="campaignSetup.outreachStartHour"
+	                                                    options="outreachHourOptions"
+	                                                />
+	                                                <span class="mt-2 block text-sm leading-6 text-gray-600">The earliest time AI can contact a lead in their local timezone.</span>
+	                                            </label>
+
+	                                            <label class="block">
+	                                                <span class="block text-sm/6 font-semibold text-gray-900">Outreach End Hour<span class="text-indigo-400">*</span></span>
+	                                                <x-outcraft.select
+	                                                    class="mt-2"
+	                                                    model="campaignSetup.outreachEndHour"
+	                                                    options="outreachHourOptions"
+	                                                />
+	                                                <span class="mt-2 block text-sm leading-6 text-gray-600">The latest time AI can contact a lead in their local timezone.</span>
+	                                            </label>
+	                                        </div>
+	                                    </fieldset>
+	                                </div>
 	                            </section>
 
-                            <section x-cloak x-show="campaignSetup.current === 'discounts' || campaignSetupScrollFromStep === 'discounts'" x-ref="campaignSetupStep_discounts"
-                                :style="campaignSetupStepStyle('discounts')"
-                                data-campaign-setup-step
+	                            <section x-cloak x-show="campaignSetup.current === 'discounts' || campaignSetupScrollFromStep === 'discounts'" x-ref="campaignSetupStep_discounts"
+	                                :style="campaignSetupStepStyle('discounts')"
+	                                data-campaign-setup-step
                                 class="space-y-6 pr-2 pb-4">
                                 <div class="mb-1">
                                     <p class="text-sm font-semibold text-indigo-600" x-text="`${campaignSetupMode === 'fast' ? 'Fast Setup' : 'Advanced Setup'} · Step ${campaignSetupStepIndex('discounts') + 1} of ${campaignSetupStepsForMode().length}`"></p>
@@ -1572,75 +1707,7 @@
                                 </div>
                             </section>
 
-	                            <section x-cloak x-show="campaignSetup.current === 'availability' || campaignSetupScrollFromStep === 'availability'" x-ref="campaignSetupStep_availability"
-                                :style="campaignSetupStepStyle('availability')"
-                                data-campaign-setup-step
-                                class="pr-2 pb-4">
-                                <div class="mb-1">
-                                    <p class="text-sm font-semibold text-indigo-600" x-text="`${campaignSetupMode === 'fast' ? 'Fast Setup' : 'Advanced Setup'} · Step ${campaignSetupStepIndex('availability') + 1} of ${campaignSetupStepsForMode().length}`"></p>
-                                    <span class="mb-4 flex size-10 items-center justify-center rounded-md bg-indigo-50 text-indigo-600">
-                                        <span class="outcraft-icon !text-[21px]" x-text="campaignSetupStepIcon('availability')"></span>
-                                    </span>
-                                    <h2 class="mt-2 text-2xl font-bold leading-8 tracking-tight text-gray-950" x-text="campaignSetupHeading('availability')"></h2>
-                                    <p class="mt-2 mb-8 max-w-3xl text-sm leading-6 text-gray-600" x-text="campaignSetupDescription('availability')"></p>
-                                </div>
-	                                <div class="bg-white">
-	                                    <div>
-	                                        <button type="button" x-on:click="campaignSetup.allDay = ! campaignSetup.allDay; scheduleCampaignBuilderLayoutUpdate()" role="switch" :aria-checked="campaignSetup.allDay" class="flex w-full items-start gap-4 rounded-md text-left focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600">
-	                                            <span class="relative mt-1 inline-flex h-6 w-11 shrink-0 rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out" :class="campaignSetup.allDay ? 'bg-indigo-600' : 'bg-gray-200'">
-	                                                <span class="pointer-events-none inline-block size-5 rounded-full bg-white shadow transition duration-200 ease-in-out" :class="campaignSetup.allDay ? 'translate-x-5' : 'translate-x-0'"></span>
-	                                            </span>
-	                                            <span>
-	                                                <span class="block text-sm font-semibold leading-6 text-gray-950">Enable 24/7 Outreach</span>
-	                                                <span class="mt-1 block text-sm leading-6 text-gray-600">AI can contact leads at any time, regardless of your configured business hours.</span>
-	                                            </span>
-	                                        </button>
-
-	                                        <fieldset x-show="! campaignSetup.allDay" x-transition:enter="transition ease-out duration-200" x-transition:enter-start="opacity-0 translate-y-3" x-transition:enter-end="opacity-100 translate-y-0" x-transition:leave="transition ease-in duration-150" x-transition:leave-start="opacity-100 translate-y-0" x-transition:leave-end="opacity-0 translate-y-2" class="mt-7">
-	                                            <div class="flex items-center justify-between gap-4">
-	                                                <h4 class="text-sm font-semibold leading-6 text-gray-950">Outreach Days</h4>
-	                                                <button type="button" x-on:click="selectAllOutreachDays()" class="text-sm font-semibold text-indigo-600 hover:text-indigo-500">Select All</button>
-	                                            </div>
-
-	                                            <div class="mt-4 flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center sm:gap-x-6 sm:gap-y-3">
-	                                                <template x-for="day in outreachWeekdays" :key="day">
-	                                                    <button type="button" x-on:click="toggleOutreachDay(day)" role="checkbox" :aria-checked="campaignSetup.outreachDays.includes(day)" class="inline-flex w-fit items-center gap-3 rounded-md text-sm font-semibold leading-6 text-gray-900 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600">
-	                                                        <span class="inline-flex size-4 items-center justify-center rounded border transition" :class="campaignSetup.outreachDays.includes(day) ? 'border-indigo-600 bg-indigo-600 text-white' : 'border-gray-300 bg-white text-transparent shadow-sm'">
-	                                                            <span class="outcraft-icon !text-[12px]">check</span>
-	                                                        </span>
-	                                                        <span x-text="day"></span>
-	                                                    </button>
-	                                                </template>
-	                                            </div>
-
-	                                            <div class="mt-7 grid gap-6 lg:grid-cols-2">
-	                                                <label class="block">
-	                                                    <span class="block text-sm/6 font-semibold text-gray-900">Outreach Start Hour<span class="text-indigo-400">*</span></span>
-		                                                <x-outcraft.select
-		                                                    class="mt-2"
-		                                                    model="campaignSetup.outreachStartHour"
-		                                                    options="outreachHourOptions"
-		                                                />
-	                                                    <span class="mt-2 block text-sm leading-6 text-gray-600">The earliest time AI can contact a lead in their local timezone.</span>
-	                                                </label>
-
-	                                                <label class="block">
-	                                                    <span class="block text-sm/6 font-semibold text-gray-900">Outreach End Hour<span class="text-indigo-400">*</span></span>
-		                                                <x-outcraft.select
-		                                                    class="mt-2"
-		                                                    model="campaignSetup.outreachEndHour"
-		                                                    options="outreachHourOptions"
-		                                                />
-	                                                    <span class="mt-2 block text-sm leading-6 text-gray-600">The latest time AI can contact a lead in their local timezone.</span>
-	                                                </label>
-	                                            </div>
-	                                        </fieldset>
-
-	                                    </div>
-	                                </div>
-	                            </section>
-
-                            <section x-cloak x-show="campaignSetup.current === 'sequence' || campaignSetupScrollFromStep === 'sequence'" x-ref="campaignSetupStep_sequence"
+	                            <section x-cloak x-show="campaignSetup.current === 'sequence' || campaignSetupScrollFromStep === 'sequence'" x-ref="campaignSetupStep_sequence"
                                 :style="campaignSetupStepStyle('sequence')"
                                 data-campaign-setup-step
                                 class="space-y-6 pr-2 pb-4">
@@ -2170,10 +2237,10 @@
                             </div>
                             </section>
 
-                            <section x-cloak x-show="campaignSetup.current === 'priority' || campaignSetupScrollFromStep === 'priority'" x-ref="campaignSetupStep_priority"
-                                :style="campaignSetupStepStyle('priority')"
-                                data-campaign-setup-step
-                                class="space-y-6 pr-2 pb-4">
+	                            <section x-cloak x-show="campaignSetup.current === 'priority' || campaignSetupScrollFromStep === 'priority'" x-ref="campaignSetupStep_priority"
+	                                :style="campaignSetupStepStyle('priority')"
+	                                data-campaign-setup-step
+	                                class="space-y-6 pr-2 pb-4">
                                 <div class="mb-1">
                                     <p class="text-sm font-semibold text-indigo-600" x-text="`${campaignSetupMode === 'fast' ? 'Fast Setup' : 'Advanced Setup'} · Step ${campaignSetupStepIndex('priority') + 1} of ${campaignSetupStepsForMode().length}`"></p>
                                     <span class="mb-4 flex size-10 items-center justify-center rounded-md bg-indigo-50 text-indigo-600">
@@ -2186,21 +2253,102 @@
                                 <h3 class="text-sm font-bold text-gray-950">No Campaign Overrides</h3>
                                 <p class="mt-2 text-sm text-gray-500">Create a campaign override to decide which campaign should run when multiple campaigns qualify.</p>
                                 <button type="button" x-on:click="campaignSetup.overrideModalOpen = true" class="mt-5 inline-flex h-9 items-center rounded-md bg-indigo-600 px-3 text-sm font-semibold text-white">Add Override Rule</button>
-                            </div>
-                            </section>
+	                            </div>
+	                            </section>
 
-                            <section x-cloak x-show="campaignSetup.current === 'review' || campaignSetupScrollFromStep === 'review'" x-ref="campaignSetupStep_review"
-                                :style="campaignSetupStepStyle('review')"
-                                data-campaign-setup-step
-                                class="pr-2 pb-4">
-                                <div>
-                                    <span class="mb-4 flex size-10 items-center justify-center rounded-md bg-indigo-50 text-indigo-600">
+	                            <section x-cloak x-show="campaignSetup.current === 'events' || campaignSetupScrollFromStep === 'events'" x-ref="campaignSetupStep_events"
+	                                :style="campaignSetupStepStyle('events')"
+	                                data-campaign-setup-step
+	                                class="space-y-6 pr-2 pb-4">
+	                                <div class="mb-1">
+	                                    <p class="text-sm font-semibold text-indigo-600" x-text="`${campaignSetupMode === 'fast' ? 'Fast Setup' : 'Advanced Setup'} · Step ${campaignSetupStepIndex('events') + 1} of ${campaignSetupStepsForMode().length}`"></p>
+	                                    <span class="mb-4 flex size-10 items-center justify-center rounded-md bg-indigo-50 text-indigo-600">
+	                                        <span class="outcraft-icon !text-[21px]" x-text="campaignSetupStepIcon('events')"></span>
+	                                    </span>
+	                                    <h2 class="mt-2 text-2xl font-bold leading-8 tracking-tight text-gray-950" x-text="campaignSetupHeading('events')"></h2>
+	                                    <p class="mt-2 max-w-3xl text-sm leading-6 text-gray-600" x-text="campaignSetupDescription('events')"></p>
+	                                </div>
+	                                <div data-card-surface class="overflow-hidden rounded-lg border border-gray-200 bg-white shadow-sm">
+		                                <div class="flex w-full items-center justify-between gap-4 px-5 py-5 text-left">
+		                                    <div class="flex min-w-0 items-center gap-4">
+		                                        <span class="flex size-[60px] shrink-0 items-center justify-center rounded-md" :class="leadSourceLogoContainerClass(campaignSetup.source)">
+		                                            <span x-show="leadSourceLogos[campaignSetup.source]" class="outcraft-source-logo outcraft-source-logo-lg" x-html="leadSourceLogos[campaignSetup.source]"></span>
+		                                            <span x-show="! leadSourceLogos[campaignSetup.source]" class="outcraft-icon !text-[32px]" x-text="leadSourceIcon(campaignSetup.source)"></span>
+		                                        </span>
+		                                        <span class="min-w-0">
+		                                            <span class="block text-sm font-bold text-gray-950" x-text="leadSourceConnectionTitle()"></span>
+		                                            <span class="mt-1 block text-sm leading-6 text-gray-500" x-text="leadSourceConnectionDescription()"></span>
+		                                        </span>
+		                                    </div>
+		                                    <span class="flex shrink-0 flex-col items-end gap-2">
+		                                        <span
+		                                            class="inline-flex rounded-md px-2 py-1 text-xs font-medium ring-1 ring-inset"
+		                                            :class="! requiresIntegration() || campaignSetup.integrationStatus === 'Connected' ? 'bg-green-50 text-green-700 ring-green-600/20' : (campaignSetup.integrationStatus === 'Skipped for Now' ? 'bg-amber-50 text-amber-700 ring-amber-600/20' : 'bg-gray-50 text-gray-600 ring-gray-500/10')"
+		                                            x-text="leadSourceConnectionStatusLabel()"
+		                                        ></span>
+		                                        <span class="text-xs leading-5 text-gray-500" x-text="leadSourceConnectedAtLabel()"></span>
+		                                    </span>
+		                                </div>
+
+	                                    <div class="overflow-x-auto border-t border-gray-200">
+	                                        <table class="min-w-full divide-y divide-gray-200 text-left text-sm">
+	                                            <thead class="bg-gray-50">
+	                                                <tr>
+	                                                    <th class="px-6 py-4 font-semibold text-gray-950">Event</th>
+	                                                    <th class="px-6 py-4 font-semibold text-gray-950">Dispatches (limit / current)</th>
+	                                                    <th class="px-6 py-4 font-semibold text-gray-950">Is Enabled</th>
+	                                                    <th class="px-6 py-4"><span class="sr-only">Actions</span></th>
+	                                                </tr>
+	                                            </thead>
+	                                            <tbody class="divide-y divide-gray-100">
+	                                                <template x-for="event in campaignSetup.leadSourceEvents" :key="event.id">
+	                                                    <tr>
+		                                                    <td class="px-6 py-5 text-sm font-semibold text-green-700" x-text="event.label"></td>
+	                                                        <td class="px-6 py-5 text-sm leading-6 text-gray-900" x-text="leadSourceEventDispatchSummary(event)"></td>
+	                                                        <td class="px-6 py-5">
+	                                                            <button type="button" x-on:click="toggleLeadSourceEvent(event.id)" role="switch" :aria-checked="event.enabled" class="relative inline-flex h-6 w-11 shrink-0 self-center rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600" :class="event.enabled ? 'bg-green-500' : 'bg-gray-200'">
+	                                                                <span class="pointer-events-none inline-block size-5 rounded-full bg-white shadow transition duration-200 ease-in-out" :class="event.enabled ? 'translate-x-5' : 'translate-x-0'"></span>
+	                                                            </button>
+	                                                        </td>
+	                                                        <td class="px-6 py-5 text-right">
+		                                                        <button type="button" x-on:click="openLeadSourceEventSettings(event)" class="inline-flex h-9 items-center rounded-md bg-white px-3 text-sm font-semibold text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 transition hover:bg-gray-50">
+		                                                            Edit
+		                                                        </button>
+	                                                        </td>
+	                                                    </tr>
+	                                                </template>
+	                                            </tbody>
+	                                        </table>
+	                                    </div>
+
+		                                <button
+		                                    x-show="campaignSetup.source === 'Klaviyo'"
+		                                    type="button"
+		                                    x-on:click="campaignSetup.klaviyoEventsGuideOpen = true"
+		                                    class="flex w-full items-center justify-between gap-4 border-t border-gray-200 px-5 py-5 text-left transition hover:bg-gray-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600"
+		                                >
+		                                    <span class="min-w-0">
+		                                        <span class="block text-sm font-bold text-gray-950">How to connect Klaviyo events</span>
+		                                        <span class="mt-1 block text-sm leading-6 text-gray-500">Create Checkout Started and Order Placed flows with webhook actions.</span>
+		                                    </span>
+		                                    <span class="outcraft-icon shrink-0 !text-[20px] text-gray-400">arrow_forward</span>
+		                                </button>
+	                                </div>
+	                            </section>
+
+	                            <section x-cloak x-show="campaignSetup.current === 'review' || campaignSetupScrollFromStep === 'review'" x-ref="campaignSetupStep_review"
+	                                :style="campaignSetupStepStyle('review')"
+	                                data-campaign-setup-step
+                                class="grid grid-cols-1 gap-x-8 gap-y-10 pr-2 pb-4 md:grid-cols-3">
+                                <div class="flex flex-col">
+                                    <span class="order-1 mb-4 flex size-10 items-center justify-center rounded-md bg-indigo-50 text-indigo-600">
                                         <span class="outcraft-icon !text-[21px]" x-text="campaignSetupStepIcon('review')"></span>
                                     </span>
-                                    <h2 class="text-2xl font-bold leading-8 tracking-tight text-gray-950" x-text="campaignSetupHeading('review')"></h2>
-                                    <p class="mt-2 text-sm leading-6 text-gray-600" x-text="campaignSetupDescription('review')"></p>
+                                    <h2 class="order-2 text-2xl font-bold leading-8 tracking-tight text-gray-950" x-text="campaignSetupHeading('review')"></h2>
+                                    <p class="order-3 mt-2 text-sm leading-6 text-gray-600" x-text="campaignSetupDescription('review')"></p>
                                 </div>
-                                <div class="max-w-xl space-y-5">
+                                <div data-card-surface class="rounded-lg border border-gray-200 bg-white p-5 shadow-sm md:col-span-2 sm:p-6">
+                                    <div class="max-w-xl space-y-5">
                                     <label class="block">
                                         <span class="block text-sm/6 font-semibold text-gray-900">Campaign Name</span>
                                         <input x-model="campaignSetup.name" type="text" placeholder="Generated automatically if left empty" class="mt-2 block w-full rounded-md bg-white px-3 py-1.5 text-sm/6 text-gray-900 shadow-sm outline outline-1 -outline-offset-1 outline-gray-300 placeholder:text-gray-400 focus:outline-2 focus:-outline-offset-2 focus:outline-indigo-600">
@@ -2213,13 +2361,14 @@
                                         </button>
                                         <button type="button" x-on:click="publishCampaignSetup()" :disabled="launchBlocked()" class="inline-flex h-9 items-center rounded-md bg-indigo-600 px-3 text-sm font-semibold text-white shadow-sm transition hover:bg-indigo-500 disabled:cursor-not-allowed disabled:opacity-40">Launch Campaign</button>
                                     </div>
+                                    </div>
                                 </div>
                             </section>
                             </div>
                         </div>
                         <div x-cloak x-show="campaignSetupModeSelected && ! campaignSetupIntroStep" class="hidden lg:block"></div>
 
-		                        <div x-cloak x-show="campaignSetupModeSelected && ! campaignSetupIntroStep" class="fixed inset-x-0 bottom-0 z-40 flex border-t border-gray-200 bg-white px-4 py-3 lg:px-0 lg:py-4" :style="campaignSetupActionBarStyle">
+		                        <div x-cloak x-show="campaignSetupModeSelected && ! campaignSetupIntroStep && campaignSetup.current !== 'review'" class="fixed inset-x-0 bottom-0 z-40 flex border-t border-gray-200 bg-white px-4 py-3 lg:px-0 lg:py-4" :style="campaignSetupActionBarStyle">
 	                            <div class="flex w-full items-center justify-between gap-3" :style="campaignSetupActionBarContentStyle">
 	                                <button type="button" x-on:click="previousCampaignSetupStep()" :disabled="campaignSetupStepIndex() === 0" class="inline-flex h-9 shrink-0 items-center gap-2 rounded-md px-2 text-sm font-semibold text-gray-600 transition hover:bg-gray-50 hover:text-gray-950 disabled:cursor-not-allowed disabled:opacity-40">
 	                                    <span class="outcraft-icon !text-[18px]">arrow_upward</span>
@@ -2235,6 +2384,54 @@
 	                                </div>
 	                            </div>
 	                        </div>
+
+                        <div
+                            x-cloak
+                            x-show="campaignCancelConfirmOpen"
+                            x-transition.opacity
+                            x-on:keydown.escape.window="closeCampaignCancelConfirm()"
+                            class="fixed inset-0 z-50 flex items-center justify-center bg-gray-950/30 p-4"
+                        >
+                            <div x-on:click="closeCampaignCancelConfirm()" class="absolute inset-0"></div>
+                            <div
+                                x-show="campaignCancelConfirmOpen"
+                                x-transition:enter="transition ease-out duration-150"
+                                x-transition:enter-start="opacity-0 translate-y-3 scale-95"
+                                x-transition:enter-end="opacity-100 translate-y-0 scale-100"
+                                x-transition:leave="transition ease-in duration-100"
+                                x-transition:leave-start="opacity-100 translate-y-0 scale-100"
+                                x-transition:leave-end="opacity-0 translate-y-2 scale-95"
+                                class="relative w-full max-w-md overflow-hidden rounded-lg bg-white shadow-xl ring-1 ring-gray-900/10"
+                                role="dialog"
+                                aria-modal="true"
+                                aria-labelledby="campaign-cancel-confirm-title"
+                            >
+                                <div class="px-6 py-5">
+                                    <div class="flex items-start justify-between gap-4">
+                                        <div class="flex items-start gap-3">
+                                            <span class="flex size-10 shrink-0 items-center justify-center rounded-md bg-amber-50 text-amber-600">
+                                                <span class="outcraft-icon !text-[20px]">report</span>
+                                            </span>
+                                            <div>
+                                                <h2 id="campaign-cancel-confirm-title" class="text-base font-semibold text-gray-950">Cancel Campaign Setup?</h2>
+                                                <p class="mt-1 text-sm leading-6 text-gray-500">Save this campaign as a draft or discard the setup and return to Campaigns.</p>
+                                            </div>
+                                        </div>
+                                        <button type="button" x-on:click="closeCampaignCancelConfirm()" class="inline-flex size-8 shrink-0 items-center justify-center rounded-md text-gray-400 transition hover:bg-gray-50 hover:text-gray-700" aria-label="Close">
+                                            <span class="outcraft-icon !text-[20px]">close</span>
+                                        </button>
+                                    </div>
+                                </div>
+                                <div class="flex flex-col-reverse gap-3 border-t border-gray-100 bg-white px-6 py-4 sm:flex-row sm:justify-end">
+                                    <button type="button" x-on:click="cancelCampaignSetupWithoutDraft()" class="inline-flex h-9 items-center justify-center rounded-md bg-white px-3 text-sm font-semibold text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 transition hover:bg-gray-50">
+                                        Cancel Setup
+                                    </button>
+                                    <button type="button" x-on:click="saveCampaignSetupDraft()" class="inline-flex h-9 items-center justify-center rounded-md bg-indigo-600 px-3 text-sm font-semibold text-white shadow-sm transition hover:bg-indigo-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600">
+                                        Save as Draft
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
 
                         <div
                             x-cloak
@@ -2303,7 +2500,7 @@
                                     <div class="flex items-start justify-between gap-4">
                                         <div class="min-w-0">
                                             <h2 class="text-base font-semibold text-gray-950" x-text="campaignSetup.phoneNumberModalOpen ? 'Assign phone number' : (campaignSetup.physicalAddressModalOpen ? (campaignSetup.physicalAddressFormOpen ? 'Add address' : 'Physical Addresses') : (campaignSetup.mailboxModalOpen ? 'Add Mailbox' : (campaignSetup.delayModalOpen ? delayModalTitle() : (campaignSetup.followupModalOpen ? 'Select Follow-Up Sequence Step' : (campaignSetup.sequenceModalOpen ? 'Select Outreach Sequence Step' : (campaignSetup.overrideModalOpen ? 'Create Campaign Override' : (campaignSetup.discountCodeModalOpen ? 'Add Discount Code' : 'Create Flow Template Step')))))))"></h2>
-                                            <p x-show="campaignSetup.sequenceModalOpen || campaignSetup.followupModalOpen || campaignSetup.delayModalOpen || campaignSetup.mailboxModalOpen || (campaignSetup.physicalAddressModalOpen && ! campaignSetup.physicalAddressFormOpen)" class="mt-1 text-sm leading-6 text-gray-500" x-text="campaignSetup.physicalAddressModalOpen ? 'Manage business addresses used for phone number registration.' : (campaignSetup.mailboxModalOpen ? 'Choose the mailbox type and follow the connection instructions.' : (campaignSetup.delayModalOpen ? delayModalDescription() : (campaignSetup.followupModalOpen ? 'Choose the follow-up action the AI should run after this lead response.' : 'Choose the outreach action the AI should run at this point in the sequence.')))"></p>
+                                            <p x-show="campaignSetup.sequenceModalOpen || campaignSetup.followupModalOpen || campaignSetup.delayModalOpen || campaignSetup.mailboxModalOpen || campaignSetup.phoneNumberModalOpen || (campaignSetup.physicalAddressModalOpen && ! campaignSetup.physicalAddressFormOpen)" class="mt-1 text-sm leading-6 text-gray-500" x-text="campaignSetup.phoneNumberModalOpen ? 'Choose the provider and region for the phone number used by call outreach in this campaign.' : (campaignSetup.physicalAddressModalOpen ? 'Manage business addresses used for phone number registration.' : (campaignSetup.mailboxModalOpen ? 'Choose the mailbox type and follow the connection instructions.' : (campaignSetup.delayModalOpen ? delayModalDescription() : (campaignSetup.followupModalOpen ? 'Choose the follow-up action the AI should run after this lead response.' : 'Choose the outreach action the AI should run at this point in the sequence.'))))"></p>
                                         </div>
                                         <button type="button" x-on:click="closeCampaignSetupOverlays()" class="inline-flex size-8 shrink-0 items-center justify-center rounded-md text-gray-400 transition hover:bg-gray-50 hover:text-gray-700" aria-label="Close">
                                             <span class="outcraft-icon !text-[20px]">close</span>
@@ -2488,8 +2685,168 @@
                                         <p x-show="filteredBriefBuilderItemGroups().length === 0" class="px-1 py-6 text-center text-sm text-gray-500">No Items Found.</p>
                                     </div>
                                 </div>
+		                            </div>
+	                        </div>
+
+	                        <div
+	                            x-cloak
+	                            x-show="campaignSetup.leadSourceEventModalOpen"
+	                            x-transition.opacity
+	                            x-on:keydown.escape.window="closeCampaignSetupOverlays()"
+	                            class="fixed inset-0 z-50 flex items-center justify-center bg-gray-950/30 p-4"
+	                        >
+	                            <div x-on:click="closeCampaignSetupOverlays()" class="absolute inset-0"></div>
+	                            <div
+	                                x-show="campaignSetup.leadSourceEventModalOpen"
+	                                x-transition:enter="transition ease-out duration-150"
+	                                x-transition:enter-start="opacity-0 translate-y-3 scale-95"
+	                                x-transition:enter-end="opacity-100 translate-y-0 scale-100"
+	                                x-transition:leave="transition ease-in duration-100"
+	                                x-transition:leave-start="opacity-100 translate-y-0 scale-100"
+	                                x-transition:leave-end="opacity-0 translate-y-2 scale-95"
+	                                class="relative w-full max-w-4xl overflow-hidden rounded-lg bg-white shadow-2xl ring-1 ring-gray-900/10"
+	                                role="dialog"
+	                                aria-modal="true"
+	                                aria-labelledby="lead-source-event-settings-title"
+	                            >
+	                                <button type="button" x-on:click="closeCampaignSetupOverlays()" class="absolute right-5 top-5 z-20 inline-flex size-8 items-center justify-center rounded-md text-gray-400 transition hover:bg-gray-50 hover:text-gray-700" aria-label="Close">
+	                                    <span class="outcraft-icon !text-[22px]">close</span>
+	                                </button>
+
+	                                <div class="px-6 py-7 sm:px-8">
+	                                    <h2 id="lead-source-event-settings-title" class="text-xl font-bold leading-8 text-gray-950">Edit external event branch</h2>
+	                                    <p class="mt-2 text-sm leading-6 text-gray-500">Configure dispatch limits for the selected lead source event.</p>
+
+	                                    <div class="mt-8 grid gap-6 md:grid-cols-2">
+	                                        <label class="block">
+	                                            <span class="block text-sm/6 font-semibold text-gray-900">Dispatches limit</span>
+	                                            <input x-model="campaignSetup.leadSourceEventForm.dispatchesLimit" type="number" inputmode="numeric" placeholder="999999991" class="mt-2 block w-full rounded-md bg-white px-3 py-1.5 text-sm/6 text-gray-900 shadow-sm outline outline-1 -outline-offset-1 outline-gray-300 placeholder:text-gray-400 focus:outline-2 focus:-outline-offset-2 focus:outline-indigo-600">
+	                                            <span class="mt-2 block text-sm leading-6 text-gray-500">How many times this trigger can be fired. Leave empty for unlimited.</span>
+	                                        </label>
+	                                        <label class="block">
+	                                            <span class="block text-sm/6 font-semibold text-gray-900">Cooldown (days)</span>
+	                                            <input x-model="campaignSetup.leadSourceEventForm.cooldownDays" type="number" inputmode="numeric" min="0" class="mt-2 block w-full rounded-md bg-white px-3 py-1.5 text-sm/6 text-gray-900 shadow-sm outline outline-1 -outline-offset-1 outline-gray-300 placeholder:text-gray-400 focus:outline-2 focus:-outline-offset-2 focus:outline-indigo-600">
+	                                            <span class="mt-2 block text-sm leading-6 text-gray-500">Number of days to wait before this trigger can be fired again for the same lead.</span>
+	                                        </label>
+	                                    </div>
+
+	                                    <div class="mt-8 flex flex-wrap gap-3">
+	                                        <button type="button" x-on:click="saveLeadSourceEventSettings()" class="inline-flex h-9 items-center rounded-md bg-indigo-600 px-3 text-sm font-semibold text-white shadow-sm transition hover:bg-indigo-500">Save changes</button>
+	                                        <button type="button" x-on:click="closeCampaignSetupOverlays()" class="inline-flex h-9 items-center rounded-md bg-white px-3 text-sm font-semibold text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 transition hover:bg-gray-50">Cancel</button>
+	                                    </div>
+	                                </div>
 	                            </div>
 	                        </div>
+
+		                        <div
+		                            x-cloak
+		                            x-show="campaignSetup.klaviyoEventsGuideOpen"
+                            x-transition.opacity
+                            x-on:keydown.escape.window="closeCampaignSetupOverlays()"
+                            class="fixed inset-0 z-50 flex items-center justify-center bg-gray-950/30 p-4"
+                        >
+                            <div x-on:click="closeCampaignSetupOverlays()" class="absolute inset-0"></div>
+                            <div
+                                x-show="campaignSetup.klaviyoEventsGuideOpen"
+                                x-transition:enter="transition ease-out duration-150"
+                                x-transition:enter-start="opacity-0 translate-y-3 scale-95"
+                                x-transition:enter-end="opacity-100 translate-y-0 scale-100"
+                                x-transition:leave="transition ease-in duration-100"
+                                x-transition:leave-start="opacity-100 translate-y-0 scale-100"
+                                x-transition:leave-end="opacity-0 translate-y-2 scale-95"
+                                class="relative max-h-[min(900px,calc(100vh-2rem))] w-full max-w-5xl overflow-hidden rounded-lg bg-white shadow-2xl ring-1 ring-gray-900/10"
+                                role="dialog"
+                                aria-modal="true"
+                                aria-labelledby="klaviyo-events-guide-title"
+                            >
+                                <button type="button" x-on:click="closeCampaignSetupOverlays()" class="absolute right-5 top-5 z-20 inline-flex size-8 items-center justify-center rounded-md text-gray-400 transition hover:bg-gray-50 hover:text-gray-700" aria-label="Close">
+                                    <span class="outcraft-icon !text-[22px]">close</span>
+                                </button>
+
+                                <div class="max-h-[min(900px,calc(100vh-2rem))] overflow-y-auto px-6 py-8 sm:px-10 lg:px-16">
+                                    <div class="max-w-3xl">
+                                        <span class="flex size-10 items-center justify-center rounded-md bg-indigo-50 text-indigo-600">
+                                            <span class="outcraft-icon !text-[21px]">webhook</span>
+                                        </span>
+                                        <h2 id="klaviyo-events-guide-title" class="mt-5 text-xl font-bold text-gray-950">How To Run This Campaign?</h2>
+                                        <p class="mt-2 text-sm leading-6 text-gray-600">To connect Klaviyo with Outcraft, create 2 simple flows in Klaviyo with Webhook actions.</p>
+                                    </div>
+
+	                                    <div class="mt-8 grid gap-6">
+                                        <section class="rounded-lg bg-gray-50 p-5 ring-1 ring-inset ring-gray-200">
+                                            <h3 class="text-base font-bold text-gray-950">Create The "Checkout Started" Flow</h3>
+                                            <ol class="mt-4 list-decimal space-y-2 pl-5 text-sm leading-6 text-gray-600">
+                                                <li>Go to Klaviyo -> Flows. Click Create Flow -> Build your own.</li>
+                                                <li>Choose any name, for example: "Outcraft - Checkout Abandoned Trigger - Checkout Start".</li>
+                                                <li>Select a Checkout Started trigger.</li>
+                                                <li>Pick the metric that matches your ecommerce integration: Shopify, WooCommerce, Custom, etc.</li>
+                                                <li>On Re-entry criteria, select Allow re-entry.</li>
+                                                <li>Save -> Confirm and save.</li>
+                                                <li>Drag and drop a Webhook action from the left sidebar and connect it directly to the trigger.</li>
+                                            </ol>
+
+                                            <div class="mt-5 space-y-4">
+                                                <div>
+                                                    <p class="text-sm font-semibold text-gray-900">Destination URL:</p>
+	                                                    <pre class="mt-2 overflow-x-auto rounded-md bg-gray-100 p-3 text-xs leading-5 text-gray-700 ring-1 ring-inset ring-gray-200"><code>https://outcraft.ai/api/v1/trigger/bf1576f3-8de9-49a9-8e9b-80be6a19eafd</code></pre>
+                                                </div>
+                                                <div>
+                                                    <p class="text-sm font-semibold text-gray-900">JSON Body:</p>
+	                                                    <pre class="mt-2 overflow-x-auto rounded-md bg-gray-100 p-3 text-xs leading-5 text-gray-700 ring-1 ring-inset ring-gray-200"><code>{
+  "outcraft_event": "klaviyo/checkout/started",
+  "event_raw": "@{{ event|escapejs }}",
+  "person_raw": "@{{ person|escapejs }}"
+}</code></pre>
+                                                </div>
+                                            </div>
+
+                                            <p class="mt-5 text-sm leading-6 text-gray-600">Click Save, then Review and turn on. Make sure Flow status is set to Live, then press Save.</p>
+                                        </section>
+
+                                        <section class="rounded-lg bg-gray-50 p-5 ring-1 ring-inset ring-gray-200">
+                                            <h3 class="text-base font-bold text-gray-950">Create The "Order Placed" Flow</h3>
+                                            <ol class="mt-4 list-decimal space-y-2 pl-5 text-sm leading-6 text-gray-600">
+                                                <li>Go to Klaviyo -> Flows. Click Create Flow -> Build your own.</li>
+                                                <li>Choose any name, for example: "Outcraft - Checkout Abandoned Trigger - Order Placed".</li>
+                                                <li>Select a Placed Order trigger.</li>
+                                                <li>Pick the metric that matches your ecommerce integration: Shopify, WooCommerce, Custom, etc.</li>
+                                                <li>On Re-entry criteria, select Allow re-entry.</li>
+                                                <li>Save -> Confirm and save.</li>
+                                                <li>Drag and drop a Webhook action from the left sidebar and connect it directly to the trigger.</li>
+                                            </ol>
+
+                                            <div class="mt-5 space-y-4">
+                                                <div>
+                                                    <p class="text-sm font-semibold text-gray-900">Destination URL:</p>
+	                                                    <pre class="mt-2 overflow-x-auto rounded-md bg-gray-100 p-3 text-xs leading-5 text-gray-700 ring-1 ring-inset ring-gray-200"><code>https://outcraft.ai/api/v1/trigger/bf1576f3-8de9-49a9-8e9b-80be6a19eafd</code></pre>
+                                                </div>
+                                                <div>
+                                                    <p class="text-sm font-semibold text-gray-900">JSON Body:</p>
+	                                                    <pre class="mt-2 overflow-x-auto rounded-md bg-gray-100 p-3 text-xs leading-5 text-gray-700 ring-1 ring-inset ring-gray-200"><code>{
+  "outcraft_event": "klaviyo/order/placed",
+  "event_raw": "@{{ event|escapejs }}",
+  "person_raw": "@{{ person|escapejs }}"
+}</code></pre>
+                                                </div>
+                                            </div>
+
+                                            <p class="mt-5 text-sm leading-6 text-gray-600">Click Save, then Review and turn on. Make sure Flow status is set to Live, then press Save.</p>
+                                        </section>
+                                    </div>
+
+                                    <section class="mt-8 rounded-lg bg-indigo-50 p-5 ring-1 ring-inset ring-indigo-100">
+                                        <h3 class="text-base font-bold text-gray-950">TL;DR checklist</h3>
+	                                        <ul class="mt-4 list-disc space-y-2 pl-5 text-sm leading-6 text-gray-700">
+	                                            <li>Create 2 flows: Checkout Started + Order Placed.</li>
+	                                            <li>Add a Webhook action to each flow.</li>
+	                                            <li>Paste the JSON exactly as provided.</li>
+	                                            <li>Set flow status to Live.</li>
+	                                        </ul>
+                                        <p class="mt-4 text-sm font-semibold text-indigo-700">That's it - Outcraft handles the rest.</p>
+                                    </section>
+                                </div>
+                            </div>
+                        </div>
 
 	                        <div
 	                            x-cloak

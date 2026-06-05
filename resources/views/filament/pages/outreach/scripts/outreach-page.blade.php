@@ -17,6 +17,7 @@
             auto_awesome: 'sparkles',
             badge: 'id-card',
             block: 'ban',
+            briefcase_business: 'briefcase-business',
             business: 'building-2',
             call: 'phone',
             calendar_check: 'calendar-check',
@@ -88,6 +89,7 @@
             settings: 'settings',
             sms: 'message-square-text',
             south_east: 'arrow-down-right',
+            sparkle: 'sparkle',
             shopping_cart: 'shopping-cart',
             support_agent: 'headset',
             task_alt: 'circle-check-big',
@@ -526,6 +528,8 @@
                 leadInteractionFeedbackText: '',
                 activeCampaignPageTab: 'Campaigns',
                 campaignDetailOpen: false,
+                campaignCreationV2Open: false,
+                campaignCreationV2UnlockedPanels: ['company-brand'],
                 campaignDetailMobilePanelOpen: false,
                 selectedCampaign: null,
                 abTestDetailOpen: false,
@@ -543,9 +547,18 @@
                     },
                     numberOfLeads: '',
                 },
-                activeCampaignDetailPanel: 'company-basics',
+                activeCampaignDetailPanel: 'company-brand',
                 campaignDetailDirtyPanels: [],
+                campaignDetailSelectedBrandId: '',
+                campaignDetailBrandPickerOpen: false,
+                campaignDetailSelectedAgentIds: [],
+                campaignDetailAgentPickerOpen: false,
+                campaignDetailAgentPickerIds: [],
                 campaignBuilderOpen: false,
+                onboardingCampaignFlow: false,
+                onboardingCompanyIds: [],
+                onboardingAiAgentIds: [],
+                campaignCancelConfirmOpen: false,
                 campaignBuilderMobileProgressOpen: false,
                 campaignBuilderTransitioning: false,
                 campaignBuilderTransitionLabel: 'Preparing Campaign Setup...',
@@ -579,6 +592,7 @@
                 campaignSetupPanelContentStyle: '',
                 campaignSetupFlowSpacerStyle: '',
                 campaignSetupPanelMaxScroll: 0,
+                campaignBuilderTransitionTimer: null,
                 campaignSetupActionBarFrame: null,
                 campaignSetupModeTransitionTimer: null,
                 campaignSetupScrollFromStep: null,
@@ -639,6 +653,8 @@
                     width: 320,
                     arrowLeft: 160,
                 },
+                copiedContactValue: '',
+                copiedContactTimer: null,
                 captureToast: {
                     visible: false,
                     title: 'Question Captured',
@@ -677,21 +693,143 @@
 	                selectedPresetName: 'Filter Presets',
                 nav: [
                     { label: 'Dashboard', icon: 'dashboard' },
-                    { label: 'Campaigns', icon: 'format_list_bulleted' },
+                    { label: 'Brands', icon: 'briefcase_business' },
+                    { label: 'AI Agents', icon: 'sparkle' },
+                    { label: 'Campaigns', icon: 'rocket' },
                     { label: 'Leads', icon: 'group' },
                     { label: 'Analytics', icon: 'monitoring' },
                     { label: 'Knowledge Base', icon: 'library_books' },
                 ],
+                brands: [
+                    {
+                        id: 'brand-outcraft',
+                        name: 'Outcraft',
+                        website: 'outcraft.ai',
+                        industry: 'SaaS',
+                        description: 'AI outreach platform for campaign setup, lead conversations, and automated follow-up.',
+                        problem: 'Teams need faster outreach setup without losing context or personalization.',
+                        differentiators: 'AI-guided setup, reusable brand context, custom fields, and multi-channel campaign orchestration.',
+                        icp: 'Growth teams, agencies, and sales-led SaaS companies running outbound or lifecycle campaigns.',
+                        faqs: 'Q: Can AI book meetings?\nA: Yes, when booking is enabled and a calendar link is provided.',
+                        supportEmail: 'support@outcraft.ai',
+                        termsUrl: 'https://outcraft.ai/terms',
+                        privacyUrl: 'https://outcraft.ai/privacy',
+                        certifications: 'SOC2',
+                        compliance: 'GDPR, CCPA',
+                        status: 'Active',
+                        legalStatus: 'Ready',
+                        modified: '2 hours ago',
+                    },
+                    {
+                        id: 'brand-example-commerce',
+                        name: 'Example Commerce',
+                        website: 'example.com',
+                        industry: 'Ecommerce',
+                        description: 'Retail brand selling curated home, lifestyle, and seasonal product bundles.',
+                        problem: 'Shoppers abandon carts when they need timing, delivery, or product-fit reassurance.',
+                        differentiators: 'Curated bundles, fast delivery, seasonal offers, and practical post-purchase support.',
+                        icp: 'Online shoppers who browse product bundles, abandon checkout, or respond to seasonal offers.',
+                        faqs: 'Q: Do you offer discounts?\nA: Campaign-specific discounts may be available.',
+                        supportEmail: 'support@example.com',
+                        termsUrl: 'https://example.com/terms-of-service',
+                        privacyUrl: 'https://example.com/privacy-policy',
+                        certifications: '',
+                        compliance: 'GDPR, CCPA',
+                        status: 'Active',
+                        legalStatus: 'Ready',
+                        modified: '1 day ago',
+                    },
+                ],
+                brandModalOpen: false,
+                brandModalStep: 1,
+                brandEditingId: null,
+                brandModalReturnToCampaignBuilder: false,
+                brandModalReturnToCampaignDetail: false,
+                brandForm: {
+                    name: '',
+                    website: '',
+                    pronunciationEnabled: false,
+                    pronunciation: '',
+                    industry: '',
+                    description: '',
+                    problem: '',
+                    differentiators: '',
+                    icp: '',
+                    faqs: '',
+                    supportEmail: '',
+                    termsUrl: '',
+                    privacyUrl: '',
+                    certifications: '',
+                    compliance: '',
+                },
+                aiAgents: [
+                    {
+                        id: 'agent-bridget-us',
+                        name: 'Bridget',
+                        languageCode: 'US',
+                        language: 'English (US)',
+                        voice: 'Bridget (Ultra-realistic)',
+                        callGreeting: 'Hey, is this @{{first_name}}?',
+                        backgroundNoise: 'Office',
+                        emailSignature: "Best,\nBridget from Example",
+                        transcriberModel: 'Flux General',
+                        aiModel: 'GPT-4.1',
+                        agentPersonality: "- Respectful\n- Confident\n- Solution-oriented, highlighting value\n- Slow speaking, calm, and not rushed\n- Bright, sociable, engaging",
+                        agentSpeechStyle: "- Use natural long turns when explaining value.\n- Add micro-pacing before important questions.\n- Use natural hesitation only where it fits.\n- Keep delivery human-sounding.\n- Avoid reading from a script.",
+                        channels: 'Calls, Email, SMS',
+                        status: 'Ready',
+                        modified: '2 hours ago',
+                    },
+                    {
+                        id: 'agent-maya-lt',
+                        name: 'Maya',
+                        languageCode: 'LT',
+                        language: 'Lithuanian (LT)',
+                        voice: 'Maya (Warm)',
+                        callGreeting: 'Sveiki, ar kalbu su @{{first_name}}?',
+                        backgroundNoise: 'None',
+                        emailSignature: "Pagarbiai,\nMaya",
+                        transcriberModel: 'Flux General',
+                        aiModel: 'GPT-4.1',
+                        agentPersonality: "- Warm\n- Clear\n- Helpful\n- Direct without pressure",
+                        agentSpeechStyle: "- Keep sentences short.\n- Ask one question at a time.\n- Sound natural and calm.",
+                        channels: 'Calls, SMS',
+                        status: 'Draft',
+                        modified: '1 day ago',
+                    },
+                ],
+                aiAgentModalOpen: false,
+                aiAgentLanguageBatchModalOpen: false,
+                aiAgentLanguageBatchContext: 'global',
+                aiAgentLanguageSearch: '',
+                aiAgentLanguageBatchSelection: [],
+                aiAgentAdvancedOpen: false,
+                aiAgentEditingId: null,
+                aiAgentModalReturnToCampaignBuilder: false,
+                aiAgentModalReturnToCampaignDetail: false,
+                aiAgentCampaignAssignmentIds: [],
+                aiAgentForm: {
+                    languageCode: 'US',
+                    name: 'Bridget',
+                    voice: 'Bridget (Ultra-realistic)',
+                    callGreeting: 'Hey, is this @{{first_name}}?',
+                    backgroundNoise: 'Office',
+                    emailSignature: "Best,\nBridget from Example",
+                    transcriberModel: 'Flux General',
+                    aiModel: 'GPT-4.1',
+                    agentPersonality: "- Respectful\n- Confident\n- Solution-oriented, highlighting value\n- Slow speaking, calm, and not rushed\n- Bright, sociable, engaging",
+                    agentSpeechStyle: "- Use natural long turns when explaining value.\n- Add micro-pacing before important questions.\n- Use natural hesitation only where it fits.\n- Keep delivery human-sounding.\n- Avoid reading from a script.",
+                },
                 pinnedCampaigns: [
-                    { name: 'Book Appointment Campaign', icon: 'calendar_check', status: 'Running', change: '', modified: '2 hours ago', owner: 'Diana Ross' },
-                    { name: 'Qualify Lead Campaign', icon: 'filter_alt', status: 'Running', change: '', modified: '4 hours ago', owner: 'Mantas G.' },
-                    { name: 'Recover Abandoned Checkout Campaign', icon: 'shopping_cart', status: 'Running', change: 'Unpublished Changes', modified: '1 day ago', owner: 'Support Ops' },
-                    { name: 'Client Reactivation Campaign', icon: 'refresh_ccw', status: 'Running', change: '', modified: '2 days ago', owner: 'Casey AI' },
-                    { name: 'Upsell Post-Purchase Campaign', icon: 'gift', status: 'Running', change: '', modified: '3 days ago', owner: 'Diana Ross' },
-                    { name: 'Post-Delivery Follow-Up Campaign', icon: 'package_check', status: 'Running', change: '', modified: '4 days ago', owner: 'Mantas G.' },
-                    { name: 'Inbound Refund Request Campaign', icon: 'receipt_text', status: 'Paused', change: '', modified: '5 days ago', owner: 'Support Ops' },
-                    { name: 'Send Information Campaign', icon: 'send', status: 'Running', change: '', modified: '6 days ago', owner: 'Casey AI' },
-                    { name: 'Provide Support Campaign', icon: 'headphones', status: 'Running', change: '', modified: '1 week ago', owner: 'Support Ops' },
+                    { name: 'Book Appointment Campaign', icon: 'calendar_check', status: 'Running', change: '', modified: '2 hours ago', owner: 'Diana Ross', agentIds: ['agent-bridget-us'] },
+                    { name: 'Qualify Lead Campaign', icon: 'filter_alt', status: 'Running', change: '', modified: '4 hours ago', owner: 'Mantas G.', agentIds: ['agent-bridget-us'] },
+                    { name: 'Recover Abandoned Checkout Campaign', icon: 'shopping_cart', status: 'Running', change: 'Unpublished Changes', modified: '1 day ago', owner: 'Support Ops', agentIds: ['agent-bridget-us'] },
+                    { name: 'Client Reactivation Campaign', icon: 'refresh_ccw', status: 'Running', change: '', modified: '2 days ago', owner: 'Casey AI', agentIds: ['agent-maya-lt'] },
+                    { name: 'Upsell Post-Purchase Campaign', icon: 'gift', status: 'Running', change: '', modified: '3 days ago', owner: 'Diana Ross', agentIds: ['agent-bridget-us'] },
+                    { name: 'Post-Delivery Follow-Up Campaign', icon: 'package_check', status: 'Running', change: '', modified: '4 days ago', owner: 'Mantas G.', agentIds: ['agent-bridget-us'] },
+                    { name: 'Inbound Refund Request Campaign', icon: 'receipt_text', status: 'Paused', change: '', modified: '5 days ago', owner: 'Support Ops', agentIds: ['agent-bridget-us'] },
+                    { name: 'Send Information Campaign', icon: 'send', status: 'Running', change: '', modified: '6 days ago', owner: 'Casey AI', agentIds: ['agent-maya-lt'] },
+                    { name: 'Provide Support Campaign', icon: 'headphones', status: 'Running', change: '', modified: '1 week ago', owner: 'Support Ops', agentIds: ['agent-bridget-us'] },
                 ],
                 abTestCampaigns: [
                     {
@@ -844,30 +982,30 @@
                     },
                 ],
                 companySetupSteps: [
-                    { label: 'Create or Choose Company', description: 'Select an existing profile or start fresh.', icon: 'apartment' },
-                    { label: 'Add Basic Company Details', description: 'Brand name, website, and pronunciation.', icon: 'fingerprint' },
-                    { label: 'Industry & Market', description: 'Positioning, customers, and FAQs.', icon: 'analytics' },
-                    { label: 'Compliance & Legal', description: 'Support, policies, and standards.', icon: 'gpp_good' },
+                    { label: 'Choose Company', description: 'Select an existing profile or create a new one.', icon: 'briefcase_business' },
+                    { label: 'Choose AI Agent', description: 'Select a reusable agent profile or create a new one.', icon: 'sparkle' },
                 ],
 	                campaignSetupMode: 'fast',
 	                campaignSetupModeSelected: false,
 	                campaignSetupIntroStep: 'type',
 	                campaignSetupFastSteps: [
-	                    { id: 'agent', label: 'AI Agent', description: 'Identity, voice, work time, and other settings.' },
-	                    { id: 'channels', label: 'Outreach Channels', description: 'Calls, SMS, email, WhatsApp.' },
-	                    { id: 'brief', label: 'Campaign Context', description: 'Describe goal and context.' },
-	                    { id: 'review', label: 'Review & Launch', description: 'Validate and launch.' },
+			                    { id: 'channels', label: 'Outreach Channels', description: 'Calls, SMS, email, WhatsApp.' },
+			                    { id: 'availability', label: 'Outreach Schedule', description: 'Local business hours and custom outreach windows.' },
+			                    { id: 'brief', label: 'Campaign Context', description: 'Describe goal and context.' },
+			                    { id: 'events', label: 'Lead Source Events', description: 'Triggers and dispatch limits.' },
+			                    { id: 'review', label: 'Review & Launch', description: 'Validate and launch.' },
+			                ],
+	                campaignSetupAdvancedSteps: [
+					                    { id: 'channels', label: 'Outreach Channels', description: 'Transport settings.', group: 'Campaign' },
+				                    { id: 'availability', label: 'Outreach Schedule', description: 'Local business hours and custom outreach windows.', group: 'Campaign' },
+				                    { id: 'sequence', label: 'Outreach Sequence', description: 'Timeline and actions.', group: 'Outreach' },
+			                    { id: 'followups', label: 'Follow-Up Sequence', description: 'Response-based follow-up sequences.', group: 'Outreach' },
+			                    { id: 'brief', label: 'Campaign Context', description: 'Essence, goal, and qualification.', group: 'Campaign' },
+			                    { id: 'booking', label: 'Booking', description: 'Meeting and calendar rules.', group: 'Campaign' },
+		                    { id: 'intelligence', label: 'Conversation Intelligence', description: 'Evaluation fields.', group: 'Intelligence' },
+	                    { id: 'events', label: 'Lead Source Events', description: 'Triggers and dispatch limits.', group: 'Campaign' },
+	                    { id: 'review', label: 'Review & Launch', description: 'Validate and launch.', group: 'Finish' },
 	                ],
-                campaignSetupAdvancedSteps: [
-		                    { id: 'agent', label: 'AI Agent', description: 'Identity, voice, work time, and other settings.', group: 'Agent' },
-			                    { id: 'channels', label: 'Outreach Channels', description: 'Transport settings.', group: 'Campaign' },
-		                    { id: 'sequence', label: 'Outreach Sequence', description: 'Timeline and actions.', group: 'Outreach' },
-		                    { id: 'followups', label: 'Follow-Up Sequence', description: 'Response-based follow-up sequences.', group: 'Outreach' },
-		                    { id: 'brief', label: 'Campaign Context', description: 'Essence, goal, and qualification.', group: 'Campaign' },
-		                    { id: 'booking', label: 'Booking', description: 'Meeting and calendar rules.', group: 'Campaign' },
-	                    { id: 'intelligence', label: 'Conversation Intelligence', description: 'Evaluation fields.', group: 'Intelligence' },
-                    { id: 'review', label: 'Review & Launch', description: 'Validate and launch.', group: 'Finish' },
-                ],
                 campaignSetupLanguageOptions: [
                     { code: 'US', label: 'US', name: 'English', flagCode: 'us' },
                     { code: 'GB', label: 'UK', name: 'English', flagCode: 'gb' },
@@ -895,6 +1033,7 @@
 	                    languageBatchSelection: [],
                     languageSearch: '',
                     languages: [{ code: 'US', label: 'US', name: 'English', flagCode: 'us' }],
+                    selectedAiAgentId: 'agent-bridget-us',
                     agentName: 'Bridget',
                     voice: 'Bridget (Ultra-realistic)',
                     emailSignature: "Best,\nBridget from Example",
@@ -1037,10 +1176,27 @@
                         delayAmount: 0,
                         delayUnit: 'Immediately',
                     },
-                    followupModalOpen: false,
-                    discountCodeModalOpen: false,
-                    integrationSkipModalOpen: false,
-                    overrideModalOpen: false,
+	                    followupModalOpen: false,
+	                    discountCodeModalOpen: false,
+	                    integrationSkipModalOpen: false,
+	                    klaviyoEventsGuideOpen: false,
+	                    leadSourceEventModalOpen: false,
+	                    leadSourceEventEditingId: null,
+	                    leadSourceEventForm: {
+	                        dispatchesLimit: '',
+	                        cooldownDays: 30,
+	                    },
+	                    leadSourceEvents: [
+	                        {
+	                            id: 'checkout-abandoned',
+	                            label: 'Checkout Abandoned',
+	                            dispatchesLimit: '',
+	                            currentDispatches: 0,
+	                            cooldownDays: 30,
+	                            enabled: true,
+	                        },
+	                    ],
+	                    overrideModalOpen: false,
                     evaluationDrawerOpen: false,
                     evaluationActionOpen: '',
                     defaultSummaryEvaluationVisible: true,
@@ -1565,6 +1721,35 @@
                         this.typographyPanelOpen = false;
                     }
                 },
+                handleDashboardOnboardingShortcut(event) {
+                    const tagName = String(event.target?.tagName || '').toLowerCase();
+                    const isTyping = event.target?.isContentEditable || ['input', 'textarea', 'select'].includes(tagName);
+
+                    if (isTyping || event.metaKey || event.ctrlKey || event.altKey || event.shiftKey || event.repeat) {
+                        return;
+                    }
+
+                    if (String(event.key || '').toLowerCase() !== 'q') {
+                        return;
+                    }
+
+                    if (
+                        this.activeNav !== 'Dashboard'
+                        || this.campaignBuilderOpen
+                        || this.mobileNavOpen
+                        || this.brandModalOpen
+                        || this.aiAgentModalOpen
+                        || this.abTestCreateModalOpen
+                        || this.campaignDetailOpen
+                        || this.abTestDetailOpen
+                        || this.leadDetailOpen
+                    ) {
+                        return;
+                    }
+
+                    event.preventDefault();
+                    this.startOnboardingCampaignFlow();
+                },
                 initializeProgressBarStyle() {
                     this.progressBarStyle = 'bulletlist';
                 },
@@ -2059,7 +2244,7 @@
                     return this.topNavHeaderVisible ? 'translate-y-0' : '-translate-y-full';
                 },
                 topNavSectionActive() {
-                    return (this.activeNav === 'Campaigns' && ! this.campaignDetailOpen && ! this.abTestDetailOpen)
+                    return (this.activeNav === 'Campaigns' && ! this.campaignDetailOpen && ! this.campaignCreationV2Open && ! this.abTestDetailOpen)
                         || this.activeNav === 'Analytics'
                         || (this.activeNav === 'Leads' && ! this.leadDetailOpen);
                 },
@@ -2326,15 +2511,19 @@
 	                    const insightsTab = this.insightsTabFromParam(params.get('tab'));
 	                    const leadId = Number(params.get('lead'));
 	                    const builder = String(params.get('builder') || '');
-	                    const builderStep = Number(params.get('builderStep'));
-	                    const setupMode = String(params.get('setupMode') || '');
-	                    const setupStep = String(params.get('setupStep') || '');
-                    const campaignParam = String(params.get('campaign') || '');
+		                    const builderStep = Number(params.get('builderStep'));
+		                    const setupMode = String(params.get('setupMode') || '');
+		                    const setupStep = String(params.get('setupStep') || '');
+	                    const setupSource = String(params.get('source') || '');
+	                    const campaignParam = String(params.get('campaign') || '');
 
-	                    this.activeNav = nav;
-	                    this.activeTab = nav === 'Leads' ? tab : this.activeTab;
-	                    this.activeInsightsTab = nav === 'Analytics' ? insightsTab : this.activeInsightsTab;
-	                    this.leadDetailOpen = false;
+		                    this.activeNav = nav;
+		                    this.activeTab = nav === 'Leads' ? tab : this.activeTab;
+		                    this.activeInsightsTab = nav === 'Analytics' ? insightsTab : this.activeInsightsTab;
+                    this.onboardingCampaignFlow = false;
+                    this.onboardingCompanyIds = [];
+                    this.onboardingAiAgentIds = [];
+		                    this.leadDetailOpen = false;
                     this.leadDetailsEditing = false;
                     this.leadDetailsActionOpen = false;
                     this.campaignRunsActionOpen = false;
@@ -2350,11 +2539,16 @@
                         };
                     }
 
-	                    this.searchOpen = false;
-	                    this.presetOpen = false;
-	                    this.campaignOpen = false;
-	                    this.campaignBuilderOpen = false;
+		                    this.searchOpen = false;
+		                    this.presetOpen = false;
+		                    this.campaignOpen = false;
+		                    this.campaignBuilderOpen = false;
+                    this.onboardingCampaignFlow = false;
+                    this.onboardingCompanyIds = [];
+                    this.onboardingAiAgentIds = [];
                     this.campaignDetailOpen = false;
+                    this.campaignCreationV2Open = false;
+                    this.campaignCreationV2UnlockedPanels = ['company-brand'];
                     this.campaignDetailMobilePanelOpen = false;
                     this.selectedCampaign = null;
                     this.abTestDetailOpen = false;
@@ -2370,11 +2564,20 @@
 	                        this.campaignBuilderTransitioning = false;
 	                        this.campaignBuilderStep = normalizedBuilderStep;
 	                        this.campaignBuilderMaxStep = Math.max(this.campaignBuilderMaxStep, normalizedBuilderStep);
-	                        this.campaignBuilderScrollFromStep = null;
-	                        this.campaignBuilderFadingStep = null;
+		                        this.campaignBuilderScrollFromStep = null;
+		                        this.campaignBuilderFadingStep = null;
+	                        const matchingSetupSource = this.leadSourceGroups
+	                            .flatMap((group) => group.items)
+	                            .find((source) => source.name.toLowerCase() === setupSource.toLowerCase())?.name || '';
 
-	                        if (['fast', 'advanced'].includes(setupMode)) {
-	                            this.campaignSetupMode = setupMode;
+	                        if (matchingSetupSource) {
+	                            this.campaignSetup.source = matchingSetupSource;
+	                            this.campaignSetup.integrationStatus = matchingSetupSource === 'CSV File / Manual' ? 'No Integration Required' : 'Not Connected';
+	                            this.completeCampaignSetupStep('source');
+	                        }
+
+		                        if (['fast', 'advanced'].includes(setupMode)) {
+		                            this.campaignSetupMode = setupMode;
 	                        } else if (setupStep && this.campaignSetupAdvancedSteps.some((step) => step.id === setupStep)) {
 	                            this.campaignSetupMode = 'advanced';
 	                        }
@@ -2434,7 +2637,7 @@
                         url.searchParams.set('campaign', this.campaignSlug(this.selectedCampaign.name));
                     }
 
-	                    if (this.campaignBuilderOpen) {
+		                    if (this.campaignBuilderOpen && ! this.onboardingCampaignFlow) {
 	                        url.searchParams.set('nav', 'Campaigns');
 	                        url.searchParams.set('builder', 'campaign');
 	                        url.searchParams.set('builderStep', this.campaignBuilderStep);
@@ -2498,11 +2701,20 @@
                 },
 		                setActiveNav(section, updateUrl = true) {
 		                    this.showLoader();
-		                    this.activeNav = section;
+			                    this.activeNav = section;
                     this.resetTopNavHeaderScroll();
-	                    this.campaignBuilderOpen = false;
-	                    this.campaignDetailOpen = false;
+		                    this.campaignBuilderOpen = false;
+                    this.onboardingCampaignFlow = false;
+                    this.onboardingCompanyIds = [];
+                    this.onboardingAiAgentIds = [];
+                    this.campaignCancelConfirmOpen = false;
+                    this.campaignDetailOpen = false;
+                    this.campaignCreationV2Open = false;
+                    this.campaignCreationV2UnlockedPanels = ['company-brand'];
                     this.campaignDetailMobilePanelOpen = false;
+                    this.campaignDetailBrandPickerOpen = false;
+                    this.campaignDetailAgentPickerOpen = false;
+                    this.campaignDetailAgentPickerIds = [];
                     this.abTestDetailOpen = false;
 	                    this.leadDetailOpen = false;
                     this.leadDetailsEditing = false;
@@ -2512,6 +2724,8 @@
                     this.selectedCampaign = null;
                     this.selectedAbTest = null;
                     this.abTestCreateModalOpen = false;
+                    this.brandModalOpen = false;
+                    this.aiAgentModalOpen = false;
                     this.mobileNavOpen = false;
                     if (section === 'Leads') {
                         this.activeTab = 'Leads';
@@ -2545,10 +2759,20 @@
                         window.clearTimeout(this.campaignSetupModeTransitionTimer);
                         this.campaignSetupModeTransitionTimer = null;
                     }
+                    if (this.campaignBuilderTransitionTimer) {
+                        window.clearTimeout(this.campaignBuilderTransitionTimer);
+                        this.campaignBuilderTransitionTimer = null;
+                    }
+                    this.onboardingCampaignFlow = false;
+                    this.onboardingCompanyIds = [];
+                    this.onboardingAiAgentIds = [];
                     this.activeNav = 'Campaigns';
                     this.activeCampaignPageTab = 'Campaigns';
                     this.campaignBuilderOpen = true;
+                    this.campaignCancelConfirmOpen = false;
                     this.campaignDetailOpen = false;
+                    this.campaignCreationV2Open = false;
+                    this.campaignCreationV2UnlockedPanels = ['company-brand'];
                     this.abTestDetailOpen = false;
                     this.abTestCreateModalOpen = false;
                     this.selectedCampaign = null;
@@ -2560,9 +2784,11 @@
                     this.campaignBuilderScrollFromStep = null;
                     this.campaignBuilderFadingStep = null;
                     this.campaignBuilderBottomPadding = 0;
-	                    this.campaignSetupBottomPadding = 0;
-	                    this.campaignSetupModeSelected = false;
-	                    this.campaignSetupIntroStep = 'type';
+		                    this.campaignSetupBottomPadding = 0;
+		                    this.campaignSetupModeSelected = false;
+		                    this.campaignSetupIntroStep = 'type';
+                    this.companySetupSelectedCompany = '';
+                    this.resetCompanyForm();
                     this.cancelCampaignBuilderScrollAnimation();
                     this.searchOpen = false;
                     this.presetOpen = false;
@@ -2571,16 +2797,149 @@
 	                    this.updateCampaignBuilderBottomPadding();
 	                    this.updateCampaignBuilderStickyLayout();
 	                    this.updateCampaignBuilderActionBarPosition();
-	                    this.scrollCampaignBuilderToStep(0);
+		                    this.scrollCampaignBuilderToStep(0, 'auto');
 	                    this.syncUrl();
 	                },
+                startCampaignCreationV2() {
+                    this.showLoader(260);
+
+                    if (this.campaignSetupModeTransitionTimer) {
+                        window.clearTimeout(this.campaignSetupModeTransitionTimer);
+                        this.campaignSetupModeTransitionTimer = null;
+                    }
+
+                    if (this.campaignBuilderTransitionTimer) {
+                        window.clearTimeout(this.campaignBuilderTransitionTimer);
+                        this.campaignBuilderTransitionTimer = null;
+                    }
+
+                    this.activeNav = 'Campaigns';
+                    this.activeCampaignPageTab = 'Campaigns';
+                    this.campaignBuilderOpen = false;
+                    this.onboardingCampaignFlow = false;
+                    this.onboardingCompanyIds = [];
+                    this.onboardingAiAgentIds = [];
+                    this.campaignCancelConfirmOpen = false;
+                    this.campaignDetailOpen = false;
+                    this.campaignCreationV2Open = true;
+                    this.campaignCreationV2UnlockedPanels = ['company-brand'];
+                    this.abTestDetailOpen = false;
+                    this.abTestCreateModalOpen = false;
+                    this.selectedCampaign = null;
+                    this.selectedAbTest = null;
+                    this.activeCampaignDetailPanel = 'company-brand';
+                    this.campaignDetailDirtyPanels = [];
+                    this.campaignDetailSelectedBrandId = '';
+                    this.campaignDetailBrandPickerOpen = false;
+                    this.campaignDetailSelectedAgentIds = [];
+                    this.campaignDetailAgentPickerOpen = false;
+                    this.campaignDetailAgentPickerIds = [];
+                    this.campaignDetailMobilePanelOpen = false;
+                    this.companySetupSelectedCompany = '';
+                    this.resetCompanyForm();
+                    this.campaignBuilderStep = this.companySetupStartStep();
+                    this.campaignBuilderMaxStep = this.companySetupStartStep();
+                    this.campaignBuilderScrollFromStep = null;
+                    this.campaignBuilderFadingStep = null;
+                    this.campaignBuilderEnteringStep = null;
+                    this.campaignSetupMode = 'advanced';
+                    this.campaignSetupModeSelected = true;
+                    this.campaignSetupIntroStep = '';
+                    this.campaignSetup.current = 'type';
+                    this.campaignSetup.name = '';
+                    this.campaignSetup.type = '';
+                    this.campaignSetup.source = '';
+                    this.campaignSetup.integrationStatus = 'Not Connected';
+                    this.campaignSetup.completed = [];
+                    this.campaignSetup.attention = [];
+                    this.campaignSetup.selectedAiAgentId = '';
+                    this.searchOpen = false;
+                    this.presetOpen = false;
+                    this.campaignOpen = false;
+                    this.mobileNavOpen = false;
+                    this.resetTopNavHeaderScroll();
+                    this.cancelCampaignBuilderScrollAnimation();
+
+                    this.$nextTick(() => {
+                        this.$refs.workspaceMain?.scrollTo?.({ top: 0, behavior: 'auto' });
+                    });
+
+                    this.syncUrl();
+                },
+                startOnboardingCampaignFlow() {
+                    this.showLoader(260);
+                    if (this.campaignSetupModeTransitionTimer) {
+                        window.clearTimeout(this.campaignSetupModeTransitionTimer);
+                        this.campaignSetupModeTransitionTimer = null;
+                    }
+                    if (this.campaignBuilderTransitionTimer) {
+                        window.clearTimeout(this.campaignBuilderTransitionTimer);
+                        this.campaignBuilderTransitionTimer = null;
+                    }
+                    const defaultOnboardingAgent = this.ensureAiAgentForLanguageCode('US');
+
+                    this.onboardingCampaignFlow = true;
+                    this.onboardingCompanyIds = [];
+                    this.onboardingAiAgentIds = defaultOnboardingAgent ? [defaultOnboardingAgent.id] : [];
+                    this.activeNav = 'Dashboard';
+                    this.activeCampaignPageTab = 'Campaigns';
+                    this.campaignBuilderOpen = true;
+                    this.campaignCancelConfirmOpen = false;
+                    this.campaignDetailOpen = false;
+                    this.campaignCreationV2Open = false;
+                    this.campaignCreationV2UnlockedPanels = ['company-brand'];
+                    this.abTestDetailOpen = false;
+                    this.abTestCreateModalOpen = false;
+                    this.selectedCampaign = null;
+                    this.selectedAbTest = null;
+                    this.campaignBuilderTransitioning = false;
+                    this.campaignBuilderTransitionLabel = 'Preparing Campaign Setup...';
+                    this.campaignBuilderStep = 0;
+                    this.campaignBuilderMaxStep = 0;
+                    this.campaignBuilderScrollFromStep = null;
+                    this.campaignBuilderFadingStep = null;
+                    this.campaignBuilderEnteringStep = null;
+                    this.campaignSetupScrollFromStep = null;
+                    this.campaignSetupFadingStep = null;
+                    this.campaignSetupEnteringStep = null;
+                    this.campaignBuilderBottomPadding = 0;
+                    this.campaignSetupBottomPadding = 0;
+                    this.campaignSetupModeSelected = false;
+                    this.campaignSetupIntroStep = 'type';
+                    this.companySetupSelectedCompany = '';
+                    this.campaignDetailSelectedAgentIds = defaultOnboardingAgent ? [defaultOnboardingAgent.id] : [];
+                    this.campaignSetup.selectedAiAgentId = defaultOnboardingAgent?.id || '';
+                    if (defaultOnboardingAgent) {
+                        this.applyAiAgentToCampaignSetup(defaultOnboardingAgent);
+                    }
+                    this.resetCompanyForm();
+                    this.cancelCampaignBuilderScrollAnimation();
+                    this.searchOpen = false;
+                    this.presetOpen = false;
+                    this.campaignOpen = false;
+                    this.mobileNavOpen = false;
+                    this.updateCampaignBuilderBottomPadding();
+                    this.updateCampaignBuilderStickyLayout();
+                    this.updateCampaignBuilderActionBarPosition();
+                    this.scrollCampaignBuilderToStep(0, 'auto');
+                    this.syncUrl(true);
+                },
                 exitCampaignBuilder() {
                     this.showLoader(260);
                     if (this.campaignSetupModeTransitionTimer) {
                         window.clearTimeout(this.campaignSetupModeTransitionTimer);
                         this.campaignSetupModeTransitionTimer = null;
                     }
+                    if (this.campaignBuilderTransitionTimer) {
+                        window.clearTimeout(this.campaignBuilderTransitionTimer);
+                        this.campaignBuilderTransitionTimer = null;
+                    }
                     this.campaignBuilderOpen = false;
+                    this.onboardingCampaignFlow = false;
+                    this.onboardingCompanyIds = [];
+                    this.onboardingAiAgentIds = [];
+                    this.campaignDetailSelectedAgentIds = [];
+                    this.campaignCancelConfirmOpen = false;
                     this.campaignBuilderTransitioning = false;
                     this.campaignBuilderTransitionLabel = 'Preparing Campaign Setup...';
                     this.campaignBuilderStep = 0;
@@ -2603,6 +2962,201 @@
 	                    this.activeCampaignPageTab = 'Campaigns';
 	                    this.syncUrl(true);
 	                },
+                completeOnboardingCampaignFlow() {
+                    this.showLoader(560);
+                    if (this.campaignSetupModeTransitionTimer) {
+                        window.clearTimeout(this.campaignSetupModeTransitionTimer);
+                        this.campaignSetupModeTransitionTimer = null;
+                    }
+                    if (this.campaignBuilderTransitionTimer) {
+                        window.clearTimeout(this.campaignBuilderTransitionTimer);
+                        this.campaignBuilderTransitionTimer = null;
+                    }
+                    this.campaignBuilderOpen = false;
+                    this.onboardingCampaignFlow = false;
+                    this.onboardingCompanyIds = [];
+                    this.onboardingAiAgentIds = [];
+                    this.campaignDetailSelectedAgentIds = [];
+                    this.campaignCancelConfirmOpen = false;
+                    this.campaignBuilderTransitioning = false;
+                    this.campaignBuilderTransitionLabel = 'Preparing Campaign Setup...';
+                    this.campaignBuilderStep = 0;
+                    this.campaignBuilderMaxStep = 0;
+                    this.campaignBuilderScrollFromStep = null;
+                    this.campaignBuilderFadingStep = null;
+                    this.campaignBuilderEnteringStep = null;
+                    this.campaignSetupScrollFromStep = null;
+                    this.campaignSetupFadingStep = null;
+                    this.campaignSetupEnteringStep = null;
+                    this.campaignBuilderBottomPadding = 0;
+                    this.campaignSetupBottomPadding = 0;
+                    this.campaignBuilderActionBarStyle = '';
+                    this.campaignSetupActionBarStyle = '';
+                    this.campaignSetupCanvasStyle = '';
+                    this.campaignSetupModeSelected = false;
+                    this.campaignSetupIntroStep = 'type';
+                    this.cancelCampaignBuilderScrollAnimation();
+                    this.activeNav = 'Dashboard';
+                    this.activeCampaignPageTab = 'Campaigns';
+                    this.mobileNavOpen = false;
+                    this.syncUrl(true);
+                },
+                openCampaignCancelConfirm() {
+                    this.campaignCancelConfirmOpen = true;
+                },
+                closeCampaignCancelConfirm() {
+                    this.campaignCancelConfirmOpen = false;
+                },
+                cancelCampaignSetupWithoutDraft() {
+                    this.campaignCancelConfirmOpen = false;
+                    this.exitCampaignBuilder();
+                },
+                campaignDraftBaseName() {
+                    const typedName = String(this.campaignSetup.name || '').trim();
+
+                    if (typedName) {
+                        return typedName;
+                    }
+
+                    const typeName = String(this.campaignSetup.type || '').trim();
+
+                    return typeName ? `${typeName} Campaign` : 'Untitled Campaign';
+                },
+                uniqueCampaignDraftName(baseName) {
+                    const existingNames = new Set(this.allCampaignPageRows().map((campaign) => String(campaign.name || '').trim()));
+
+                    if (! existingNames.has(baseName)) {
+                        return baseName;
+                    }
+
+                    let index = 2;
+                    let name = `${baseName} (${index})`;
+
+                    while (existingNames.has(name)) {
+                        index += 1;
+                        name = `${baseName} (${index})`;
+                    }
+
+                    return name;
+                },
+                saveCampaignSetupDraft() {
+                    const name = this.uniqueCampaignDraftName(this.campaignDraftBaseName());
+                    const typeMeta = this.campaignTypeMeta(this.campaignSetup.type);
+                    const agentIds = this.normalizeCampaignAgentIds(
+                        this.campaignDetailSelectedAgentIds.length
+                            ? this.campaignDetailSelectedAgentIds
+                            : (this.campaignSetup.selectedAiAgentId ? [this.campaignSetup.selectedAiAgentId] : [])
+                    );
+
+                    this.pinnedCampaigns.unshift({
+                        name,
+                        icon: typeMeta?.icon || 'rocket',
+                        status: 'Draft',
+                        change: '',
+                        modified: 'just now',
+                        owner: 'You',
+                        agentIds,
+                    });
+
+                    this.campaignCancelConfirmOpen = false;
+                    this.exitCampaignBuilder();
+                },
+                createCampaignFromCurrentSetup(status = 'Running') {
+                    const name = this.uniqueCampaignDraftName(this.campaignDraftBaseName());
+                    const typeMeta = this.campaignTypeMeta(this.campaignSetup.type);
+                    const agentIds = this.normalizeCampaignAgentIds(
+                        this.campaignDetailSelectedAgentIds.length
+                            ? this.campaignDetailSelectedAgentIds
+                            : (this.campaignSetup.selectedAiAgentId ? [this.campaignSetup.selectedAiAgentId] : [])
+                    );
+
+                    this.pinnedCampaigns.unshift({
+                        name,
+                        icon: typeMeta?.icon || 'rocket',
+                        status,
+                        change: '',
+                        modified: 'just now',
+                        owner: 'You',
+                        source: this.campaignSetup.source || 'CSV File / Manual',
+                        brandId: this.campaignDetailSelectedBrandId || '',
+                        agentIds,
+                    });
+                },
+                companyOptionFromBrand(brand) {
+                    return {
+                        id: brand.id,
+                        name: brand.name,
+                        website: brand.website,
+                        industry: brand.industry,
+                        description: brand.description,
+                        problem: brand.problem,
+                        differentiators: brand.differentiators,
+                        icp: brand.icp,
+                        faqs: brand.faqs,
+                        supportEmail: brand.supportEmail,
+                        termsUrl: brand.termsUrl,
+                        privacyUrl: brand.privacyUrl,
+                        certifications: brand.certifications,
+                        compliance: brand.compliance,
+                    };
+                },
+                campaignBuilderBaseCompanyOptions() {
+                    const brandOnlyOptions = this.brands
+                        .filter((brand) => ! this.companySetupDemoCompanies.some((company) => this.brandMatchesCompany(brand, company)))
+                        .map((brand) => this.companyOptionFromBrand(brand));
+
+                    return [...brandOnlyOptions, ...this.companySetupDemoCompanies];
+                },
+                campaignBuilderCompanyOptions() {
+                    const options = this.campaignBuilderBaseCompanyOptions();
+
+                    if (! this.onboardingCampaignFlow) {
+                        return options;
+                    }
+
+                    return options.filter((company) => this.onboardingCompanyIds.includes(company.id));
+                },
+                campaignBuilderCompanyHeading() {
+                    return this.onboardingCampaignFlow ? 'Create Brand' : 'Choose Company';
+                },
+                campaignBuilderCompanyDescription() {
+                    return this.onboardingCampaignFlow
+                        ? 'Create the reusable brand profile Outcraft will use for company context, website, positioning, and legal references.'
+                        : 'Choose an existing company profile or create a new one before setting up campaigns.';
+                },
+                campaignBuilderCreateCompanyLabel() {
+                    return this.onboardingCampaignFlow ? 'Create New Brand' : 'Create New Company';
+                },
+                campaignBuilderCreateCompanyDescription() {
+                    return this.onboardingCampaignFlow
+                        ? 'Build the brand profile for this onboarding campaign.'
+                        : 'Start a fresh company profile for this campaign setup.';
+                },
+                campaignBuilderAiAgentOptions() {
+                    if (! this.onboardingCampaignFlow) {
+                        return this.aiAgents;
+                    }
+
+                    return this.onboardingAiAgentIds
+                        .map((agentId) => this.aiAgents.find((agent) => agent.id === agentId))
+                        .filter(Boolean);
+                },
+                campaignBuilderAgentHeading() {
+                    return this.onboardingCampaignFlow ? 'Create AI Agent' : 'Choose AI Agent';
+                },
+                campaignBuilderAgentDescription() {
+                    return this.onboardingCampaignFlow
+                        ? 'Create the reusable AI agent profile that defines the campaign language, voice, and outreach behavior.'
+                        : 'Choose a reusable AI agent profile before setting up the campaign.';
+                },
+                campaignBuilderCreateAgentLabel() {
+                    return this.onboardingCampaignFlow ? 'Create New AI Agent' : 'Create New Agent';
+                },
+                campaignBuilderCreateAgentDescription() {
+                    return this.onboardingCampaignFlow
+                        ? 'Build the AI agent profile for this onboarding campaign.'
+                        : 'Start a fresh AI agent profile for this campaign setup.';
+                },
                 companySetupStartStep() {
                     return this.companySetupSteps.length;
                 },
@@ -2631,6 +3185,827 @@
                         compliance: '',
                     });
                     this.campaignBuilderErrors = {};
+                },
+                defaultBrandForm() {
+                    return {
+                        name: '',
+                        website: '',
+                        pronunciationEnabled: false,
+                        pronunciation: '',
+                        industry: '',
+                        description: '',
+                        problem: '',
+                        differentiators: '',
+                        icp: '',
+                        faqs: '',
+                        supportEmail: '',
+                        termsUrl: '',
+                        privacyUrl: '',
+                        certifications: '',
+                        compliance: '',
+                    };
+                },
+                openBrandCreateModal(brand = null, options = {}) {
+                    this.brandEditingId = brand?.id || null;
+                    this.brandModalReturnToCampaignBuilder = Boolean(options.returnToCampaignBuilder);
+                    this.brandModalReturnToCampaignDetail = Boolean(options.returnToCampaignDetail);
+                    this.brandModalStep = 1;
+                    Object.assign(this.brandForm, this.defaultBrandForm(), brand ? {
+                        name: brand.name || '',
+                        website: brand.website || '',
+                        pronunciationEnabled: Boolean(brand.pronunciation),
+                        pronunciation: brand.pronunciation || '',
+                        industry: brand.industry || '',
+                        description: brand.description || '',
+                        problem: brand.problem || '',
+                        differentiators: brand.differentiators || '',
+                        icp: brand.icp || '',
+                        faqs: brand.faqs || '',
+                        supportEmail: brand.supportEmail || '',
+                        termsUrl: brand.termsUrl || '',
+                        privacyUrl: brand.privacyUrl || '',
+                        certifications: brand.certifications || '',
+                        compliance: brand.compliance || '',
+                    } : {});
+                    this.brandModalOpen = true;
+                },
+                closeBrandCreateModal() {
+                    this.brandModalOpen = false;
+                    this.brandEditingId = null;
+                    this.brandModalReturnToCampaignBuilder = false;
+                    this.brandModalReturnToCampaignDetail = false;
+                    this.brandModalStep = 1;
+                },
+                brandStepTotal() {
+                    return 3;
+                },
+                brandProgressSteps() {
+                    return [
+                        { step: 1, label: 'Brand', description: 'Name, website, and pronunciation.' },
+                        { step: 2, label: 'Industry', description: 'Positioning, customer profile, and FAQs.' },
+                        { step: 3, label: 'Compliance', description: 'Support, policies, and compliance notes.' },
+                    ];
+                },
+                brandFieldFilled(value) {
+                    return Boolean(String(value || '').trim());
+                },
+                brandStepValid(step = this.brandModalStep) {
+                    if (step === 1) {
+                        return this.brandFieldFilled(this.brandForm.name) && this.brandFieldFilled(this.brandForm.website);
+                    }
+
+                    if (step === 2) {
+                        return this.brandFieldFilled(this.brandForm.industry) && this.brandFieldFilled(this.brandForm.description);
+                    }
+
+                    return true;
+                },
+                firstInvalidBrandStep() {
+                    for (let step = 1; step <= this.brandStepTotal(); step += 1) {
+                        if (! this.brandStepValid(step)) {
+                            return step;
+                        }
+                    }
+
+                    return null;
+                },
+                brandCanNavigateToStep(step) {
+                    if (step <= this.brandModalStep) {
+                        return true;
+                    }
+
+                    for (let currentStep = 1; currentStep < step; currentStep += 1) {
+                        if (! this.brandStepValid(currentStep)) {
+                            return false;
+                        }
+                    }
+
+                    return true;
+                },
+                setBrandModalStep(step) {
+                    if (! this.brandCanNavigateToStep(step)) {
+                        return;
+                    }
+
+                    this.brandModalStep = Math.max(1, Math.min(this.brandStepTotal(), step));
+                },
+                brandCanContinue() {
+                    if (this.brandModalStep >= this.brandStepTotal()) {
+                        return this.firstInvalidBrandStep() === null;
+                    }
+
+                    return this.brandStepValid(this.brandModalStep);
+                },
+                nextBrandModalStep() {
+                    if (! this.brandStepValid(this.brandModalStep)) {
+                        return;
+                    }
+
+                    this.brandModalStep = Math.min(this.brandStepTotal(), this.brandModalStep + 1);
+                },
+                previousBrandModalStep() {
+                    this.brandModalStep = Math.max(1, this.brandModalStep - 1);
+                },
+                brandProgressDotClass(step) {
+                    return this.brandModalStep >= step
+                        ? 'bg-indigo-600'
+                        : 'bg-gray-200';
+                },
+                brandInitials(name) {
+                    return String(name || 'B').trim().slice(0, 1).toUpperCase() || 'B';
+                },
+                normalizedBrandField(value) {
+                    return String(value || '').trim().toLowerCase();
+                },
+                brandMatchesCompany(brand, company) {
+                    if (! brand || ! company) {
+                        return false;
+                    }
+
+                    if (brand.id && company.id && brand.id === company.id) {
+                        return true;
+                    }
+
+                    return this.normalizedBrandField(brand.name) === this.normalizedBrandField(company.name)
+                        && this.normalizedBrandField(brand.website) === this.normalizedBrandField(company.website);
+                },
+                brandForCompanyOption(company) {
+                    if (! company) {
+                        return null;
+                    }
+
+                    return this.brands.find((brand) => brand.id === company.id)
+                        || this.brands.find((brand) => this.brandMatchesCompany(brand, company))
+                        || company;
+                },
+                brandRecordFromCompanyOption(company) {
+                    const hasLegal = Boolean(String(company?.termsUrl || '').trim() && String(company?.privacyUrl || '').trim());
+
+                    return {
+                        id: company?.id || `brand-${Date.now()}`,
+                        name: String(company?.name || '').trim() || 'Untitled Brand',
+                        website: String(company?.website || '').trim() || 'example.com',
+                        pronunciation: company?.pronunciation || '',
+                        industry: String(company?.industry || '').trim() || 'Uncategorized',
+                        description: String(company?.description || '').trim(),
+                        problem: String(company?.problem || '').trim(),
+                        differentiators: String(company?.differentiators || '').trim(),
+                        icp: String(company?.icp || '').trim(),
+                        faqs: String(company?.faqs || '').trim(),
+                        supportEmail: String(company?.supportEmail || '').trim(),
+                        termsUrl: String(company?.termsUrl || '').trim(),
+                        privacyUrl: String(company?.privacyUrl || '').trim(),
+                        certifications: String(company?.certifications || '').trim(),
+                        compliance: String(company?.compliance || '').trim(),
+                        status: 'Active',
+                        legalStatus: hasLegal ? 'Ready' : 'Needs Legal',
+                        modified: company?.modified || 'just now',
+                    };
+                },
+                ensureBrandForCompanyOption(company) {
+                    const existing = this.brands.find((brand) => this.brandMatchesCompany(brand, company));
+
+                    if (existing) {
+                        this.upsertCompanyDemoFromBrand(existing);
+                        return existing;
+                    }
+
+                    const record = this.brandRecordFromCompanyOption(company);
+                    this.brands.unshift(record);
+                    this.upsertCompanyDemoFromBrand(record);
+                    this.removeDuplicateCompanyDemoOptions(record);
+
+                    return record;
+                },
+                openCampaignBuilderBrandEditModal(company) {
+                    const brand = this.brandForCompanyOption(company);
+
+                    if (! brand) {
+                        return;
+                    }
+
+                    this.openBrandCreateModal(brand, { returnToCampaignBuilder: this.campaignBuilderOpen });
+                },
+                removeDuplicateCompanyDemoOptions(brand) {
+                    if (! brand) {
+                        return;
+                    }
+
+                    const seen = new Set();
+
+                    this.companySetupDemoCompanies = this.companySetupDemoCompanies.filter((company) => {
+                        if (this.brandMatchesCompany(brand, company)) {
+                            if (seen.has('brand-match')) {
+                                return false;
+                            }
+
+                            seen.add('brand-match');
+                        }
+
+                        return true;
+                    });
+                },
+                deleteCampaignBuilderBrand(company) {
+                    if (! company) {
+                        return;
+                    }
+
+                    const brand = this.brandForCompanyOption(company);
+                    const deletedIds = [company.id, brand?.id].filter(Boolean);
+                    const matchesDeletedBrand = (item) => deletedIds.includes(item.id) || this.brandMatchesCompany(item, company) || this.brandMatchesCompany(item, brand);
+
+                    this.brands = this.brands.filter((item) => ! matchesDeletedBrand(item));
+                    this.companySetupDemoCompanies = this.companySetupDemoCompanies.filter((item) => ! matchesDeletedBrand(item));
+                    const remainingCompanyIds = new Set(this.campaignBuilderBaseCompanyOptions().map((item) => item.id));
+                    this.onboardingCompanyIds = this.onboardingCompanyIds.filter((id) => remainingCompanyIds.has(id));
+
+                    if (this.companySetupSelectedCompany && ! remainingCompanyIds.has(this.companySetupSelectedCompany)) {
+                        this.companySetupSelectedCompany = '';
+                        this.resetCompanyForm();
+                    }
+
+                    if (deletedIds.includes(this.campaignDetailSelectedBrandId) || matchesDeletedBrand(this.selectedCampaignDetailBrand())) {
+                        this.campaignDetailSelectedBrandId = '';
+                    }
+
+                    this.pinnedCampaigns.forEach((campaign) => {
+                        if (deletedIds.includes(campaign.brandId)) {
+                            campaign.brandId = '';
+                        }
+                    });
+
+                    this.scheduleCampaignBuilderLayoutUpdate();
+                },
+                saveBrandModal() {
+                    const invalidStep = this.firstInvalidBrandStep();
+
+                    if (invalidStep !== null) {
+                        this.brandModalStep = invalidStep;
+                        return;
+                    }
+
+                    const creating = ! this.brandEditingId;
+                    const id = this.brandEditingId || `brand-${Date.now()}`;
+                    const hasLegal = Boolean(String(this.brandForm.termsUrl || '').trim() && String(this.brandForm.privacyUrl || '').trim());
+                    const record = {
+                        id,
+                        name: String(this.brandForm.name || '').trim() || 'Untitled Brand',
+                        website: String(this.brandForm.website || '').trim() || 'example.com',
+                        pronunciation: this.brandForm.pronunciationEnabled ? String(this.brandForm.pronunciation || '').trim() : '',
+                        industry: String(this.brandForm.industry || '').trim() || 'Uncategorized',
+                        description: String(this.brandForm.description || '').trim(),
+                        problem: String(this.brandForm.problem || '').trim(),
+                        differentiators: String(this.brandForm.differentiators || '').trim(),
+                        icp: String(this.brandForm.icp || '').trim(),
+                        faqs: String(this.brandForm.faqs || '').trim(),
+                        supportEmail: String(this.brandForm.supportEmail || '').trim(),
+                        termsUrl: String(this.brandForm.termsUrl || '').trim(),
+                        privacyUrl: String(this.brandForm.privacyUrl || '').trim(),
+                        certifications: String(this.brandForm.certifications || '').trim(),
+                        compliance: String(this.brandForm.compliance || '').trim(),
+                        status: 'Active',
+                        legalStatus: hasLegal ? 'Ready' : 'Needs Legal',
+                        modified: 'just now',
+                    };
+
+                    const index = this.brands.findIndex((brand) => brand.id === id);
+
+                    if (index >= 0) {
+                        this.brands.splice(index, 1, record);
+                    } else {
+                        this.brands.unshift(record);
+                    }
+
+                    this.upsertCompanyDemoFromBrand(record);
+                    this.removeDuplicateCompanyDemoOptions(record);
+
+                    if (this.onboardingCampaignFlow && creating && ! this.onboardingCompanyIds.includes(record.id)) {
+                        this.onboardingCompanyIds.unshift(record.id);
+                    }
+
+                    const shouldContinueCampaignBuilder = this.brandModalReturnToCampaignBuilder && this.campaignBuilderOpen && creating;
+                    const shouldSelectForCampaignDetail = this.brandModalReturnToCampaignDetail && (this.campaignDetailOpen || this.campaignCreationV2Open);
+
+                    if (shouldContinueCampaignBuilder) {
+                        this.campaignBuilderTransitionLabel = 'Preparing AI Agent Selection...';
+                        this.campaignBuilderTransitioning = true;
+                    }
+
+                    this.closeBrandCreateModal();
+
+                    if (shouldContinueCampaignBuilder) {
+                        this.selectCompanyForSetup(record.id);
+                        this.transitionToCampaignAgentSelection();
+                    }
+
+                    if (shouldSelectForCampaignDetail) {
+                        this.selectCampaignDetailBrand(record.id);
+                    }
+                },
+                upsertCompanyDemoFromBrand(brand) {
+                    const record = {
+                        id: brand.id,
+                        name: brand.name,
+                        website: brand.website,
+                        industry: brand.industry,
+                        description: brand.description,
+                        problem: brand.problem,
+                        differentiators: brand.differentiators,
+                        icp: brand.icp,
+                        faqs: brand.faqs,
+                        supportEmail: brand.supportEmail,
+                        termsUrl: brand.termsUrl,
+                        privacyUrl: brand.privacyUrl,
+                        certifications: brand.certifications,
+                        compliance: brand.compliance,
+                    };
+                    const index = this.companySetupDemoCompanies.findIndex((company) => company.id === brand.id);
+
+                    if (index >= 0) {
+                        this.companySetupDemoCompanies.splice(index, 1, record);
+                    } else {
+                        this.companySetupDemoCompanies.unshift(record);
+                    }
+                },
+                defaultAiAgentForm() {
+                    return {
+                        languageCode: 'US',
+                        name: 'Bridget',
+                        voice: 'Bridget (Ultra-realistic)',
+                        callGreeting: 'Hey, is this @{{first_name}}?',
+                        backgroundNoise: 'Office',
+                        emailSignature: "Best,\nBridget from Example",
+                        transcriberModel: 'Flux General',
+                        aiModel: 'GPT-4.1',
+                        agentPersonality: "- Respectful\n- Confident\n- Solution-oriented, highlighting value\n- Slow speaking, calm, and not rushed\n- Bright, sociable, engaging",
+                        agentSpeechStyle: "- Use natural long turns when explaining value.\n- Add micro-pacing before important questions.\n- Use natural hesitation only where it fits.\n- Keep delivery human-sounding.\n- Avoid reading from a script.",
+                    };
+                },
+                openAiAgentLanguageBatchModal(context = 'global') {
+                    this.aiAgentLanguageBatchContext = context;
+                    this.aiAgentLanguageSearch = '';
+                    this.aiAgentLanguageBatchSelection = [];
+                    this.aiAgentLanguageBatchModalOpen = true;
+                },
+                closeAiAgentLanguageBatchModal() {
+                    this.aiAgentLanguageBatchModalOpen = false;
+                    this.aiAgentLanguageBatchContext = 'global';
+                    this.aiAgentLanguageSearch = '';
+                    this.aiAgentLanguageBatchSelection = [];
+                },
+                filteredAiAgentLanguageBatchOptions() {
+                    const existingCodes = new Set(
+                        this.aiAgentLanguageBatchContext === 'campaign-creation'
+                            ? this.campaignBuilderAiAgentOptions().map((agent) => agent.languageCode)
+                            : this.aiAgents.map((agent) => agent.languageCode)
+                    );
+                    const query = String(this.aiAgentLanguageSearch || '').trim().toLowerCase();
+
+                    return this.campaignSetupLanguageOptions.filter((language) => {
+                        if (existingCodes.has(language.code)) {
+                            return false;
+                        }
+
+                        if (! query) {
+                            return true;
+                        }
+
+                        return [language.code, language.label, language.name, this.campaignSetupLanguageDisplay(language)]
+                            .some((value) => String(value || '').toLowerCase().includes(query));
+                    });
+                },
+                aiAgentLanguageSelectedForBatch(code) {
+                    return this.aiAgentLanguageBatchSelection.includes(code);
+                },
+                toggleAiAgentLanguageSelection(code) {
+                    if (this.aiAgentLanguageSelectedForBatch(code)) {
+                        this.aiAgentLanguageBatchSelection = this.aiAgentLanguageBatchSelection.filter((item) => item !== code);
+                        return;
+                    }
+
+                    this.aiAgentLanguageBatchSelection.push(code);
+                },
+                aiAgentLanguageDefaults(language) {
+                    const defaults = {
+                        name: `${language?.name || 'Language'} Agent`,
+                        voice: 'Bridget (Ultra-realistic)',
+                        callGreeting: 'Hey, is this @{{first_name}}?',
+                        backgroundNoise: 'Office',
+                        emailSignature: `Best,\n${language?.name || 'AI'} Agent`,
+                        agentPersonality: "- Respectful\n- Confident\n- Solution-oriented, highlighting value\n- Slow speaking, calm, and not rushed\n- Bright, sociable, engaging",
+                        agentSpeechStyle: "- Use natural long turns when explaining value.\n- Add micro-pacing before important questions.\n- Use natural hesitation only where it fits.\n- Keep delivery human-sounding.\n- Avoid reading from a script.",
+                    };
+                    const profiles = {
+                        GB: { name: 'Amelia', callGreeting: 'Hi, is this @{{first_name}}?', emailSignature: "Best,\nAmelia" },
+                        ES: { name: 'Sofia', voice: 'Maya (Warm)', callGreeting: 'Hola, ¿hablo con @{{first_name}}?', emailSignature: "Saludos,\nSofia" },
+                        DE: { name: 'Greta', voice: 'Alex (Calm)', callGreeting: 'Hallo, spreche ich mit @{{first_name}}?', emailSignature: "Viele Grüße,\nGreta" },
+                        FR: { name: 'Camille', voice: 'Maya (Warm)', callGreeting: 'Bonjour, est-ce bien @{{first_name}} ?', emailSignature: "Cordialement,\nCamille" },
+                        NL: { name: 'Lotte', voice: 'Maya (Warm)', callGreeting: 'Hoi, spreek ik met @{{first_name}}?', emailSignature: "Groeten,\nLotte" },
+                        IT: { name: 'Giulia', voice: 'Maya (Warm)', callGreeting: 'Ciao, parlo con @{{first_name}}?', emailSignature: "A presto,\nGiulia" },
+                        PL: { name: 'Zofia', voice: 'Maya (Warm)', callGreeting: 'Dzień dobry, czy rozmawiam z @{{first_name}}?', emailSignature: "Pozdrawiam,\nZofia" },
+                        LT: { name: 'Maya', voice: 'Maya (Warm)', callGreeting: 'Sveiki, ar kalbu su @{{first_name}}?', backgroundNoise: 'None', emailSignature: "Pagarbiai,\nMaya" },
+                    };
+
+                    return { ...defaults, ...(profiles[language?.code] || {}) };
+                },
+                makeAiAgentRecordForLanguage(language, index = 0) {
+                    const base = this.defaultAiAgentForm();
+                    const profile = this.aiAgentLanguageDefaults(language);
+                    const id = `agent-${String(language.code || 'language').toLowerCase()}-${Date.now()}-${index}`;
+
+                    return {
+                        id,
+                        name: profile.name,
+                        languageCode: language.code,
+                        language: this.campaignSetupLanguageDisplay(language),
+                        voice: profile.voice || base.voice,
+                        callGreeting: profile.callGreeting || base.callGreeting,
+                        backgroundNoise: profile.backgroundNoise || base.backgroundNoise,
+                        emailSignature: profile.emailSignature || base.emailSignature,
+                        transcriberModel: base.transcriberModel,
+                        aiModel: base.aiModel,
+                        agentPersonality: profile.agentPersonality || base.agentPersonality,
+                        agentSpeechStyle: profile.agentSpeechStyle || base.agentSpeechStyle,
+                        channels: 'Calls, Email, SMS',
+                        status: 'Ready',
+                        modified: 'just now',
+                    };
+                },
+                ensureAiAgentForLanguage(language, index = 0) {
+                    if (! language?.code) {
+                        return null;
+                    }
+
+                    const existing = this.aiAgents.find((agent) => agent.languageCode === language.code);
+
+                    if (existing) {
+                        return existing;
+                    }
+
+                    const record = this.makeAiAgentRecordForLanguage(language, index);
+                    this.aiAgents.push(record);
+
+                    return record;
+                },
+                ensureAiAgentForLanguageCode(code, index = 0) {
+                    const language = this.campaignSetupLanguageOptions.find((item) => item.code === code);
+
+                    return language ? this.ensureAiAgentForLanguage(language, index) : null;
+                },
+                addSelectedAiAgentLanguages() {
+                    const selectedCodes = new Set(this.aiAgentLanguageBatchSelection);
+                    const selectedLanguages = this.campaignSetupLanguageOptions
+                        .filter((language) => selectedCodes.has(language.code));
+
+                    if (this.aiAgentLanguageBatchContext === 'campaign-creation') {
+                        const records = selectedLanguages
+                            .filter((language) => ! this.campaignBuilderAiAgentOptions().some((agent) => agent.languageCode === language.code))
+                            .map((language, index) => this.ensureAiAgentForLanguage(language, index))
+                            .filter(Boolean);
+
+                        if (records.length === 0) {
+                            this.closeAiAgentLanguageBatchModal();
+                            return;
+                        }
+
+                        records.forEach((agent) => {
+                            if (! this.onboardingAiAgentIds.includes(agent.id)) {
+                                this.onboardingAiAgentIds.push(agent.id);
+                            }
+
+                            if (! this.campaignDetailSelectedAgentIds.includes(agent.id)) {
+                                this.campaignDetailSelectedAgentIds.push(agent.id);
+                            }
+                        });
+
+                        if (! this.campaignSetup.selectedAiAgentId) {
+                            this.selectCampaignAiAgent(records[0]);
+                        }
+
+                        this.closeAiAgentLanguageBatchModal();
+                        this.scheduleCampaignBuilderLayoutUpdate();
+                        return;
+                    }
+
+                    const records = selectedLanguages
+                        .filter((language) => ! this.aiAgents.some((agent) => agent.languageCode === language.code))
+                        .map((language, index) => this.makeAiAgentRecordForLanguage(language, index));
+
+                    if (records.length === 0) {
+                        this.closeAiAgentLanguageBatchModal();
+                        return;
+                    }
+
+                    this.aiAgents = [...records, ...this.aiAgents];
+                    this.closeAiAgentLanguageBatchModal();
+                    this.scheduleCampaignBuilderLayoutUpdate();
+                },
+                openAiAgentCreateModal(agent = null, languageCode = '', options = {}) {
+                    const language = languageCode || agent?.languageCode || this.campaignSetup.activeLanguage || 'US';
+
+                    this.aiAgentEditingId = agent?.id || null;
+                    this.aiAgentModalReturnToCampaignBuilder = Boolean(options.returnToCampaignBuilder);
+                    this.aiAgentModalReturnToCampaignDetail = Boolean(options.returnToCampaignDetail);
+                    this.aiAgentAdvancedOpen = false;
+                    this.aiAgentCampaignAssignmentIds = agent
+                        ? this.campaignsAssignedToAgent(agent.id).map((campaign) => campaign.name)
+                        : [];
+                    Object.assign(this.aiAgentForm, this.defaultAiAgentForm(), agent ? {
+                        languageCode: agent.languageCode || language,
+                        name: agent.name || '',
+                        voice: agent.voice || 'Bridget (Ultra-realistic)',
+                        callGreeting: agent.callGreeting || '',
+                        backgroundNoise: agent.backgroundNoise || 'Office',
+                        emailSignature: agent.emailSignature || '',
+                        transcriberModel: agent.transcriberModel || 'Flux General',
+                        aiModel: agent.aiModel || 'GPT-4.1',
+                        agentPersonality: agent.agentPersonality || '',
+                        agentSpeechStyle: agent.agentSpeechStyle || '',
+                    } : { languageCode: language });
+                    this.aiAgentModalOpen = true;
+                },
+                openAiAgentCreateModalFromCampaignSetup() {
+                    this.openAiAgentCreateModal(null, this.campaignSetup.activeLanguage || 'US');
+                },
+                openCampaignCreationAiAgentModal() {
+                    if (this.onboardingCampaignFlow) {
+                        this.openAiAgentLanguageBatchModal('campaign-creation');
+                        return;
+                    }
+
+                    this.openAiAgentCreateModal(null, this.campaignSetup.activeLanguage || 'US', { returnToCampaignBuilder: true });
+                },
+                closeAiAgentCreateModal() {
+                    this.aiAgentModalOpen = false;
+                    this.aiAgentEditingId = null;
+                    this.aiAgentModalReturnToCampaignBuilder = false;
+                    this.aiAgentModalReturnToCampaignDetail = false;
+                    this.aiAgentCampaignAssignmentIds = [];
+                    this.aiAgentAdvancedOpen = false;
+                },
+                aiAgentStatusClass(status) {
+                    return status === 'Ready'
+                        ? 'bg-green-50 text-green-700 ring-green-600/20'
+                        : 'bg-amber-50 text-amber-700 ring-amber-600/20';
+                },
+                aiAgentLanguageLabel(code) {
+                    const language = this.campaignSetupLanguageOptions.find((item) => item.code === code);
+
+                    return language ? this.campaignSetupLanguageDisplay(language) : 'Language';
+                },
+                aiAgentLanguage(agent) {
+                    return this.campaignSetupLanguageOptions.find((item) => item.code === agent?.languageCode) || null;
+                },
+                aiAgentTitle(agent) {
+                    const language = this.aiAgentLanguage(agent);
+                    const languageName = language ? this.campaignSetupLanguageDisplay(language) : (agent?.language || 'Language');
+
+                    return `${languageName} AI Agent`;
+                },
+                aiAgentFlagUrl(agent) {
+                    const language = this.aiAgentLanguage(agent);
+
+                    return language ? this.campaignSetupFlagUrl(language) : this.flagUrl(agent?.languageCode || 'US');
+                },
+                aiAgentVoiceStyle(agent) {
+                    const voice = String(agent?.voice || '').trim();
+                    const match = voice.match(/\(([^)]+)\)/);
+                    const style = match ? match[1] : voice;
+
+                    return String(style || 'Ultra Realistic')
+                        .replace(/[-_]+/g, ' ')
+                        .replace(/\s+/g, ' ')
+                        .trim()
+                        .replace(/\b\w/g, (letter) => letter.toUpperCase());
+                },
+                canDeleteAiAgent(agentId = '') {
+                    return this.aiAgents.length > 1 && this.aiAgents.some((agent) => agent.id === agentId);
+                },
+                canDeleteCampaignCreationAiAgent(agentId = '') {
+                    return this.canDeleteAiAgent(agentId)
+                        && this.campaignBuilderAiAgentOptions().filter((agent) => agent.id !== agentId).length > 0;
+                },
+                fallbackAiAgent(excludedAgentId = '') {
+                    return this.aiAgents.find((agent) => agent.id !== excludedAgentId) || null;
+                },
+                deleteCampaignCreationAiAgent(agent) {
+                    const agentId = typeof agent === 'string' ? agent : agent?.id;
+
+                    if (! this.canDeleteCampaignCreationAiAgent(agentId)) {
+                        return;
+                    }
+
+                    const fallbackAgent = this.campaignBuilderAiAgentOptions().find((item) => item.id !== agentId) || null;
+
+                    this.deleteAiAgent(agentId);
+
+                    if (! fallbackAgent || ! this.aiAgents.some((item) => item.id === fallbackAgent.id)) {
+                        return;
+                    }
+
+                    if (! this.campaignDetailSelectedAgentIds.includes(fallbackAgent.id)) {
+                        this.campaignDetailSelectedAgentIds.push(fallbackAgent.id);
+                    }
+
+                    if (! this.campaignBuilderAiAgentOptions().some((item) => item.id === this.campaignSetup.selectedAiAgentId)) {
+                        this.selectCampaignAiAgent(fallbackAgent);
+                    }
+                },
+                deleteAiAgent(agent) {
+                    const agentId = typeof agent === 'string' ? agent : agent?.id;
+
+                    if (! this.canDeleteAiAgent(agentId)) {
+                        return;
+                    }
+
+                    const fallbackAgent = this.fallbackAiAgent(agentId);
+
+                    this.aiAgents = this.aiAgents.filter((item) => item.id !== agentId);
+                    this.onboardingAiAgentIds = this.onboardingAiAgentIds.filter((id) => id !== agentId);
+                    this.campaignDetailSelectedAgentIds = this.campaignDetailSelectedAgentIds.filter((id) => id !== agentId);
+                    this.campaignDetailAgentPickerIds = this.campaignDetailAgentPickerIds.filter((id) => id !== agentId);
+
+                    this.pinnedCampaigns.forEach((campaign) => {
+                        const agentIds = this.campaignAgentIds(campaign).filter((id) => id !== agentId);
+
+                        campaign.agentIds = this.normalizeCampaignAgentIds(agentIds, fallbackAgent?.id || '');
+                    });
+
+                    if (this.selectedCampaign?.agentIds) {
+                        const selectedAgentIds = this.campaignAgentIds(this.selectedCampaign).filter((id) => id !== agentId);
+
+                        this.selectedCampaign.agentIds = this.normalizeCampaignAgentIds(selectedAgentIds, fallbackAgent?.id || '');
+                    }
+
+                    if (this.campaignSetup.selectedAiAgentId === agentId) {
+                        if (fallbackAgent) {
+                            this.selectCampaignAiAgent(fallbackAgent);
+                        } else {
+                            this.campaignSetup.selectedAiAgentId = '';
+                        }
+                    }
+
+                    if ((this.campaignDetailOpen || this.campaignCreationV2Open) && this.campaignDetailSelectedAgentIds.length === 0 && fallbackAgent) {
+                        this.campaignDetailSelectedAgentIds = [fallbackAgent.id];
+                        this.selectCampaignAiAgent(fallbackAgent);
+                    }
+
+                    if (this.aiAgentEditingId === agentId) {
+                        this.closeAiAgentCreateModal();
+                    }
+
+                    this.syncSelectedCampaignAgentAssignments();
+                    if (this.campaignDetailOpen || this.campaignCreationV2Open) {
+                        this.markCampaignDetailPanelChanged('campaign-agent');
+                    }
+                    this.scheduleCampaignBuilderLayoutUpdate();
+                },
+                campaignSetupSelectedAgent() {
+                    return this.aiAgents.find((agent) => agent.id === this.campaignSetup.selectedAiAgentId) || null;
+                },
+                campaignAssignmentRows() {
+                    return this.pinnedCampaigns;
+                },
+                normalizeCampaignAgentIds(agentIds = [], fallbackAgentId = '') {
+                    const validIds = [...new Set(agentIds)]
+                        .filter((id) => this.aiAgents.some((agent) => agent.id === id));
+
+                    if (validIds.length) {
+                        return validIds;
+                    }
+
+                    const fallbackId = [fallbackAgentId, this.campaignSetup.selectedAiAgentId, this.aiAgents[0]?.id]
+                        .find((id) => id && this.aiAgents.some((agent) => agent.id === id));
+
+                    return fallbackId ? [fallbackId] : [];
+                },
+                campaignAgentIds(campaign) {
+                    if (Array.isArray(campaign?.agentIds)) {
+                        return this.normalizeCampaignAgentIds(campaign.agentIds);
+                    }
+
+                    return ['agent-bridget-us'];
+                },
+                campaignsAssignedToAgent(agentId) {
+                    return this.campaignAssignmentRows().filter((campaign) => this.campaignAgentIds(campaign).includes(agentId));
+                },
+                aiAgentCampaignAssignmentSelected(campaignName) {
+                    return this.aiAgentCampaignAssignmentIds.includes(campaignName);
+                },
+                aiAgentCampaignAssignmentLocked(campaignName) {
+                    if (! this.aiAgentEditingId || ! this.aiAgentCampaignAssignmentSelected(campaignName)) {
+                        return false;
+                    }
+
+                    const campaign = this.campaignAssignmentRows().find((item) => item.name === campaignName);
+                    const agentIds = this.campaignAgentIds(campaign);
+
+                    return agentIds.length <= 1 && agentIds.includes(this.aiAgentEditingId);
+                },
+                toggleAiAgentCampaignAssignment(campaignName) {
+                    if (this.aiAgentCampaignAssignmentSelected(campaignName)) {
+                        if (this.aiAgentCampaignAssignmentLocked(campaignName)) {
+                            return;
+                        }
+
+                        this.aiAgentCampaignAssignmentIds = this.aiAgentCampaignAssignmentIds.filter((name) => name !== campaignName);
+
+                        return;
+                    }
+
+                    this.aiAgentCampaignAssignmentIds.push(campaignName);
+                },
+                applyAiAgentCampaignAssignments(agentId) {
+                    this.campaignAssignmentRows().forEach((campaign) => {
+                        const selected = this.aiAgentCampaignAssignmentSelected(campaign.name);
+                        const agentIds = this.campaignAgentIds(campaign).filter((id) => id !== agentId);
+
+                        if (selected) {
+                            agentIds.push(agentId);
+                        }
+
+                        campaign.agentIds = this.normalizeCampaignAgentIds(agentIds, agentId);
+                    });
+                },
+                selectCampaignAiAgent(agent) {
+                    if (! agent) {
+                        return;
+                    }
+
+                    this.campaignSetup.selectedAiAgentId = agent.id;
+                    this.applyAiAgentToCampaignSetup(agent);
+                },
+                applyAiAgentToCampaignSetup(agent) {
+                    const language = this.campaignSetupLanguageOptions.find((item) => item.code === agent.languageCode);
+
+                    if (language) {
+                        this.campaignSetup.languages = [{ ...language }];
+                        this.campaignSetup.activeLanguage = language.code;
+                        this.campaignSetup.defaultLanguage = language.code;
+                        this.campaignSetup.languageAccordionOpen = language.code;
+                    }
+
+                    Object.assign(this.campaignSetup, {
+                        agentName: agent.name || this.campaignSetup.agentName,
+                        voice: agent.voice || this.campaignSetup.voice,
+                        callGreeting: agent.callGreeting || this.campaignSetup.callGreeting,
+                        backgroundNoise: agent.backgroundNoise || this.campaignSetup.backgroundNoise,
+                        emailSignature: agent.emailSignature || this.campaignSetup.emailSignature,
+                        transcriberModel: agent.transcriberModel || this.campaignSetup.transcriberModel,
+                        aiModel: agent.aiModel || this.campaignSetup.aiModel,
+                        agentPersonality: agent.agentPersonality || this.campaignSetup.agentPersonality,
+                        agentSpeechStyle: agent.agentSpeechStyle || this.campaignSetup.agentSpeechStyle,
+                    });
+                },
+                saveAiAgentModal() {
+                    const creating = ! this.aiAgentEditingId;
+                    const id = this.aiAgentEditingId || `agent-${Date.now()}`;
+                    const language = this.campaignSetupLanguageOptions.find((item) => item.code === this.aiAgentForm.languageCode) || this.campaignSetupLanguageOptions[0];
+                    const record = {
+                        id,
+                        name: String(this.aiAgentForm.name || '').trim() || `${language.name} Agent`,
+                        languageCode: language.code,
+                        language: this.campaignSetupLanguageDisplay(language),
+                        voice: String(this.aiAgentForm.voice || '').trim() || 'Bridget (Ultra-realistic)',
+                        callGreeting: String(this.aiAgentForm.callGreeting || '').trim(),
+                        backgroundNoise: String(this.aiAgentForm.backgroundNoise || '').trim() || 'Office',
+                        emailSignature: String(this.aiAgentForm.emailSignature || '').trim(),
+                        transcriberModel: this.aiAgentForm.transcriberModel || 'Flux General',
+                        aiModel: this.aiAgentForm.aiModel || 'GPT-4.1',
+                        agentPersonality: String(this.aiAgentForm.agentPersonality || '').trim(),
+                        agentSpeechStyle: String(this.aiAgentForm.agentSpeechStyle || '').trim(),
+                        channels: 'Calls, Email, SMS',
+                        status: 'Ready',
+                        modified: 'just now',
+                    };
+                    const index = this.aiAgents.findIndex((agent) => agent.id === id);
+
+                    if (index >= 0) {
+                        this.aiAgents.splice(index, 1, record);
+                    } else {
+                        this.aiAgents.unshift(record);
+                    }
+
+                    if (this.onboardingCampaignFlow && creating && ! this.onboardingAiAgentIds.includes(record.id)) {
+                        this.onboardingAiAgentIds.unshift(record.id);
+                    }
+
+                    const shouldSelectForCampaignBuilder = this.aiAgentModalReturnToCampaignBuilder && this.campaignBuilderOpen && creating;
+                    const shouldSelectForCampaignDetail = this.aiAgentModalReturnToCampaignDetail && this.campaignDetailOpen && creating;
+
+                    this.selectCampaignAiAgent(record);
+
+                    if (shouldSelectForCampaignBuilder && ! this.campaignDetailSelectedAgentIds.includes(record.id)) {
+                        this.campaignDetailSelectedAgentIds.push(record.id);
+                    }
+
+                    this.applyAiAgentCampaignAssignments(record.id);
+                    this.refreshCampaignDetailAgentAssignments();
+                    this.closeAiAgentCreateModal();
+
+                    if (shouldSelectForCampaignDetail) {
+                        this.addCampaignDetailAgent(record.id);
+                    }
                 },
                 selectCompanyForSetup(companyId) {
                     this.companySetupSelectedCompany = companyId;
@@ -2669,12 +4044,106 @@
                     this.scheduleCampaignBuilderLayoutUpdate();
                 },
                 chooseNewCompanyForSetup() {
-                    this.selectCompanyForSetup('new');
-                    this.setCampaignBuilderStep(1, 180);
+                    this.companySetupSelectedCompany = '';
+                    this.openBrandCreateModal(null, { returnToCampaignBuilder: true });
                 },
                 chooseExistingCompanyForSetup(companyId) {
                     this.selectCompanyForSetup(companyId);
+                    this.transitionToCampaignAgentSelection();
+                },
+                runCampaignBuilderTransition(label, callback, duration = 700) {
+                    const container = this.campaignBuilderScrollContainer();
+
+                    if (this.campaignBuilderTransitionTimer) {
+                        window.clearTimeout(this.campaignBuilderTransitionTimer);
+                    }
+
+                    this.campaignBuilderTransitionLabel = label;
+                    this.campaignBuilderTransitioning = true;
+
+                    this.campaignBuilderTransitionTimer = window.setTimeout(() => {
+                        callback?.();
+
+                        this.$nextTick(() => {
+                            container?.scrollTo({ top: 0, behavior: 'auto' });
+                            window.requestAnimationFrame(() => {
+                                this.campaignBuilderTransitioning = false;
+                                this.campaignBuilderTransitionLabel = 'Preparing Campaign Setup...';
+                                this.campaignBuilderTransitionTimer = null;
+                            });
+                        });
+                    }, duration);
+                },
+                transitionToCampaignAgentSelection() {
+                    this.runCampaignBuilderTransition('Preparing AI Agent Selection...', () => {
+                        const nextStep = Math.min(1, this.companySetupFinalStepIndex());
+
+                        this.campaignBuilderDirection = 'forward';
+                        this.campaignBuilderStep = nextStep;
+                        this.campaignBuilderMaxStep = Math.max(this.campaignBuilderMaxStep, nextStep);
+                        this.campaignBuilderErrors = {};
+                        this.campaignBuilderScrollFromStep = null;
+                        this.campaignBuilderFadingStep = null;
+                        this.campaignBuilderEnteringStep = null;
+                        this.updateCampaignBuilderBottomPadding();
+                        this.updateCampaignSetupBottomPadding();
+                        this.updateCampaignBuilderStickyLayout();
+                        this.updateCampaignBuilderActionBarPosition();
+                        this.updateCampaignSetupActionBarPosition();
+                        this.syncUrl();
+                    }, 650);
+                },
+                campaignCreationAiAgentSelected(agentId) {
+                    return this.campaignDetailSelectedAgentIds.includes(agentId);
+                },
+                toggleCampaignCreationAiAgent(agent) {
+                    if (! agent?.id) {
+                        return;
+                    }
+
+                    if (this.campaignCreationAiAgentSelected(agent.id)) {
+                        this.campaignDetailSelectedAgentIds = this.campaignDetailSelectedAgentIds.filter((id) => id !== agent.id);
+
+                        if (this.campaignSetup.selectedAiAgentId === agent.id) {
+                            const fallbackAgent = this.aiAgents.find((item) => this.campaignDetailSelectedAgentIds.includes(item.id));
+
+                            if (fallbackAgent) {
+                                this.selectCampaignAiAgent(fallbackAgent);
+                            } else {
+                                this.campaignSetup.selectedAiAgentId = '';
+                            }
+                        }
+
+                        return;
+                    }
+
+                    this.campaignDetailSelectedAgentIds.push(agent.id);
+
+                    if (! this.campaignSetup.selectedAiAgentId) {
+                        this.selectCampaignAiAgent(agent);
+                    }
+                },
+                campaignCreationAiAgentCanContinue() {
+                    return this.campaignDetailSelectedAgentIds.some((agentId) => this.aiAgents.some((agent) => agent.id === agentId));
+                },
+                continueCampaignCreationAiAgents() {
+                    const agentIds = this.normalizeCampaignAgentIds(this.campaignDetailSelectedAgentIds);
+
+                    if (agentIds.length === 0) {
+                        return;
+                    }
+
+                    this.campaignDetailSelectedAgentIds = agentIds;
+                    const selectedAgent = this.aiAgents.find((agent) => agentIds.includes(agent.id));
+
+                    if (selectedAgent) {
+                        this.selectCampaignAiAgent(selectedAgent);
+                    }
+
                     this.transitionToCampaignSetup();
+                },
+                chooseCampaignCreationAiAgent(agent) {
+                    this.toggleCampaignCreationAiAgent(agent);
                 },
 		                campaignBuilderBackLabel() {
 	                    if (this.campaignBuilderStep < this.companySetupStartStep()) {
@@ -2766,7 +4235,7 @@
                 },
                 campaignBuilderMobileProgressLabel() {
                     if (this.campaignBuilderStep < this.companySetupStartStep()) {
-                        return this.companySetupSteps[this.campaignBuilderStep]?.label || 'Company Details';
+                        return this.companySetupSteps[this.campaignBuilderStep]?.label || 'Choose Company';
                     }
 
                     return this.campaignSetupCurrentStep()?.label || 'Campaign Setup';
@@ -2940,25 +4409,23 @@
                     this.nextCampaignBuilderStep();
                 },
                 transitionToCampaignSetup() {
-                    const container = this.campaignBuilderScrollContainer();
-
-                    this.campaignBuilderTransitionLabel = 'Preparing Campaign Setup...';
-                    this.campaignBuilderTransitioning = true;
-
-                    window.setTimeout(() => {
+                    this.runCampaignBuilderTransition('Preparing Campaign Setup...', () => {
                         const setupStartStep = this.companySetupStartStep();
 
-                        this.campaignBuilderStep = setupStartStep;
-                        this.campaignBuilderMaxStep = Math.max(this.campaignBuilderMaxStep, setupStartStep);
-                        this.campaignBuilderErrors = {};
-                        this.campaignBuilderScrollFromStep = null;
-                        this.campaignBuilderFadingStep = null;
-                        this.campaignBuilderEnteringStep = null;
-
-                        this.$nextTick(() => {
-                            container?.scrollTo({ top: 0, behavior: 'auto' });
-                            this.campaignBuilderTransitioning = false;
-                        });
+	                        this.campaignBuilderStep = setupStartStep;
+	                        this.campaignBuilderMaxStep = Math.max(this.campaignBuilderMaxStep, setupStartStep);
+	                        this.campaignBuilderErrors = {};
+	                        this.campaignSetupModeSelected = false;
+	                        this.campaignSetupIntroStep = 'type';
+	                        this.campaignSetup.current = 'type';
+	                        this.campaignSetupActionBarStyle = '';
+	                        this.campaignSetupCanvasStyle = '';
+	                        this.campaignBuilderScrollFromStep = null;
+	                        this.campaignBuilderFadingStep = null;
+	                        this.campaignBuilderEnteringStep = null;
+	                        this.campaignSetupScrollFromStep = null;
+	                        this.campaignSetupFadingStep = null;
+	                        this.campaignSetupEnteringStep = null;
                     }, 700);
                 },
                 isCampaignBuilderCompanyStepVisible(step) {
@@ -2990,9 +4457,7 @@
                 campaignBuilderCompanyStepRefName(step) {
                     return [
                         'companyChooseSection',
-                        'companyIdentitySection',
-                        'industryMarketSection',
-                        'complianceLegalSection',
+                        'campaignAgentChooseSection',
                     ][step] || null;
                 },
                 campaignBuilderCompanyStepTop(step) {
@@ -3118,15 +4583,15 @@
                     return '';
                 },
                 campaignBuilderUsesSidebarLayout() {
-                    return this.campaignBuilderStep < this.companySetupStartStep()
-                        || (this.campaignBuilderStep >= this.companySetupStartStep()
+                    return this.campaignBuilderStep >= this.companySetupStartStep()
                             && this.campaignSetupModeSelected
-                            && ! this.campaignSetupIntroStep);
+                            && ! this.campaignSetupIntroStep;
                 },
                 campaignBuilderUsesIntroLayout() {
-                    return this.campaignBuilderStep >= this.companySetupStartStep()
+                    return this.campaignBuilderStep < this.companySetupStartStep()
+                        || (this.campaignBuilderStep >= this.companySetupStartStep()
                         && ! this.campaignSetupModeSelected
-                        && Boolean(this.campaignSetupIntroStep);
+                        && Boolean(this.campaignSetupIntroStep));
                 },
                 campaignBuilderColumnViewportStyle() {
                     return '';
@@ -3209,9 +4674,7 @@
 
                     const companyStepRefs = [
                         'companyChooseSection',
-                        'companyIdentitySection',
-                        'industryMarketSection',
-                        'complianceLegalSection',
+                        'campaignAgentChooseSection',
                     ];
 
                     const stepRef = companyStepRefs[this.campaignBuilderStep];
@@ -3251,7 +4714,7 @@
                     });
                 },
                 updateCampaignSetupBottomPadding() {
-                    if (! this.campaignBuilderOpen || this.campaignBuilderStep < this.companySetupStartStep() || ! this.campaignSetupModeSelected) {
+                    if (! this.campaignBuilderOpen || this.campaignBuilderStep < this.companySetupStartStep() || ! this.campaignSetupModeSelected || this.campaignSetup.current === 'review') {
                         this.campaignSetupBottomPadding = 0;
 
                         return;
@@ -3281,9 +4744,7 @@
                 scrollCampaignBuilderToStep(step, behavior = 'smooth') {
                     const companyStepRefs = [
                         'companyChooseSection',
-                        'companyIdentitySection',
-                        'industryMarketSection',
-                        'complianceLegalSection',
+                        'campaignAgentChooseSection',
                     ];
 
                     this.$nextTick(() => this.scrollBuilderStageToTop(step >= this.companySetupStartStep() ? 'campaignAgentSection' : (companyStepRefs[step] || 'companyDetailsFormStage'), behavior));
@@ -3406,9 +4867,10 @@
                 campaignSetupStepIcon(stepId = this.campaignSetup.current) {
                     const icons = {
                         start: 'add',
-                        type: 'target',
-                        source: 'database',
-                        integration: 'extension',
+                        type: 'goal',
+                        source: 'blocks',
+                        integration: 'unplug',
+                        mode: 'rocket',
                         brief: 'description',
                         general: 'settings',
                         resources: 'package_check',
@@ -3419,39 +4881,41 @@
                         availability: 'schedule',
                         sequence: 'timeline',
                         followups: 'refresh_ccw',
-                        handoff: 'headphones',
-                        intelligence: 'fact_check',
-                        geo: 'travel_explore',
-                        dispatch: 'send',
-                        priority: 'trending_up',
-                        review: 'verified',
-                    };
+	                        handoff: 'headphones',
+	                        intelligence: 'fact_check',
+	                        geo: 'travel_explore',
+	                        dispatch: 'send',
+	                        priority: 'trending_up',
+	                        events: 'webhook',
+	                        review: 'verified',
+	                    };
 
                     return icons[stepId] || 'settings';
                 },
                 campaignSetupHeading(stepId = this.campaignSetup.current) {
                     const headings = {
                         start: 'Create Campaign',
-                        type: 'Choose Campaign Type',
+                        type: 'Choose Campaign Objective',
 	                        source: 'Where Should This Campaign Get Leads From?',
 	                        integration: 'Connect Lead Source',
 	                        brief: 'Campaign Context',
                         general: 'General Settings',
 	                        resources: 'Resources & Offers',
-                        agent: 'AI Agent',
+                        agent: 'Choose AI Agent',
 	                        channels: 'Outreach Channels',
                         discounts: 'Discount Codes',
                         booking: 'Booking',
-		                        availability: 'Scheduling Settings',
+		                        availability: 'Outreach Schedule',
                         sequence: 'Outreach Sequence',
                         followups: 'Follow-Up Sequence',
                         handoff: 'Handoff',
-                        intelligence: 'Conversation Intelligence',
-                        geo: 'Geo Permissions',
-                        dispatch: 'Dispatch Conditions',
-                        priority: 'Campaign Priority',
-                        review: 'Review & Launch Your Campaign',
-                    };
+	                        intelligence: 'Conversation Intelligence',
+	                        geo: 'Geo Permissions',
+	                        dispatch: 'Dispatch Conditions',
+	                        priority: 'Campaign Priority',
+	                        events: 'Lead Source Events',
+	                        review: 'Review & Launch Your Campaign',
+	                    };
 
                     return headings[stepId] || this.campaignSetupCurrentStep(stepId)?.label || 'Campaign Setup';
                 },
@@ -3464,7 +4928,7 @@
 	                        brief: 'Define the essence and goal of the campaign.',
                         general: 'Configure general campaign settings, such as target audience, messaging preferences, and performance goals. This will help the AI tailor its interactions to better suit your campaign\'s objectives.',
 	                        resources: 'Define what the AI can send or offer after the lead accepts.',
-                        agent: 'Choose how your AI agent introduces itself, sounds, and represents your company.',
+                        agent: 'Select a reusable AI agent for this campaign or create a new one here.',
 	                        channels: 'Set up the channels your AI uses to connect with customers - calls, SMS, WhatsApp and email. Configure how each one operates.',
                         discounts: 'Manage discount codes the AI can include in email and message content.',
                         booking: 'Configure how the AI books meetings and which scheduling link it should offer.',
@@ -3472,12 +4936,13 @@
                         sequence: 'Set actions the AI will run and the delay time between them. You can edit the sequence, but we recommend keeping the template defaults unless you have a specific reason to change them.',
                         followups: 'When a lead responds to the first outreach, the agent can continue with a matching follow-up sequence. Enable sequences separately for Positive, Undecided, or Negative responses.',
                         handoff: 'Configure when AI should pass the conversation to a human.',
-                        intelligence: 'See and manage how AI evaluates interactions with leads, and set up custom evaluation fields to track the most important information for your business.',
-                        geo: 'Choose which countries or regions this campaign is allowed to contact.',
-                        dispatch: 'Define when this campaign should be dispatched based on lead metadata.',
-                        priority: 'Control what happens when a lead qualifies for multiple campaigns at the same time.',
-                        review: 'Before your AI agent starts working on this campaign, review the setup, run a test, and publish it. You can update the campaign again later if needed.',
-                    };
+	                        intelligence: 'See and manage how AI evaluates interactions with leads, and set up custom evaluation fields to track the most important information for your business.',
+	                        geo: 'Choose which countries or regions this campaign is allowed to contact.',
+	                        dispatch: 'Define when this campaign should be dispatched based on lead metadata.',
+	                        priority: 'Control what happens when a lead qualifies for multiple campaigns at the same time.',
+	                        events: 'Review which connected lead source events can trigger this campaign and how often they may dispatch.',
+	                        review: 'Before your AI agent starts working on this campaign, review the setup, run a test, and publish it. You can update the campaign again later if needed.',
+	                    };
 
                     return descriptions[stepId] || this.campaignSetupCurrentStep(stepId)?.description || '';
                 },
@@ -3641,7 +5106,7 @@
 
                         const containerRect = container.getBoundingClientRect();
                         const stageRect = stage.getBoundingClientRect();
-                        const companyStepRefs = ['companyChooseSection', 'companyIdentitySection', 'industryMarketSection', 'complianceLegalSection'];
+                        const companyStepRefs = ['companyChooseSection', 'campaignAgentChooseSection'];
                         const alignmentRef = companyStepRefs.includes(refName) ? this.$refs.companySetupProgressNav : null;
                         const alignmentRect = alignmentRef?.getBoundingClientRect?.();
                         const targetTop = alignmentRect
@@ -3825,16 +5290,124 @@
                 requiresIntegration() {
                     return Boolean(this.campaignSetup.source) && ! ['CSV File / Manual', 'Custom API'].includes(this.campaignSetup.source);
                 },
-                campaignIntegrationSummary() {
-                    if (this.campaignSetup.source === 'CSV File / Manual') {
-                        return 'No Integration Required';
-                    }
+	                campaignIntegrationSummary() {
+	                    if (this.campaignSetup.source === 'CSV File / Manual') {
+	                        return 'No Integration Required';
+	                    }
 
-                    return this.campaignSetup.integrationStatus;
-                },
-                connectCampaignSource() {
-                    this.campaignSetup.integrationStatus = this.requiresIntegration() ? 'Connected' : 'No Integration Required';
-                    this.completeCampaignSetupStep('integration');
+	                    return this.campaignSetup.integrationStatus;
+	                },
+	                leadSourceConfigurationDescription() {
+	                    if (this.campaignSetup.source === 'Klaviyo') {
+	                        return 'Connect your Klaviyo account to automatically sync contacts as leads and trigger campaigns based on their behavior.';
+	                    }
+
+	                    return `Review which ${this.campaignSetup.source || 'lead source'} events can create leads and trigger this campaign.`;
+	                },
+	                leadSourceConnectionTitle() {
+	                    const sourceName = this.campaignSetup.source || 'Lead Source';
+
+	                    if (this.campaignSetup.integrationStatus === 'Connected' || ! this.requiresIntegration()) {
+	                        return `${sourceName} Account Connected`;
+	                    }
+
+	                    return `${sourceName} Account Not Connected`;
+	                },
+	                leadSourceConnectionDescription() {
+	                    if (! this.requiresIntegration()) {
+	                        return 'This source does not require an external integration.';
+	                    }
+
+	                    if (this.campaignSetup.integrationStatus === 'Connected') {
+	                        return `${this.campaignSetup.source || 'Lead source'} integration is active and ready.`;
+	                    }
+
+	                    if (this.campaignSetup.integrationStatus === 'Skipped for Now') {
+	                        return 'Connection was skipped for now. Event triggers will stay inactive until this source is connected.';
+	                    }
+
+	                    return 'Connect this source before relying on event-based triggers.';
+	                },
+	                leadSourceConnectionStatusLabel() {
+	                    if (! this.requiresIntegration()) {
+	                        return 'NO INTEGRATION REQUIRED';
+	                    }
+
+	                    if (this.campaignSetup.integrationStatus === 'Connected') {
+	                        return 'CONNECTED';
+	                    }
+
+	                    if (this.campaignSetup.integrationStatus === 'Skipped for Now') {
+	                        return 'SETUP LATER';
+	                    }
+
+	                    return 'NOT CONNECTED';
+	                },
+	                leadSourceConnectionStatusClass() {
+	                    if (! this.requiresIntegration() || this.campaignSetup.integrationStatus === 'Connected') {
+	                        return 'text-green-700';
+	                    }
+
+	                    if (this.campaignSetup.integrationStatus === 'Skipped for Now') {
+	                        return 'text-amber-700';
+	                    }
+
+	                    return 'text-gray-500';
+	                },
+	                leadSourceConnectionIconClass() {
+	                    if (! this.requiresIntegration() || this.campaignSetup.integrationStatus === 'Connected') {
+	                        return 'check_circle text-green-500';
+	                    }
+
+	                    if (this.campaignSetup.integrationStatus === 'Skipped for Now') {
+	                        return 'schedule text-amber-500';
+	                    }
+
+	                    return 'radio_button_unchecked text-gray-400';
+	                },
+	                leadSourceConnectedAtLabel() {
+	                    return this.campaignSetup.integrationStatus === 'Connected' ? '5 hours ago' : '-';
+	                },
+	                leadSourceEventDispatchSummary(event) {
+	                    const limit = String(event?.dispatchesLimit || '').trim() || 'Unlimited';
+	                    const current = Number(event?.currentDispatches || 0);
+
+	                    return `${limit} / ${current}`;
+	                },
+	                toggleLeadSourceEvent(eventId) {
+	                    const event = this.campaignSetup.leadSourceEvents.find((item) => item.id === eventId);
+
+	                    if (! event) {
+	                        return;
+	                    }
+
+	                    event.enabled = ! event.enabled;
+	                    this.scheduleCampaignBuilderLayoutUpdate();
+	                },
+	                openLeadSourceEventSettings(event) {
+	                    if (! event) {
+	                        return;
+	                    }
+
+	                    this.campaignSetup.leadSourceEventEditingId = event.id;
+	                    this.campaignSetup.leadSourceEventForm.dispatchesLimit = event.dispatchesLimit || '';
+	                    this.campaignSetup.leadSourceEventForm.cooldownDays = event.cooldownDays ?? 30;
+	                    this.campaignSetup.leadSourceEventModalOpen = true;
+	                },
+	                saveLeadSourceEventSettings() {
+	                    const event = this.campaignSetup.leadSourceEvents.find((item) => item.id === this.campaignSetup.leadSourceEventEditingId);
+
+	                    if (event) {
+	                        event.dispatchesLimit = String(this.campaignSetup.leadSourceEventForm.dispatchesLimit || '').trim();
+	                        event.cooldownDays = Number(this.campaignSetup.leadSourceEventForm.cooldownDays || 0);
+	                    }
+
+	                    this.closeCampaignSetupOverlays();
+	                    this.scheduleCampaignBuilderLayoutUpdate();
+	                },
+	                connectCampaignSource() {
+	                    this.campaignSetup.integrationStatus = this.requiresIntegration() ? 'Connected' : 'No Integration Required';
+	                    this.completeCampaignSetupStep('integration');
                     this.clearCampaignSetupAttention('integration');
                     this.continueAfterLeadSourceIntegration();
                 },
@@ -4674,9 +6247,12 @@
                     this.campaignSetup.phoneNumberModalOpen = false;
                     this.campaignSetup.physicalAddressModalOpen = false;
                     this.campaignSetup.physicalAddressFormOpen = false;
-                    this.campaignSetup.discountCodeModalOpen = false;
-	                    this.campaignSetup.integrationSkipModalOpen = false;
-	                    this.campaignSetup.briefBuilderItemModalOpen = false;
+		                    this.campaignSetup.discountCodeModalOpen = false;
+		                    this.campaignSetup.integrationSkipModalOpen = false;
+		                    this.campaignSetup.klaviyoEventsGuideOpen = false;
+		                    this.campaignSetup.leadSourceEventModalOpen = false;
+		                    this.campaignSetup.leadSourceEventEditingId = null;
+		                    this.campaignSetup.briefBuilderItemModalOpen = false;
 	                    this.campaignSetup.briefBuilderItemActionOpen = '';
 	                    this.campaignSetup.overrideModalOpen = false;
 	                    this.campaignSetup.languageBatchModalOpen = false;
@@ -5173,6 +6749,17 @@
                     }
 
                     this.campaignSetup.knowledgePublished = true;
+
+                    if (this.campaignCreationV2Open) {
+                        this.createCampaignFromCurrentSetup('Running');
+                        this.closeCampaignCreationV2();
+                        return;
+                    }
+
+                    if (this.onboardingCampaignFlow) {
+                        this.createCampaignFromCurrentSetup('Running');
+                        this.completeOnboardingCampaignFlow();
+                    }
                 },
                 reviewBadge(status) {
                     const classes = {
@@ -5220,6 +6807,7 @@
                     const integrationBlocked = this.requiresIntegration() && this.campaignSetup.integrationStatus !== 'Connected';
                     const hasBrief = String(this.campaignSetup.brief.context || '').trim().length > 20;
                     const channels = this.enabledCampaignChannels();
+                    const selectedAgent = this.campaignSetupSelectedAgent();
 
                     return [
                         { label: 'Campaign Name', summary: this.campaignSetup.name || 'Generated automatically', status: this.campaignSetup.type ? 'Done' : 'Optional' },
@@ -5228,7 +6816,7 @@
                         { label: 'Lead Source', summary: this.campaignSetup.source || 'Not selected', status: this.campaignSetup.source ? 'Done' : 'Required Before Launch' },
                         { label: 'Integration Status', summary: this.campaignIntegrationSummary(), status: integrationBlocked ? 'Required Before Launch' : 'Done' },
                         { label: 'Campaign Brief Status', summary: hasBrief ? 'Structured brief ready' : 'Needs more context', status: hasBrief ? 'Done' : 'Required Before Launch' },
-                        { label: 'AI Agent', summary: `${this.campaignSetup.agentName}, ${this.campaignSetup.voice}`, status: this.campaignSetup.agentName && this.campaignSetup.voice ? 'Done' : 'Required Before Launch' },
+                        { label: 'AI Agent', summary: selectedAgent ? `${selectedAgent.name}, ${selectedAgent.language}` : `${this.campaignSetup.agentName}, ${this.campaignSetup.voice}`, status: selectedAgent || (this.campaignSetup.agentName && this.campaignSetup.voice) ? 'Done' : 'Required Before Launch' },
                         { label: 'Channels', summary: channels.join(', ') || 'No enabled channel', status: channels.length ? 'Done' : 'Required Before Launch' },
                         { label: 'Agent Availability', summary: this.campaignScheduleSummary(), status: 'Done' },
                         ...(this.isBookAppointmentCampaign() ? [{ label: 'Booking', summary: this.bookingSummary(), status: this.campaignSetup.bookingCallLink ? 'Done' : 'Required Before Launch' }] : []),
@@ -6116,29 +7704,103 @@
 
                     return this.allCampaignPageRows().find((campaign) => this.campaignSlug(campaign.name) === slug) || null;
                 },
-                campaignDetailCompanyPanels() {
+                campaignCreationV2IntroPanels() {
                     return [
-                        { id: 'company-basics', label: 'Company Profile', icon: 'fingerprint', description: 'Brand identity, website, and pronunciation.' },
-                        { id: 'company-market', label: 'Industry & Market', icon: 'analytics', description: 'Positioning, customer profile, differentiators, and FAQs.' },
-                        { id: 'company-compliance', label: 'Compliance & Legal', icon: 'gpp_good', description: 'Support contacts, terms, privacy, and compliance notes.' },
+                        { id: 'campaign-objective', label: 'Campaign Objective', icon: 'goal', description: this.campaignSetupDescription('type') },
+                        { id: 'campaign-source', label: 'Campaign Lead Source', icon: 'blocks', description: this.campaignSetupDescription('source') },
+                        { id: 'campaign-integration', label: 'Connect Lead Source', icon: 'unplug', description: this.campaignSetupDescription('integration') },
                     ];
                 },
-                campaignDetailCampaignPanels() {
+                campaignCreationV2PanelOrder() {
                     return [
-                        { id: 'campaign-agent', label: 'AI Agent', icon: 'support_agent', description: 'Agent name, voice, personality, and speaking style.' },
-                        { id: 'campaign-channels', label: 'Outreach Channels', icon: 'forum', description: 'Calls, email, SMS, WhatsApp, and channel guidelines.' },
-                        { id: 'campaign-sequence', label: 'Outreach Sequence', icon: 'timeline', description: 'Initial touchpoints, timing, and campaign actions.' },
-                        { id: 'campaign-followups', label: 'Follow-Up Sequence', icon: 'refresh_ccw', description: 'Response-based follow-ups for positive, engaged, and negative leads.' },
-                        { id: 'campaign-context', label: 'Campaign Context', icon: 'description', description: 'Campaign goal, qualification questions, and message context.' },
-                        { id: 'campaign-booking', label: 'Booking & Schedule', icon: 'calendar_check', description: 'Booking links, outreach hours, and scheduling rules.' },
-                        { id: 'campaign-intelligence', label: 'Conversation Intelligence', icon: 'fact_check', description: 'Captured questions, evaluations, handoff, and knowledge settings.' },
+                        'company-brand',
+                        'campaign-agent',
+                        'campaign-objective',
+                        'campaign-source',
+                        'campaign-integration',
+                        ...this.campaignSetupStepsForMode().map((step) => `campaign-${step.id}`),
                     ];
+                },
+                campaignCreationV2PanelUnlocked(panelId) {
+                    return ! this.campaignCreationV2Open || this.campaignCreationV2UnlockedPanels.includes(panelId);
+                },
+                campaignCreationV2VisiblePanels(panels) {
+                    return panels;
+                },
+                campaignDetailPanelDisabled(panelId) {
+                    return this.campaignCreationV2Open && ! this.campaignCreationV2PanelUnlocked(panelId);
+                },
+                campaignDetailSidebarButtonClass(panelId) {
+                    if (this.campaignDetailPanelDisabled(panelId)) {
+                        return 'cursor-not-allowed text-gray-300';
+                    }
+
+                    return this.activeCampaignDetailPanel === panelId
+                        ? 'bg-white text-indigo-600'
+                        : 'text-gray-700 hover:bg-white hover:text-indigo-600';
+                },
+                campaignDetailSidebarIconClass(panelId) {
+                    if (this.campaignDetailPanelDisabled(panelId)) {
+                        return 'text-gray-300';
+                    }
+
+                    return this.activeCampaignDetailPanel === panelId
+                        ? 'text-indigo-600'
+                        : 'text-gray-400 group-hover:text-indigo-600';
+                },
+                campaignDetailMobileButtonClass(panelId) {
+                    return this.campaignDetailPanelDisabled(panelId)
+                        ? 'cursor-not-allowed opacity-45'
+                        : 'hover:bg-gray-50';
+                },
+                campaignDetailCompanyPanels() {
+                    return this.campaignCreationV2VisiblePanels([
+                        { id: 'company-brand', label: 'Brand', icon: 'briefcase_business', description: 'Select the reusable brand profile for this campaign.' },
+                    ]);
+                },
+                campaignDetailAgentPanels() {
+                    return this.campaignCreationV2VisiblePanels([
+                        { id: 'campaign-agent', label: 'AI Agents', icon: 'sparkle', description: 'Select the AI agents assigned to this campaign.' },
+                    ]);
+                },
+                campaignDetailCampaignPanels() {
+                    const setupPanels = this.campaignSetupStepsForMode()
+                        .filter((step) => this.campaignCreationV2Open || step.id !== 'review')
+                        .map((step) => ({
+                            id: `campaign-${step.id}`,
+                            label: this.campaignSetupHeading(step.id),
+                            icon: this.campaignSetupStepIcon(step.id),
+                            description: this.campaignSetupDescription(step.id),
+                        }));
+
+                    return this.campaignCreationV2VisiblePanels(setupPanels);
+                },
+                campaignDetailCreationPanels() {
+                    return this.campaignCreationV2Open
+                        ? this.campaignCreationV2VisiblePanels(this.campaignCreationV2IntroPanels())
+                        : [];
                 },
                 campaignDetailPanelGroups() {
                     return [
-                        { label: 'Company Details', panels: this.campaignDetailCompanyPanels() },
-                        { label: 'Campaign Details', panels: this.campaignDetailCampaignPanels() },
+                        { label: 'Company', panels: this.campaignDetailCompanyPanels() },
+                        { label: 'AI Agent', panels: this.campaignDetailAgentPanels() },
+                        { label: 'Campaign Basics', panels: this.campaignDetailCreationPanels() },
+                        { label: 'Campaign Setup', panels: this.campaignDetailCampaignPanels() },
+                    ].filter((group) => group.panels.length > 0);
+                },
+                campaignDetailSidebarPanels() {
+                    return [
+                        ...this.campaignDetailCompanyPanels(),
+                        ...this.campaignDetailAgentPanels(),
+                        ...this.campaignDetailCreationPanels(),
+                        ...this.campaignDetailCampaignPanels(),
                     ];
+                },
+                campaignDetailSidebarObjectiveLabel() {
+                    return this.campaignSetup.name || this.selectedCampaign?.name || this.campaignSetup.type || this.campaignTypeNameFromCampaign(this.selectedCampaign) || 'Not selected';
+                },
+                campaignDetailSidebarLeadSourceLabel() {
+                    return this.campaignSetup.source || this.selectedCampaign?.source || 'Not selected';
                 },
                 campaignDetailAllPanels() {
                     return this.campaignDetailPanelGroups().flatMap((group) => group.panels);
@@ -6154,21 +7816,22 @@
                 },
                 campaignDetailCompanyStepMap() {
                     return {
-                        'company-basics': 1,
-                        'company-market': 2,
-                        'company-compliance': 3,
+                        'company-brand': 0,
                     };
                 },
                 campaignDetailCampaignStepMap() {
-                    return {
-                        'campaign-agent': 'agent',
-                        'campaign-channels': 'channels',
-                        'campaign-sequence': 'sequence',
-                        'campaign-followups': 'followups',
-                        'campaign-context': 'brief',
-                        'campaign-booking': 'booking',
-                        'campaign-intelligence': 'intelligence',
+                    const introPanels = {
+                        'campaign-objective': 'type',
+                        'campaign-source': 'source',
+                        'campaign-integration': 'integration',
                     };
+                    const setupPanels = Object.fromEntries(
+                        this.campaignSetupStepsForMode()
+                            .filter((step) => this.campaignCreationV2Open || step.id !== 'review')
+                            .map((step) => [`campaign-${step.id}`, step.id])
+                    );
+
+                    return { ...introPanels, ...setupPanels };
                 },
                 setCampaignDetailPanel(panel, scrollToTop = true, openMobilePanel = true) {
                     const panels = this.campaignDetailAllPanels().map((item) => item.id);
@@ -6177,8 +7840,13 @@
                         return;
                     }
 
+                    if (this.campaignDetailPanelDisabled(panel)) {
+                        return;
+                    }
+
                     this.activeCampaignDetailPanel = panel;
                     this.campaignDetailMobilePanelOpen = Boolean(openMobilePanel);
+                    this.campaignDetailBrandPickerOpen = false;
                     this.campaignBuilderScrollFromStep = null;
                     this.campaignBuilderFadingStep = null;
                     this.campaignBuilderEnteringStep = null;
@@ -6186,7 +7854,7 @@
                     this.campaignSetupFadingStep = null;
                     this.campaignSetupEnteringStep = null;
 
-                    if (this.campaignDetailCompanyStepMap()[panel]) {
+                    if (Object.prototype.hasOwnProperty.call(this.campaignDetailCompanyStepMap(), panel)) {
                         this.campaignBuilderStep = this.campaignDetailCompanyStepMap()[panel];
                     } else {
                         this.campaignBuilderStep = this.companySetupStartStep();
@@ -6218,6 +7886,119 @@
                 saveCampaignDetail() {
                     this.campaignDetailDirtyPanels = [];
                 },
+                campaignCreationV2CurrentPanelIndex() {
+                    return Math.max(0, this.campaignCreationV2PanelOrder().indexOf(this.activeCampaignDetailPanel));
+                },
+                campaignCreationV2NextPanelId() {
+                    const order = this.campaignCreationV2PanelOrder();
+                    const currentIndex = order.indexOf(this.activeCampaignDetailPanel);
+
+                    if (currentIndex === -1 || currentIndex >= order.length - 1) {
+                        return '';
+                    }
+
+                    return order[currentIndex + 1] || '';
+                },
+                campaignCreationV2PreviousPanelId() {
+                    const order = this.campaignCreationV2PanelOrder();
+                    const currentIndex = order.indexOf(this.activeCampaignDetailPanel);
+
+                    if (currentIndex <= 0) {
+                        return '';
+                    }
+
+                    return order
+                        .slice(0, currentIndex)
+                        .reverse()
+                        .find((panelId) => this.campaignCreationV2PanelUnlocked(panelId)) || '';
+                },
+                campaignCreationV2PanelLabel(panelId) {
+                    return this.campaignDetailAllPanels().find((panel) => panel.id === panelId)?.label
+                        || this.campaignCreationV2IntroPanels().find((panel) => panel.id === panelId)?.label
+                        || this.campaignSetupHeading(String(panelId || '').replace('campaign-', ''))
+                        || 'Next Step';
+                },
+                campaignCreationV2CanContinue(panelId = this.activeCampaignDetailPanel) {
+                    if (! this.campaignCreationV2Open) {
+                        return true;
+                    }
+
+                    if (panelId === 'company-brand') {
+                        return Boolean(this.selectedCampaignDetailBrand());
+                    }
+
+                    if (panelId === 'campaign-agent') {
+                        return this.campaignDetailSelectedAgents().length > 0;
+                    }
+
+                    if (panelId === 'campaign-objective') {
+                        return Boolean(this.campaignSetup.type);
+                    }
+
+                    if (panelId === 'campaign-source') {
+                        return Boolean(this.campaignSetup.source);
+                    }
+
+                    if (panelId === 'campaign-integration') {
+                        if (! this.campaignSetup.source) {
+                            return false;
+                        }
+
+                        return ! this.requiresIntegration() || this.campaignSetup.integrationStatus === 'Connected';
+                    }
+
+                    if (panelId === 'campaign-review') {
+                        return ! this.launchBlocked();
+                    }
+
+                    return true;
+                },
+                campaignCreationV2ContinueLabel() {
+                    return this.activeCampaignDetailPanel === 'campaign-review' ? 'Launch Campaign' : 'Continue';
+                },
+                campaignCreationV2ContinueIcon() {
+                    return this.activeCampaignDetailPanel === 'campaign-review' ? 'arrow_forward' : 'arrow_downward';
+                },
+                campaignCreationV2NextLabel() {
+                    if (this.activeCampaignDetailPanel === 'campaign-review') {
+                        return '';
+                    }
+
+                    const nextPanelId = this.campaignCreationV2NextPanelId();
+
+                    return nextPanelId ? this.campaignCreationV2PanelLabel(nextPanelId) : '';
+                },
+                previousCampaignCreationV2Panel() {
+                    const previousPanelId = this.campaignCreationV2PreviousPanelId();
+
+                    if (! previousPanelId) {
+                        return;
+                    }
+
+                    this.setCampaignDetailPanel(previousPanelId);
+                },
+                continueCampaignCreationV2() {
+                    if (! this.campaignCreationV2CanContinue()) {
+                        return;
+                    }
+
+                    if (this.activeCampaignDetailPanel === 'campaign-review') {
+                        this.publishCampaignSetup();
+                        return;
+                    }
+
+                    const nextPanelId = this.campaignCreationV2NextPanelId();
+
+                    if (! nextPanelId) {
+                        return;
+                    }
+
+                    if (! this.campaignCreationV2UnlockedPanels.includes(nextPanelId)) {
+                        this.campaignCreationV2UnlockedPanels.push(nextPanelId);
+                    }
+
+                    this.setCampaignDetailPanel(nextPanelId);
+                },
                 isCampaignDetailPanelChanged(panel = this.activeCampaignDetailPanel) {
                     return this.campaignDetailDirtyPanels.includes(panel);
                 },
@@ -6244,6 +8025,218 @@
                     }
 
                     this.markCampaignDetailPanelChanged();
+                },
+                selectedCampaignDetailBrand() {
+                    return this.brands.find((brand) => brand.id === this.campaignDetailSelectedBrandId) || null;
+                },
+                campaignDetailBrandOptionSelected(company) {
+                    const selectedBrand = this.selectedCampaignDetailBrand();
+
+                    return Boolean(selectedBrand && this.brandMatchesCompany(selectedBrand, company));
+                },
+                selectCampaignDetailCompanyBrand(company, markChanged = true) {
+                    const brand = this.ensureBrandForCompanyOption(company);
+
+                    if (! brand) {
+                        return;
+                    }
+
+                    this.selectCampaignDetailBrand(brand.id, markChanged);
+                },
+                openCampaignDetailBrandPicker() {
+                    this.campaignDetailBrandPickerOpen = true;
+                },
+                closeCampaignDetailBrandPicker() {
+                    this.campaignDetailBrandPickerOpen = false;
+                },
+                defaultBrandForCampaignType(typeName) {
+                    if (['Recover Abandoned Checkout', 'Upsell Post-Purchase', 'Post-Delivery Follow-Up', 'Inbound Refund Request'].includes(typeName)) {
+                        return this.brands.find((brand) => brand.id === 'brand-example-commerce')?.id || this.brands[0]?.id || '';
+                    }
+
+                    return this.brands.find((brand) => brand.id === 'brand-outcraft')?.id || this.brands[0]?.id || '';
+                },
+                selectCampaignDetailBrand(brandId, markChanged = true) {
+                    const brand = this.brands.find((item) => item.id === brandId);
+
+                    if (! brand) {
+                        return;
+                    }
+
+                    this.campaignDetailSelectedBrandId = brand.id;
+                    this.campaignDetailBrandPickerOpen = false;
+                    this.upsertCompanyDemoFromBrand(brand);
+                    this.selectCompanyForSetup(brand.id);
+
+                    if (markChanged) {
+                        this.markCampaignDetailPanelChanged('company-brand');
+                    }
+                },
+                campaignDetailAgentSelected(agentId) {
+                    return this.campaignDetailSelectedAgentIds.includes(agentId);
+                },
+                campaignDetailCanRemoveAgent(agentId) {
+                    return this.campaignDetailAgentSelected(agentId) && this.campaignDetailSelectedAgentIds.length > 1;
+                },
+                campaignDetailSelectedAgents() {
+                    return this.campaignDetailSelectedAgentIds
+                        .map((agentId) => this.aiAgents.find((agent) => agent.id === agentId))
+                        .filter(Boolean);
+                },
+                syncSelectedCampaignAgentAssignments() {
+                    if (! this.selectedCampaign?.name) {
+                        return;
+                    }
+
+                    const agentIds = this.normalizeCampaignAgentIds(this.campaignDetailSelectedAgentIds);
+                    this.campaignDetailSelectedAgentIds = agentIds;
+                    this.selectedCampaign.agentIds = agentIds;
+
+                    const campaign = this.pinnedCampaigns.find((item) => item.name === this.selectedCampaign.name);
+
+                    if (campaign) {
+                        campaign.agentIds = agentIds;
+                    }
+                },
+                refreshCampaignDetailAgentAssignments() {
+                    if (! this.campaignDetailOpen || ! this.selectedCampaign?.name) {
+                        return;
+                    }
+
+                    const campaign = this.pinnedCampaigns.find((item) => item.name === this.selectedCampaign.name) || this.selectedCampaign;
+                    const agentIds = this.normalizeCampaignAgentIds(this.campaignAgentIds(campaign));
+
+                    this.selectedCampaign.agentIds = agentIds;
+                    this.campaignDetailSelectedAgentIds = agentIds;
+
+                    const selectedAgent = this.aiAgents.find((agent) => agentIds.includes(agent.id));
+
+                    if (selectedAgent) {
+                        this.selectCampaignAiAgent(selectedAgent);
+                    } else {
+                        this.campaignSetup.selectedAiAgentId = '';
+                    }
+                },
+                openCampaignDetailAgentPicker() {
+                    this.campaignDetailAgentPickerIds = [...this.campaignDetailSelectedAgentIds];
+                    this.campaignDetailAgentPickerOpen = true;
+                },
+                closeCampaignDetailAgentPicker() {
+                    this.campaignDetailAgentPickerOpen = false;
+                    this.campaignDetailAgentPickerIds = [];
+                },
+                campaignDetailAgentPickerSelected(agentId) {
+                    return this.campaignDetailAgentPickerIds.includes(agentId);
+                },
+                campaignDetailAgentPickerLocked(agentId) {
+                    return this.campaignDetailAgentPickerSelected(agentId) && this.campaignDetailAgentPickerIds.length <= 1;
+                },
+                toggleCampaignDetailAgentPicker(agentId) {
+                    if (this.campaignDetailAgentPickerSelected(agentId)) {
+                        if (this.campaignDetailAgentPickerLocked(agentId)) {
+                            return;
+                        }
+
+                        this.campaignDetailAgentPickerIds = this.campaignDetailAgentPickerIds.filter((id) => id !== agentId);
+
+                        return;
+                    }
+
+                    this.campaignDetailAgentPickerIds.push(agentId);
+                },
+                applyCampaignDetailAgentPicker() {
+                    this.campaignDetailSelectedAgentIds = this.normalizeCampaignAgentIds(this.campaignDetailAgentPickerIds);
+                    const selectedAgent = this.aiAgents.find((agent) => this.campaignDetailSelectedAgentIds.includes(agent.id));
+
+                    if (selectedAgent) {
+                        this.selectCampaignAiAgent(selectedAgent);
+                    } else {
+                        this.campaignSetup.selectedAiAgentId = '';
+                    }
+
+                    this.syncSelectedCampaignAgentAssignments();
+                    this.markCampaignDetailPanelChanged('campaign-agent');
+                    this.closeCampaignDetailAgentPicker();
+                },
+                addCampaignDetailAgent(agentId, markChanged = true) {
+                    const agent = this.aiAgents.find((item) => item.id === agentId);
+
+                    if (! agent) {
+                        return;
+                    }
+
+                    if (! this.campaignDetailAgentSelected(agent.id)) {
+                        this.campaignDetailSelectedAgentIds.push(agent.id);
+                    }
+
+                    this.selectCampaignAiAgent(agent);
+                    this.syncSelectedCampaignAgentAssignments();
+
+                    if (markChanged) {
+                        this.markCampaignDetailPanelChanged('campaign-agent');
+                    }
+                },
+                toggleCampaignDetailAgent(agentId) {
+                    if (this.campaignDetailAgentSelected(agentId)) {
+                        if (! this.campaignDetailCanRemoveAgent(agentId)) {
+                            return;
+                        }
+
+                        this.campaignDetailSelectedAgentIds = this.campaignDetailSelectedAgentIds.filter((id) => id !== agentId);
+
+                        if (this.campaignSetup.selectedAiAgentId === agentId) {
+                            const fallbackAgent = this.aiAgents.find((agent) => this.campaignDetailSelectedAgentIds.includes(agent.id)) || this.aiAgents[0] || null;
+
+                            if (fallbackAgent) {
+                                this.selectCampaignAiAgent(fallbackAgent);
+                            } else {
+                                this.campaignSetup.selectedAiAgentId = '';
+                            }
+                        }
+
+                        this.syncSelectedCampaignAgentAssignments();
+                        this.markCampaignDetailPanelChanged('campaign-agent');
+
+                        return;
+                    }
+
+                    this.addCampaignDetailAgent(agentId);
+                },
+                removeCampaignDetailAgent(agentId) {
+                    if (! this.campaignDetailCanRemoveAgent(agentId)) {
+                        return;
+                    }
+
+                    this.campaignDetailSelectedAgentIds = this.campaignDetailSelectedAgentIds.filter((id) => id !== agentId);
+
+                    if (this.campaignSetup.selectedAiAgentId === agentId) {
+                        const fallbackAgent = this.aiAgents.find((agent) => this.campaignDetailSelectedAgentIds.includes(agent.id));
+
+                        if (fallbackAgent) {
+                            this.selectCampaignAiAgent(fallbackAgent);
+                        } else {
+                            this.campaignSetup.selectedAiAgentId = '';
+                        }
+                    }
+
+                    this.syncSelectedCampaignAgentAssignments();
+                    this.markCampaignDetailPanelChanged('campaign-agent');
+                },
+                editCampaignDetailAgent(agentId) {
+                    const agent = this.aiAgents.find((item) => item.id === agentId);
+
+                    if (! agent) {
+                        return;
+                    }
+
+                    this.openAiAgentCreateModal(agent);
+                },
+                openCampaignDetailAiAgentModal() {
+                    this.openAiAgentCreateModal(null, this.campaignSetup.activeLanguage || 'US', { returnToCampaignDetail: true });
+
+                    if (this.selectedCampaign?.name) {
+                        this.aiAgentCampaignAssignmentIds = [this.selectedCampaign.name];
+                    }
                 },
                 campaignTypeMeta(typeName = this.campaignSetup.type) {
                     return this.campaignTypeGroups
@@ -6315,17 +8308,20 @@
                     this.activeNav = 'Campaigns';
                     this.campaignBuilderOpen = false;
                     this.campaignDetailOpen = true;
+                    this.campaignCreationV2Open = false;
+                    this.campaignCreationV2UnlockedPanels = ['company-brand'];
                     this.abTestDetailOpen = false;
                     this.abTestCreateModalOpen = false;
                     this.selectedCampaign = { ...campaign };
                     this.selectedAbTest = null;
                     this.activeCampaignPageTab = this.activeCampaignPageTab || 'Campaigns';
                     this.campaignDetailDirtyPanels = [];
+                    this.campaignDetailSelectedAgentIds = this.campaignAgentIds(campaign).filter((id) => this.aiAgents.some((agent) => agent.id === id));
                     this.campaignDetailMobilePanelOpen = false;
                     this.mobileNavOpen = false;
                     this.resetTopNavHeaderScroll();
 
-                    this.selectCompanyForSetup(this.defaultCompanyForCampaignType(type));
+                    this.selectCampaignDetailBrand(this.defaultBrandForCampaignType(type), false);
                     this.campaignSetupMode = 'advanced';
                     this.campaignSetupModeSelected = true;
                     this.campaignSetupIntroStep = '';
@@ -6335,7 +8331,17 @@
                     this.campaignSetup.source = source;
                     this.campaignSetup.integrationStatus = source === 'CSV File / Manual' ? 'No Integration Required' : 'Connected';
                     this.campaignSetup.completed = [...new Set([...this.campaignSetup.completed, 'type', 'source', 'agent', 'channels'])];
-                    this.setCampaignDetailPanel('company-basics', false, false);
+                    if (this.campaignDetailSelectedAgentIds.length === 0 && this.aiAgents[0]) {
+                        this.campaignDetailSelectedAgentIds = [this.aiAgents[0].id];
+                    }
+
+                    const selectedAgent = this.aiAgents.find((agent) => this.campaignDetailSelectedAgentIds.includes(agent.id));
+
+                    if (selectedAgent) {
+                        this.selectCampaignAiAgent(selectedAgent);
+                    }
+
+                    this.setCampaignDetailPanel('company-brand', false, false);
                     this.campaignDetailDirtyPanels = [];
 
                     if (updateUrl) {
@@ -6345,14 +8351,44 @@
                 closeCampaignDetail(updateUrl = true) {
                     this.showLoader(220);
                     this.campaignDetailOpen = false;
+                    this.campaignCreationV2Open = false;
+                    this.campaignCreationV2UnlockedPanels = ['company-brand'];
                     this.campaignDetailMobilePanelOpen = false;
                     this.selectedCampaign = null;
-                    this.activeCampaignDetailPanel = 'company-basics';
+                    this.activeCampaignDetailPanel = 'company-brand';
                     this.campaignDetailDirtyPanels = [];
+                    this.campaignDetailSelectedBrandId = '';
+                    this.campaignDetailBrandPickerOpen = false;
+                    this.campaignDetailSelectedAgentIds = [];
+                    this.campaignDetailAgentPickerOpen = false;
+                    this.campaignDetailAgentPickerIds = [];
                     this.resetTopNavHeaderScroll();
 
                     if (updateUrl) {
                         this.syncUrl();
+                    }
+                },
+                closeCampaignCreationV2(updateUrl = true) {
+                    this.showLoader(220);
+                    this.campaignCreationV2Open = false;
+                    this.campaignCreationV2UnlockedPanels = ['company-brand'];
+                    this.campaignDetailMobilePanelOpen = false;
+                    this.selectedCampaign = null;
+                    this.activeCampaignDetailPanel = 'company-brand';
+                    this.campaignDetailDirtyPanels = [];
+                    this.campaignDetailSelectedBrandId = '';
+                    this.campaignDetailBrandPickerOpen = false;
+                    this.campaignDetailSelectedAgentIds = [];
+                    this.campaignDetailAgentPickerOpen = false;
+                    this.campaignDetailAgentPickerIds = [];
+                    this.campaignSetupModeSelected = false;
+                    this.campaignSetupIntroStep = 'type';
+                    this.resetTopNavHeaderScroll();
+                    this.activeNav = 'Campaigns';
+                    this.activeCampaignPageTab = 'Campaigns';
+
+                    if (updateUrl) {
+                        this.syncUrl(true);
                     }
                 },
                 resetAbTestForm() {
@@ -8189,19 +10225,27 @@
                 hideFloatingTooltip() {
                     this.floatingTooltip.visible = false;
                 },
-                copyContact(value) {
+                copyTooltipLabel(value) {
                     const text = String(value || '').trim();
 
-                    if (!text) {
-                        return;
+                    return text && this.copiedContactValue === text ? 'Copied!' : 'Click to Copy';
+                },
+                markContactCopied(text) {
+                    this.copiedContactValue = text;
+
+                    if (this.copiedContactTimer) {
+                        clearTimeout(this.copiedContactTimer);
                     }
 
-                    if (navigator.clipboard?.writeText) {
-                        navigator.clipboard.writeText(text);
+                    this.copiedContactTimer = setTimeout(() => {
+                        if (this.copiedContactValue === text) {
+                            this.copiedContactValue = '';
+                        }
 
-                        return;
-                    }
-
+                        this.copiedContactTimer = null;
+                    }, 1600);
+                },
+                copyContactWithTextarea(text) {
                     const input = document.createElement('textarea');
                     input.value = text;
                     input.setAttribute('readonly', '');
@@ -8211,6 +10255,23 @@
                     input.select();
                     document.execCommand('copy');
                     document.body.removeChild(input);
+                },
+                copyContact(value) {
+                    const text = String(value || '').trim();
+
+                    if (!text) {
+                        return;
+                    }
+
+                    this.markContactCopied(text);
+
+                    if (navigator.clipboard?.writeText) {
+                        navigator.clipboard.writeText(text).catch(() => this.copyContactWithTextarea(text));
+
+                        return;
+                    }
+
+                    this.copyContactWithTextarea(text);
                 },
                 leadCountryOption(code) {
                     const normalized = String(code || 'US').toUpperCase();

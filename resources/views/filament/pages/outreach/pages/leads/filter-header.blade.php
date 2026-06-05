@@ -7,7 +7,7 @@
             </div>
 
             <div class="mt-4 flex flex-col gap-3 xl:flex-row xl:items-start xl:justify-between">
-                <div class="w-full xl:w-64 xl:flex-none">
+                <div class="order-1 w-full xl:w-64 xl:flex-none">
                     <x-outcraft.select
                         class="w-full"
                         model="campaign"
@@ -20,7 +20,7 @@
                     />
                 </div>
 
-                <div class="relative min-w-0 flex-1" x-on:click.outside="searchOpen = false">
+                <div class="relative order-3 min-w-0 flex-1 xl:order-2" x-on:click.outside="searchOpen = false">
                     <div data-outcraft-field-control class="rounded-md bg-white text-sm/6 text-gray-900 shadow-sm outline outline-1 -outline-offset-1 outline-gray-300 transition hover:bg-gray-50 focus-within:outline-2 focus-within:-outline-offset-2 focus-within:outline-indigo-600">
                         <div class="flex min-h-10 items-center px-3">
                             <input
@@ -61,7 +61,7 @@
                     </div>
                 </div>
 
-                <div class="flex w-full flex-col gap-3 sm:flex-row sm:items-start sm:justify-end xl:w-auto xl:flex-none">
+                <div class="order-2 flex w-full flex-col gap-3 sm:flex-row sm:items-start sm:justify-end xl:order-3 xl:w-auto xl:flex-none">
                     <x-outcraft.select
                         class="w-full sm:w-44 xl:w-44"
                         model="activeLeadRange"

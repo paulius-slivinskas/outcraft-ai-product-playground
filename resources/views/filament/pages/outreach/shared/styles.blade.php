@@ -1626,7 +1626,14 @@
             }
             .outcraft-page aside.outcraft-sidebar-collapsed > div:first-child,
             .outcraft-page aside > div:first-child {
-                justify-content: space-between !important;
+                justify-content: flex-end !important;
+            }
+            .outcraft-page aside.outcraft-sidebar-collapsed > div:first-child > button:first-child,
+            .outcraft-page aside > div:first-child > button:first-child {
+                display: none !important;
+            }
+            .outcraft-page aside nav.tailwind-sidebar-nav {
+                padding-top: 0.5rem !important;
             }
             .outcraft-page aside .outcraft-mobile-sidebar-close {
                 display: inline-flex !important;

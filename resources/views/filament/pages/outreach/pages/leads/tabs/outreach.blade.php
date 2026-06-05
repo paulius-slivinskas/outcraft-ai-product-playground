@@ -29,7 +29,7 @@
                     <tbody class="max-sm:block">
                         <tr x-show="isLoading" x-transition.opacity>
                             <td colspan="8" class="h-[260px] bg-white px-8 py-12 text-center">
-                                <div class="mx-auto flex size-[56px] items-center justify-center rounded-xl bg-white" x-html="tableLoaderSvg()"></div>
+                                <div data-card-ignore class="mx-auto flex size-[56px] items-center justify-center" x-html="tableLoaderSvg()"></div>
                             </td>
                         </tr>
                         <template x-for="(row, rowIndex) in loadingRows()" :key="row.name + row.email + row.age + row.result">
@@ -47,7 +47,7 @@
                                             <span class="truncate" x-text="row.email"></span>
                                             <span class="pointer-events-none absolute bottom-full left-1/2 z-50 mb-2 -translate-x-1/2 translate-y-1 whitespace-nowrap rounded-lg bg-gray-900 px-3 py-2 text-xs font-medium text-white opacity-0 shadow-sm transition group-hover:translate-y-0 group-hover:opacity-100">
                                                 <span x-text="row.email"></span>
-                                                <span class="ml-2 text-white/70">Click to Copy</span>
+                                                <span class="ml-2 text-white/70" x-text="copyTooltipLabel($el.previousElementSibling?.textContent)"></span>
                                                 <span class="absolute left-1/2 top-full size-2 -translate-x-1/2 -translate-y-1 rotate-45 bg-gray-900"></span>
                                             </span>
                                         </button>
@@ -56,7 +56,7 @@
                                             <span class="truncate" x-text="row.phone"></span>
                                             <span class="pointer-events-none absolute bottom-full left-1/2 z-50 mb-2 -translate-x-1/2 translate-y-1 whitespace-nowrap rounded-lg bg-gray-900 px-3 py-2 text-xs font-medium text-white opacity-0 shadow-sm transition group-hover:translate-y-0 group-hover:opacity-100">
                                                 <span x-text="row.phone"></span>
-                                                <span class="ml-2 text-white/70">Click to Copy</span>
+                                                <span class="ml-2 text-white/70" x-text="copyTooltipLabel($el.previousElementSibling?.textContent)"></span>
                                                 <span class="absolute left-1/2 top-full size-2 -translate-x-1/2 -translate-y-1 rotate-45 bg-gray-900"></span>
                                             </span>
                                         </button>

@@ -56,19 +56,27 @@
                         </div>
                         <div class="border-t border-gray-100 px-4 py-6 sm:px-6">
                             <dt class="text-sm/6 font-medium text-gray-900">Email address</dt>
-                            <dd class="mt-1 flex min-w-0 items-center gap-2 text-sm/6 text-gray-700 sm:mt-2">
-                                <span class="truncate" x-text="selectedLead?.email || 'biruhl@msn.com'"></span>
-                                <button type="button" x-on:click="copyContact(selectedLead?.email || 'biruhl@msn.com')" class="inline-flex size-6 shrink-0 items-center justify-center rounded-md text-gray-400 transition hover:bg-gray-50 hover:text-gray-900" aria-label="Copy email address">
-                                    <span class="outcraft-icon !text-[15px]">copy</span>
+                            <dd class="mt-1 flex min-w-0 text-sm/6 text-gray-700 sm:mt-2">
+                                <button type="button" x-on:click="copyContact(selectedLead?.email || 'biruhl@msn.com')" class="group relative inline-flex min-w-0 max-w-full text-left transition hover:text-gray-900">
+                                    <span class="truncate" x-text="selectedLead?.email || 'biruhl@msn.com'"></span>
+                                    <span class="pointer-events-none absolute bottom-full left-1/2 z-50 mb-2 -translate-x-1/2 translate-y-1 whitespace-nowrap rounded-lg bg-gray-900 px-3 py-2 text-xs font-medium text-white opacity-0 shadow-sm transition group-hover:translate-y-0 group-hover:opacity-100">
+                                        <span x-text="selectedLead?.email || 'biruhl@msn.com'"></span>
+                                        <span class="ml-2 text-white/70" x-text="copyTooltipLabel($el.previousElementSibling?.textContent)"></span>
+                                        <span class="absolute left-1/2 top-full size-2 -translate-x-1/2 -translate-y-1 rotate-45 bg-gray-900"></span>
+                                    </span>
                                 </button>
                             </dd>
                         </div>
                         <div class="border-t border-gray-100 px-4 py-6 sm:px-6">
                             <dt class="text-sm/6 font-medium text-gray-900">Phone Number</dt>
-                            <dd class="mt-1 flex min-w-0 items-center gap-2 text-sm/6 text-gray-700 sm:mt-2">
-                                <span class="truncate" x-text="selectedLead?.phone || '+12145059504'"></span>
-                                <button type="button" x-on:click="copyContact(selectedLead?.phone || '+12145059504')" class="inline-flex size-6 shrink-0 items-center justify-center rounded-md text-gray-400 transition hover:bg-gray-50 hover:text-gray-900" aria-label="Copy phone number">
-                                    <span class="outcraft-icon !text-[15px]">copy</span>
+                            <dd class="mt-1 flex min-w-0 text-sm/6 text-gray-700 sm:mt-2">
+                                <button type="button" x-on:click="copyContact(selectedLead?.phone || '+12145059504')" class="group relative inline-flex min-w-0 max-w-full text-left transition hover:text-gray-900">
+                                    <span class="truncate" x-text="selectedLead?.phone || '+12145059504'"></span>
+                                    <span class="pointer-events-none absolute bottom-full left-1/2 z-50 mb-2 -translate-x-1/2 translate-y-1 whitespace-nowrap rounded-lg bg-gray-900 px-3 py-2 text-xs font-medium text-white opacity-0 shadow-sm transition group-hover:translate-y-0 group-hover:opacity-100">
+                                        <span x-text="selectedLead?.phone || '+12145059504'"></span>
+                                        <span class="ml-2 text-white/70" x-text="copyTooltipLabel($el.previousElementSibling?.textContent)"></span>
+                                        <span class="absolute left-1/2 top-full size-2 -translate-x-1/2 -translate-y-1 rotate-45 bg-gray-900"></span>
+                                    </span>
                                 </button>
                             </dd>
                         </div>

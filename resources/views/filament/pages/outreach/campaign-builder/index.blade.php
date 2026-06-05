@@ -3,87 +3,24 @@
                 x-cloak
                 x-show="campaignBuilderTransitioning"
                 x-transition.opacity
-                class="fixed inset-0 z-50 flex items-center justify-center bg-white"
+                class="fixed inset-0 z-[70] flex items-center justify-center bg-white"
             >
                 <div class="flex flex-col items-center gap-4">
-                    <div data-card-ignore class="flex size-[56px] items-center justify-center rounded-xl bg-white" x-html="tableLoaderSvg()"></div>
+                    <div data-card-ignore class="flex size-[56px] items-center justify-center" x-html="tableLoaderSvg()"></div>
                     <p class="text-sm font-medium text-gray-500" x-text="campaignBuilderTransitionLabel"></p>
                 </div>
             </div>
 
-            <div x-show="! campaignBuilderUsesIntroLayout() && (campaignBuilderStep < companySetupStartStep() || campaignSetupModeSelected)" class="sticky top-0 z-30 border-b border-gray-200 bg-gray-50 px-4 py-3 lg:hidden">
-                <div class="flex items-center justify-between gap-3">
-                    <span class="min-w-0 truncate text-sm font-semibold text-gray-900" x-text="campaignBuilderMobileProgressLabel()"></span>
-                    <span class="shrink-0 text-xs font-medium text-gray-500" x-text="campaignBuilderMobileProgressStepLabel()"></span>
-                </div>
-                <div class="mt-3 h-2 overflow-hidden rounded-full bg-gray-200">
+            <div x-show="! campaignBuilderUsesIntroLayout() && (campaignBuilderStep < companySetupStartStep() || campaignSetupModeSelected)" class="border-b border-gray-200 bg-gray-50 px-4 py-3 lg:hidden">
+                <div class="h-2 overflow-hidden rounded-full bg-gray-200" role="progressbar" aria-label="Campaign setup progress" :aria-valuenow="campaignBuilderMobileProgressPercent()" aria-valuemin="0" aria-valuemax="100">
                     <div class="h-full rounded-full oc-primary-bg transition-all duration-300 ease-out" :style="`width: ${campaignBuilderMobileProgressPercent()}%`"></div>
                 </div>
             </div>
 
             <div x-ref="campaignBuilderScrollScene" :style="campaignBuilderScrollSceneStyle()" class="relative flex w-full items-start" :class="campaignBuilderUsesSidebarLayout() ? 'mx-0 min-h-full min-w-full max-w-none gap-0 bg-gray-50' : (campaignBuilderUsesIntroLayout() ? 'mx-0 min-h-full max-w-none bg-gray-50 px-4 py-6 sm:px-6 lg:px-8' : 'mx-auto max-w-7xl gap-12 xl:gap-16')">
                 <aside x-ref="campaignBuilderProgressAside" x-show="! campaignBuilderUsesIntroLayout() && (campaignBuilderStep < companySetupStartStep() || campaignSetupModeSelected)" class="hidden shrink-0 lg:block" :class="[campaignBuilderUsesIntroLayout() ? '!hidden' : '', campaignBuilderUsesSidebarLayout() ? 'min-h-screen w-80 border-r border-gray-200 bg-white px-8 py-6' : 'w-72']" :style="campaignBuilderProgressStickyStyle()">
-                    <div>
-                    <div x-ref="campaignBuilderProgressColumn">
-                    <div class="mb-8 flex items-center justify-between gap-3">
-                        <button
-                            type="button"
-                            x-on:click="handleCampaignBuilderBack()"
-                            class="inline-flex h-9 min-w-0 items-center gap-2 rounded-md px-2 text-sm font-semibold text-gray-600 transition hover:bg-gray-50 hover:text-gray-950"
-                        >
-                            <span class="outcraft-icon !text-[18px]">arrow_back</span>
-                            <span class="truncate" x-text="campaignBuilderBackLabel()"></span>
-                        </button>
-                        <div
-                            class="relative shrink-0"
-                            x-data="{ setupModeMenuOpen: false }"
-                            x-on:click.outside="setupModeMenuOpen = false"
-                        >
-                            <button type="button" x-on:click="setupModeMenuOpen = ! setupModeMenuOpen" class="inline-flex size-9 items-center justify-center rounded-md text-gray-500 transition hover:bg-gray-100 hover:text-gray-900" aria-label="Progress and setup options">
-                                <span class="outcraft-icon !text-[18px]">more_vert</span>
-                            </button>
-                            <div x-cloak x-show="setupModeMenuOpen" x-transition:enter="transition ease-out duration-200" x-transition:enter-start="opacity-0 translate-y-2" x-transition:enter-end="opacity-100 translate-y-0" x-transition:leave="transition ease-in duration-150" x-transition:leave-start="opacity-100 translate-y-0" x-transition:leave-end="opacity-0 translate-y-1" class="absolute right-2 z-40 mt-2 w-52 rounded-md border border-gray-200 bg-white py-1 shadow-lg" role="menu">
-                                <div x-show="campaignBuilderStep >= companySetupStartStep() && campaignSetupModeSelected" class="pt-1">
-                                <p class="px-2 py-1 text-xs font-semibold uppercase tracking-wide text-gray-400">Setup Mode</p>
-                                <button type="button" x-on:click="setCampaignSetupMode('fast'); setupModeMenuOpen = false" class="flex w-full items-center justify-between px-3 py-2 text-left text-sm font-medium transition" :class="campaignSetupMode === 'fast' ? 'text-gray-950' : 'text-gray-600 hover:bg-gray-50 hover:text-gray-950'" role="menuitem">
-                                    <span>Fast</span>
-                                    <span x-show="campaignSetupMode === 'fast'" class="outcraft-icon !text-[16px] text-indigo-600">check</span>
-                                </button>
-                                <button type="button" x-on:click="setCampaignSetupMode('advanced'); setupModeMenuOpen = false" class="flex w-full items-center justify-between px-3 py-2 text-left text-sm font-medium transition" :class="campaignSetupMode === 'advanced' ? 'text-gray-950' : 'text-gray-600 hover:bg-gray-50 hover:text-gray-950'" role="menuitem">
-                                    <span>Advanced</span>
-                                    <span x-show="campaignSetupMode === 'advanced'" class="outcraft-icon !text-[16px] text-indigo-600">check</span>
-                                </button>
-                                </div>
-                                <div x-show="campaignBuilderStep >= companySetupStartStep() && campaignSetupModeSelected && campaignSetup.current === 'brief'" class="mt-1 border-t border-gray-100 pt-1">
-                                    <p class="px-2 py-1 text-xs font-semibold uppercase tracking-wide text-gray-400">Campaign Context</p>
-                                    <button type="button" x-on:click="campaignSetup.briefTab = 'builder'; setupModeMenuOpen = false; scheduleCampaignBuilderLayoutUpdate()" class="flex w-full items-center justify-between px-3 py-2 text-left text-sm font-medium transition" :class="campaignSetup.briefTab === 'builder' ? 'text-gray-950' : 'text-gray-600 hover:bg-gray-50 hover:text-gray-950'" role="menuitem">
-                                        <span>Option Three</span>
-                                        <span x-show="campaignSetup.briefTab === 'builder'" class="outcraft-icon !text-[16px] text-indigo-600">check</span>
-                                    </button>
-                                    <button type="button" x-on:click="campaignSetup.briefTab = 'context'; setupModeMenuOpen = false; scheduleCampaignBuilderLayoutUpdate()" class="flex w-full items-center justify-between px-3 py-2 text-left text-sm font-medium transition" :class="campaignSetup.briefTab === 'context' ? 'text-gray-950' : 'text-gray-600 hover:bg-gray-50 hover:text-gray-950'" role="menuitem">
-                                        <span>Original</span>
-                                        <span x-show="campaignSetup.briefTab === 'context'" class="outcraft-icon !text-[16px] text-indigo-600">check</span>
-                                    </button>
-                                    <button type="button" x-on:click="campaignSetup.briefTab = 'discovery'; setupModeMenuOpen = false; scheduleCampaignBuilderLayoutUpdate()" class="flex w-full items-center justify-between px-3 py-2 text-left text-sm font-medium transition" :class="campaignSetup.briefTab === 'discovery' ? 'text-gray-950' : 'text-gray-600 hover:bg-gray-50 hover:text-gray-950'" role="menuitem">
-                                        <span>Option Two</span>
-                                        <span x-show="campaignSetup.briefTab === 'discovery'" class="outcraft-icon !text-[16px] text-indigo-600">check</span>
-                                    </button>
-                                </div>
-                                <div x-show="campaignBuilderStep >= companySetupStartStep() && campaignSetupModeSelected && campaignSetup.current === 'followups'" class="mt-1 border-t border-gray-100 pt-1">
-                                    <p class="px-2 py-1 text-xs font-semibold uppercase tracking-wide text-gray-400">Follow-Up Sequence</p>
-                                    <button type="button" x-on:click="setFollowupLayoutOption('option2'); setupModeMenuOpen = false" class="flex w-full items-center justify-between px-3 py-2 text-left text-sm font-medium transition" :class="campaignSetup.followupLayoutOption === 'option2' ? 'text-gray-950' : 'text-gray-600 hover:bg-gray-50 hover:text-gray-950'" role="menuitem">
-                                        <span>Option 2</span>
-                                        <span x-show="campaignSetup.followupLayoutOption === 'option2'" class="outcraft-icon !text-[16px] text-indigo-600">check</span>
-                                    </button>
-                                    <button type="button" x-on:click="setFollowupLayoutOption('option1'); setupModeMenuOpen = false" class="flex w-full items-center justify-between px-3 py-2 text-left text-sm font-medium transition" :class="campaignSetup.followupLayoutOption === 'option1' ? 'text-gray-950' : 'text-gray-600 hover:bg-gray-50 hover:text-gray-950'" role="menuitem">
-                                        <span>Option 1 · Historical</span>
-                                        <span x-show="campaignSetup.followupLayoutOption === 'option1'" class="outcraft-icon !text-[16px] text-indigo-600">check</span>
-                                    </button>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
+                    <div class="flex min-h-[calc(100vh-3rem)] flex-col">
+                    <div x-ref="campaignBuilderProgressColumn" class="flex-1">
                     <nav x-show="campaignBuilderStep < companySetupStartStep() && progressBarStyle === 'timeline'" x-ref="companySetupProgressNav" aria-label="Company setup progress">
                         <ol role="list" class="space-y-6">
                             <template x-for="(step, index) in companySetupSteps" :key="step.label">
@@ -145,12 +82,23 @@
                         </ol>
                     </nav>
 
+                    <div x-show="campaignBuilderStep >= companySetupStartStep() && campaignSetupModeSelected" class="mb-8 space-y-4 border-b border-gray-200 pb-6">
+                        <div>
+                            <p class="text-xs font-semibold uppercase tracking-wide text-gray-400">Campaign Objective</p>
+                            <p class="mt-1 truncate text-sm font-semibold leading-6 text-gray-950" x-text="campaignSetup.type || 'Not selected'"></p>
+                        </div>
+                        <div>
+                            <p class="text-xs font-semibold uppercase tracking-wide text-gray-400">Lead Source</p>
+                            <p class="mt-1 truncate text-sm font-semibold leading-6 text-gray-950" x-text="campaignSetup.source || 'Not selected'"></p>
+                        </div>
+                    </div>
+
                     <nav x-show="campaignBuilderStep >= companySetupStartStep() && campaignSetupModeSelected && progressBarStyle === 'timeline'" aria-label="Campaign setup progress" class="space-y-5">
                         <ol role="list" class="space-y-4">
                             <template x-for="(step, index) in campaignSetupPrimaryTimelineSteps()" :key="step.id">
                                 <li class="relative flex gap-4">
                                     <span x-show="index !== campaignSetupPrimaryTimelineSteps().length - 1" class="absolute left-[15px] top-0 -bottom-8 w-0.5" :class="campaignSetupStatus(step.id) === 'done' ? 'oc-primary-bg' : 'bg-gray-200'"></span>
-                                    <div class="relative flex min-w-0 flex-1 items-start gap-2" x-on:click.outside="step.id === 'followups' && (campaignSetup.followupOptionMenuOpen = false)">
+                                    <div class="relative flex min-w-0 flex-1 items-start gap-2">
                                         <button type="button" x-on:click="setCampaignSetupStep(step.id)" class="group flex min-w-0 flex-1 items-start gap-4 text-left">
                                             <span class="flex h-9 items-center" x-html="campaignSetupStatusIcon(step.id, campaignSetupStepNumber(step.id))"></span>
                                             <span class="min-w-0 pt-1">
@@ -158,13 +106,6 @@
                                                 <span class="block text-sm leading-5 text-gray-500" x-text="step.id === 'followups' ? followupLayoutOptionLabel() : step.description"></span>
                                             </span>
                                         </button>
-                                        <button x-show="step.id === 'followups'" type="button" x-on:click="campaignSetup.followupOptionMenuOpen = ! campaignSetup.followupOptionMenuOpen" class="mt-1 inline-flex size-8 shrink-0 items-center justify-center rounded-md text-gray-400 transition hover:bg-gray-50 hover:text-gray-700" aria-label="Follow-Up Options">
-                                            <span class="outcraft-icon !text-[18px]">more_vert</span>
-                                        </button>
-                                        <div x-cloak x-show="step.id === 'followups' && campaignSetup.followupOptionMenuOpen" x-transition class="absolute right-0 top-10 z-30 w-48 rounded-md bg-white py-1 shadow-lg ring-1 ring-gray-900/10">
-                                            <button type="button" x-on:click="setFollowupLayoutOption('option2')" class="flex w-full items-center justify-between px-3 py-2 text-left text-sm font-medium text-gray-700 transition hover:bg-gray-50 hover:text-gray-950"><span>Option 2</span><span x-show="campaignSetup.followupLayoutOption === 'option2'" class="outcraft-icon !text-[16px] oc-primary-text">check</span></button>
-                                            <button type="button" x-on:click="setFollowupLayoutOption('option1')" class="flex w-full items-center justify-between px-3 py-2 text-left text-sm font-medium text-gray-700 transition hover:bg-gray-50 hover:text-gray-950"><span>Option 1 · Historical</span><span x-show="campaignSetup.followupLayoutOption === 'option1'" class="outcraft-icon !text-[16px] oc-primary-text">check</span></button>
-                                        </div>
                                     </div>
                                 </li>
                             </template>
@@ -243,6 +184,11 @@
                             </template>
                         </ol>
                     </nav>
+                    </div>
+                    <div x-show="campaignBuilderStep >= companySetupStartStep() && campaignSetupModeSelected && ! onboardingCampaignFlow" class="mt-auto flex h-[72px] items-center">
+                        <button type="button" x-on:click="openCampaignCancelConfirm()" class="inline-flex h-9 items-center rounded-md px-2 text-sm font-semibold text-gray-600 transition hover:bg-gray-50 hover:text-gray-950 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600">
+                            Cancel Setup
+                        </button>
                     </div>
                     </div>
                 </aside>

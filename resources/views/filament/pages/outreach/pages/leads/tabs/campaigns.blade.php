@@ -123,7 +123,7 @@
                     <span x-text="paginationSummary()"></span>
                 </div>
                 <div class="flex flex-1 justify-end">
-                    <nav aria-label="Pagination" class="isolate inline-flex -space-x-px rounded-md shadow-sm">
+                    <nav aria-label="Pagination" data-outcraft-pagination class="isolate inline-flex -space-x-px overflow-hidden rounded-md shadow-sm">
                         <button type="button" x-on:click="page = Math.max(1, page - 1)" :disabled="page === 1" class="relative inline-flex size-9 items-center justify-center rounded-l-md text-gray-400 ring-1 ring-inset ring-gray-300 hover:bg-gray-50 focus:z-20 focus:outline-offset-0 disabled:cursor-not-allowed disabled:opacity-40">
                             <span class="sr-only">Previous</span>
                             <svg viewBox="0 0 20 20" fill="currentColor" data-slot="icon" aria-hidden="true" class="size-5">

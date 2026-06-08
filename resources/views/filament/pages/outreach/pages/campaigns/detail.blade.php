@@ -59,7 +59,18 @@
 
             <div class="mt-8 max-w-5xl lg:flex lg:gap-x-16">
                 <div x-show="! campaignDetailMobilePanelOpen" x-transition.opacity class="space-y-6 lg:hidden">
-                    <template x-for="group in campaignDetailPanelGroups()" :key="group.label">
+                    <div class="space-y-6 px-1">
+                        <div>
+                            <p class="text-xs font-semibold uppercase tracking-wide text-gray-400">Campaign Objective:</p>
+                            <p class="mt-1 text-sm font-semibold leading-6 text-gray-900" x-text="campaignDetailSidebarObjectiveLabel()"></p>
+                        </div>
+                        <div>
+                            <p class="text-xs font-semibold uppercase tracking-wide text-gray-400">Lead Source:</p>
+                            <p class="mt-1 text-sm font-semibold leading-6 text-gray-900" x-text="campaignDetailSidebarLeadSourceLabel()"></p>
+                        </div>
+                    </div>
+
+                    <template x-for="group in campaignDetailMobilePanelGroups()" :key="group.label">
                         <div>
                             <p class="mb-2 px-1 text-xs font-semibold uppercase tracking-wide text-gray-400" x-text="group.label"></p>
                             <ul role="list" class="overflow-hidden rounded-lg bg-white shadow-sm ring-1 ring-gray-900/5">
@@ -141,9 +152,8 @@
                 </aside>
 
                 <div class="min-w-0 flex-1" :class="campaignDetailMobilePanelOpen ? 'block' : 'hidden lg:block'">
-                    <div class="mb-4 rounded-lg bg-white px-4 py-4 shadow-sm ring-1 ring-gray-900/5 lg:hidden">
-                        <p class="text-xs font-semibold uppercase tracking-wide text-gray-400" x-text="activeCampaignDetailPanelGroupLabel()"></p>
-                        <h2 class="mt-1 text-lg font-semibold leading-7 text-gray-950" x-text="activeCampaignDetailPanelMeta()?.label || 'Campaign Settings'"></h2>
+                    <div class="mb-6 px-1 lg:hidden">
+                        <h2 class="text-lg font-semibold leading-7 text-gray-950" x-text="activeCampaignDetailPanelMeta()?.label || 'Campaign Settings'"></h2>
                         <p class="mt-1 text-sm leading-6 text-gray-500" x-text="activeCampaignDetailPanelMeta()?.description || ''"></p>
                     </div>
 
@@ -179,25 +189,40 @@
                                             <span class="block truncate text-sm leading-6 text-gray-500" x-text="company.website"></span>
                                         </span>
                                     </button>
-                                    <span class="flex shrink-0 items-center gap-1">
+                                    <span class="relative flex shrink-0 items-center" x-data="{ actionsOpen: false }" x-on:click.stop="null" x-on:click.outside="actionsOpen = false" x-on:keydown.escape.window="actionsOpen = false" data-campaign-detail-ignore-change>
                                         <button
                                             type="button"
                                             data-campaign-detail-ignore-change
-                                            x-on:click.stop="openCampaignBuilderBrandEditModal(company)"
+                                            x-on:click.stop="actionsOpen = ! actionsOpen"
                                             class="inline-flex size-9 items-center justify-center rounded-md text-gray-400 transition hover:bg-gray-50 hover:text-gray-700 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600"
-                                            :aria-label="`Edit ${company.name}`"
+                                            :aria-label="`More actions for ${company.name}`"
+                                            aria-haspopup="menu"
+                                            :aria-expanded="actionsOpen.toString()"
                                         >
-                                            <span class="outcraft-icon !text-[19px]">edit</span>
+                                            <span class="outcraft-icon !text-[20px]">more_vert</span>
                                         </button>
-                                        <button
-                                            type="button"
-                                            data-campaign-detail-ignore-change
-                                            x-on:click.stop="deleteCampaignBuilderBrand(company)"
-                                            class="inline-flex size-9 items-center justify-center rounded-md text-gray-400 transition hover:bg-red-50 hover:text-red-600 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-red-600"
-                                            :aria-label="`Delete ${company.name}`"
-                                        >
-                                            <span class="outcraft-icon !text-[19px]">delete</span>
-                                        </button>
+                                        <div x-cloak x-show="actionsOpen" x-transition:enter="transition ease-out duration-100" x-transition:enter-start="opacity-0 translate-y-1" x-transition:enter-end="opacity-100 translate-y-0" x-transition:leave="transition ease-in duration-75" x-transition:leave-start="opacity-100 translate-y-0" x-transition:leave-end="opacity-0 translate-y-1" data-dropdown-surface class="absolute right-0 top-10 z-40 w-36 rounded-md bg-white p-1 text-sm shadow-lg ring-1 ring-gray-900/10" role="menu">
+                                            <button
+                                                type="button"
+                                                data-campaign-detail-ignore-change
+                                                x-on:click.stop="actionsOpen = false; openCampaignBuilderBrandEditModal(company)"
+                                                class="flex w-full items-center gap-2 rounded px-3 py-2 text-left text-gray-700 transition hover:bg-gray-50"
+                                                role="menuitem"
+                                            >
+                                                <span class="outcraft-icon !text-[17px] text-gray-400">edit</span>
+                                                Edit
+                                            </button>
+                                            <button
+                                                type="button"
+                                                data-campaign-detail-ignore-change
+                                                x-on:click.stop="actionsOpen = false; deleteCampaignBuilderBrand(company)"
+                                                class="flex w-full items-center gap-2 rounded px-3 py-2 text-left text-red-600 transition hover:bg-red-50"
+                                                role="menuitem"
+                                            >
+                                                <span class="outcraft-icon !text-[17px]">delete</span>
+                                                Remove
+                                            </button>
+                                        </div>
                                     </span>
                                 </div>
                             </template>
@@ -258,27 +283,42 @@
                                             </span>
                                         </span>
                                     </button>
-                                    <span class="flex shrink-0 items-center gap-1">
+                                    <span class="relative flex shrink-0 items-center" x-data="{ actionsOpen: false }" x-on:click.stop="null" x-on:click.outside="actionsOpen = false" x-on:keydown.escape.window="actionsOpen = false" data-campaign-detail-ignore-change>
                                         <button
                                             type="button"
                                             data-campaign-detail-ignore-change
-                                            x-on:click.stop="openAiAgentCreateModal(agent)"
+                                            x-on:click.stop="actionsOpen = ! actionsOpen"
                                             class="inline-flex size-9 items-center justify-center rounded-md text-gray-400 transition hover:bg-gray-50 hover:text-gray-700 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600"
-                                            :aria-label="`Edit ${aiAgentTitle(agent)}`"
+                                            :aria-label="`More actions for ${aiAgentTitle(agent)}`"
+                                            aria-haspopup="menu"
+                                            :aria-expanded="actionsOpen.toString()"
                                         >
-                                            <span class="outcraft-icon !text-[19px]">edit</span>
+                                            <span class="outcraft-icon !text-[20px]">more_vert</span>
                                         </button>
-                                        <button
-                                            type="button"
-                                            data-campaign-detail-ignore-change
-                                            x-on:click.stop="deleteAiAgent(agent)"
-                                            :disabled="! canDeleteAiAgent(agent.id)"
-                                            class="inline-flex size-9 items-center justify-center rounded-md transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-red-600"
-                                            :class="canDeleteAiAgent(agent.id) ? 'text-gray-400 hover:bg-red-50 hover:text-red-600' : 'cursor-not-allowed text-gray-300'"
-                                            :aria-label="`Delete ${aiAgentTitle(agent)}`"
-                                        >
-                                            <span class="outcraft-icon !text-[19px]">delete</span>
-                                        </button>
+                                        <div x-cloak x-show="actionsOpen" x-transition:enter="transition ease-out duration-100" x-transition:enter-start="opacity-0 translate-y-1" x-transition:enter-end="opacity-100 translate-y-0" x-transition:leave="transition ease-in duration-75" x-transition:leave-start="opacity-100 translate-y-0" x-transition:leave-end="opacity-0 translate-y-1" data-dropdown-surface class="absolute right-0 top-10 z-40 w-36 rounded-md bg-white p-1 text-sm shadow-lg ring-1 ring-gray-900/10" role="menu">
+                                            <button
+                                                type="button"
+                                                data-campaign-detail-ignore-change
+                                                x-on:click.stop="actionsOpen = false; openAiAgentCreateModal(agent)"
+                                                class="flex w-full items-center gap-2 rounded px-3 py-2 text-left text-gray-700 transition hover:bg-gray-50"
+                                                role="menuitem"
+                                            >
+                                                <span class="outcraft-icon !text-[17px] text-gray-400">edit</span>
+                                                Edit
+                                            </button>
+                                            <button
+                                                type="button"
+                                                data-campaign-detail-ignore-change
+                                                x-on:click.stop="actionsOpen = false; deleteAiAgent(agent)"
+                                                :disabled="! canDeleteAiAgent(agent.id)"
+                                                class="flex w-full items-center gap-2 rounded px-3 py-2 text-left transition"
+                                                :class="canDeleteAiAgent(agent.id) ? 'text-red-600 hover:bg-red-50' : 'cursor-not-allowed text-gray-300'"
+                                                role="menuitem"
+                                            >
+                                                <span class="outcraft-icon !text-[17px]">delete</span>
+                                                Remove
+                                            </button>
+                                        </div>
                                     </span>
                                 </div>
                             </template>

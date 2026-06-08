@@ -7788,6 +7788,11 @@
                         { label: 'Campaign Setup', panels: this.campaignDetailCampaignPanels() },
                     ].filter((group) => group.panels.length > 0);
                 },
+                campaignDetailMobilePanelGroups() {
+                    return [
+                        { label: 'Campaign Setup', panels: this.campaignDetailSidebarPanels() },
+                    ].filter((group) => group.panels.length > 0);
+                },
                 campaignDetailSidebarPanels() {
                     return [
                         ...this.campaignDetailCompanyPanels(),

@@ -209,6 +209,13 @@
             border-color: var(--oc-primary-600) !important;
             --tw-ring-color: var(--oc-primary-600) !important;
         }
+        .outcraft-page [data-outcraft-pagination] {
+            border-radius: 0.5rem !important;
+        }
+        .outcraft-page [data-outcraft-pagination] button,
+        .outcraft-page [data-outcraft-pagination] span {
+            border-radius: 0 !important;
+        }
         .outcraft-page .border-gray-100,
         .outcraft-page .border-gray-200 {
             border-color: var(--oc-border-color) !important;

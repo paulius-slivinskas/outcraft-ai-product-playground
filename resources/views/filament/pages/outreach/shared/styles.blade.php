@@ -406,6 +406,16 @@
         .outcraft-page [data-campaign-builder] button[class*="rounded-"][class*="border"][class*="p-5"]:not([data-shadow-control]) {
             border-radius: var(--oc-card-radius) !important;
         }
+        .outcraft-page .oc-selectable-card {
+            border-radius: var(--oc-card-radius) !important;
+        }
+        .outcraft-page .oc-selectable-card:hover,
+        .outcraft-page .oc-selectable-card:focus-within {
+            outline-color: var(--oc-primary-600) !important;
+            outline-offset: -2px !important;
+            outline-style: solid !important;
+            outline-width: 2px !important;
+        }
         .outcraft-page [data-analytics-page] div[class*="rounded-"][class*="shadow-sm"][class*="ring-1"],
         .outcraft-page [data-analytics-page] div[class*="rounded-"][class*="border"][class*="bg-gray-50"],
         .outcraft-page [data-analytics-page] div[class*="rounded-"][class*="bg-gray-950"][class*="p-5"] {
@@ -497,6 +507,11 @@
         .outcraft-page [class*="absolute"][class*="shadow-xl"],
         .outcraft-page [class*="absolute"][class*="shadow-2xl"] {
             --tw-shadow: var(--oc-dropdown-shadow) !important;
+            box-shadow: var(--tw-ring-offset-shadow, 0 0 #0000), var(--tw-ring-shadow, 0 0 #0000), var(--tw-shadow) !important;
+        }
+        .outcraft-page [data-card-surface]:has(> ul[role="list"]),
+        .outcraft-page [data-card-surface]:has(table) {
+            --tw-shadow: 0 0 #0000 !important;
             box-shadow: var(--tw-ring-offset-shadow, 0 0 #0000), var(--tw-ring-shadow, 0 0 #0000), var(--tw-shadow) !important;
         }
         .outcraft-page > [class*="fixed"][class*="shadow-2xl"],
@@ -607,16 +622,24 @@
         .outcraft-page .indeterminate\:border-indigo-600:indeterminate {
             border-color: rgb(var(--oc-primary-600-rgb)) !important;
         }
-        .outcraft-page .outline-indigo-600,
-        .outcraft-page .hover\:outline-indigo-600:hover,
-        .outcraft-page .focus\:outline-indigo-600:focus,
-        .outcraft-page .focus-visible\:outline-indigo-600:focus-visible,
-        .outcraft-page .focus-within\:outline-indigo-600:focus-within {
-            outline-color: rgb(var(--oc-primary-600-rgb)) !important;
-        }
-        .outcraft-page .ring-indigo-100 {
-            --tw-ring-color: rgb(var(--oc-primary-100-rgb)) !important;
-        }
+	        .outcraft-page .outline-indigo-600,
+	        .outcraft-page .hover\:outline-indigo-600:hover,
+	        .outcraft-page .focus\:outline-indigo-600:focus,
+	        .outcraft-page .focus-visible\:outline-indigo-600:focus-visible,
+	        .outcraft-page .focus-within\:outline-indigo-600:focus-within {
+	            outline-color: rgb(var(--oc-primary-600-rgb)) !important;
+	        }
+	        .outcraft-page .oc-selectable-card:hover,
+	        .outcraft-page .oc-selectable-card:focus-within,
+	        .outcraft-page .oc-selectable-card:focus-visible {
+	            outline-color: rgb(var(--oc-primary-600-rgb)) !important;
+	            outline-offset: -2px !important;
+	            outline-style: solid !important;
+	            outline-width: 2px !important;
+	        }
+	        .outcraft-page .ring-indigo-100 {
+	            --tw-ring-color: rgb(var(--oc-primary-100-rgb)) !important;
+	        }
         .outcraft-page .ring-indigo-200 {
             --tw-ring-color: rgb(var(--oc-primary-200-rgb)) !important;
         }

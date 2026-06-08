@@ -19,10 +19,11 @@
 
                             <div class="space-y-3">
                                 <template x-for="company in campaignBuilderCompanyOptions()" :key="company.id">
-                                    <div
-                                        x-show="! onboardingCampaignFlow"
-                                        class="group flex w-full items-center gap-3 rounded-lg bg-white p-4 text-left shadow-sm outline outline-1 -outline-offset-1 outline-gray-300 transition hover:outline-2 hover:-outline-offset-2 hover:outline-indigo-600"
-                                    >
+	                                    <div
+	                                        x-show="! onboardingCampaignFlow"
+                                            data-card-ignore
+	                                        class="oc-selectable-card group flex w-full items-center gap-3 rounded-lg bg-white p-4 text-left shadow-sm outline outline-1 -outline-offset-1 outline-gray-300 transition hover:outline-2 hover:-outline-offset-2 hover:outline-indigo-600"
+	                                    >
                                         <button
                                             type="button"
                                             x-on:click="chooseExistingCompanyForSetup(company.id)"
@@ -69,11 +70,12 @@
                                     </div>
                                 </template>
 
-                                <button
-                                    type="button"
-                                    x-on:click="chooseNewCompanyForSetup()"
-                                    class="flex w-full items-center gap-4 rounded-lg bg-white p-4 text-left shadow-sm outline outline-1 -outline-offset-1 outline-gray-300 transition hover:outline-2 hover:-outline-offset-2 hover:outline-indigo-600 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600"
-                                >
+	                                <button
+	                                    type="button"
+	                                    x-on:click="chooseNewCompanyForSetup()"
+                                        data-card-ignore
+	                                    class="oc-selectable-card flex w-full items-center gap-4 rounded-lg bg-white p-4 text-left shadow-sm outline outline-1 -outline-offset-1 outline-gray-300 transition hover:outline-2 hover:-outline-offset-2 hover:outline-indigo-600 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600"
+	                                >
                                     <span class="flex size-10 shrink-0 items-center justify-center rounded-md oc-primary-bg text-white">
                                         <span class="outcraft-icon !text-[20px] text-white">plus</span>
                                     </span>
@@ -102,10 +104,11 @@
 
                             <div class="space-y-3">
                                 <template x-for="agent in campaignBuilderAiAgentOptions()" :key="`campaign-creation-agent-${agent.id}`">
-                                    <div
-                                        class="group flex w-full items-center gap-3 rounded-lg bg-white p-4 text-left shadow-sm outline transition hover:outline-2 hover:-outline-offset-2 hover:outline-indigo-600"
-                                        :class="campaignCreationAiAgentSelected(agent.id) ? 'outline-2 -outline-offset-2 outline-indigo-600' : 'outline-1 -outline-offset-1 outline-gray-300'"
-                                    >
+	                                    <div
+                                            data-card-ignore
+	                                        class="oc-selectable-card group flex w-full items-center gap-3 rounded-lg bg-white p-4 text-left shadow-sm outline transition hover:outline-2 hover:-outline-offset-2 hover:outline-indigo-600"
+	                                        :class="campaignCreationAiAgentSelected(agent.id) ? 'outline-2 -outline-offset-2 outline-indigo-600' : 'outline-1 -outline-offset-1 outline-gray-300'"
+	                                    >
                                         <label
                                             class="flex min-w-0 flex-1 cursor-pointer items-center gap-4 text-left"
                                         >
@@ -163,11 +166,12 @@
                                     </div>
                                 </template>
 
-                                <button
-                                    type="button"
-                                    x-on:click="openCampaignCreationAiAgentModal()"
-                                    class="flex w-full items-center gap-4 rounded-lg bg-white p-4 text-left shadow-sm outline outline-1 -outline-offset-1 outline-gray-300 transition hover:outline-2 hover:-outline-offset-2 hover:outline-indigo-600 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600"
-                                >
+	                                <button
+	                                    type="button"
+	                                    x-on:click="openCampaignCreationAiAgentModal()"
+                                        data-card-ignore
+	                                    class="oc-selectable-card flex w-full items-center gap-4 rounded-lg bg-white p-4 text-left shadow-sm outline outline-1 -outline-offset-1 outline-gray-300 transition hover:outline-2 hover:-outline-offset-2 hover:outline-indigo-600 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600"
+	                                >
                                     <span class="flex size-10 shrink-0 items-center justify-center rounded-md oc-primary-bg text-white">
                                         <span class="outcraft-icon !text-[20px] text-white">plus</span>
                                     </span>

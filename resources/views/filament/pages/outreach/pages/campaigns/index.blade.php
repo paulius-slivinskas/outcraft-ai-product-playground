@@ -46,7 +46,12 @@
         <section data-card-surface x-cloak x-show="! campaignBuilderOpen && ! campaignDetailOpen && ! campaignCreationV2Open && ! abTestDetailOpen && activeNav === 'Campaigns' && activeCampaignPageTab !== 'A/B Tests'" class="mx-6 mb-6 mt-4 overflow-hidden rounded-lg border border-gray-200 bg-white shadow-sm">
             <ul role="list" class="divide-y divide-gray-100">
                 <template x-for="campaign in campaignsPageRows()" :key="activeCampaignPageTab + campaign.name">
-                    <li x-data="{ actionsOpen: false }" x-on:click="openCampaignDetail(campaign)" class="flex cursor-pointer items-center justify-between gap-x-6 px-6 py-5 transition hover:bg-gray-50">
+                    <li
+                        x-data="{ actionsOpen: false }"
+                        x-on:click="activeCampaignPageTab !== 'Archived' && openCampaignDetail(campaign)"
+                        :class="activeCampaignPageTab === 'Archived' ? 'cursor-default' : 'cursor-pointer hover:bg-gray-50'"
+                        class="flex items-center justify-between gap-x-6 px-6 py-5 transition"
+                    >
                         <div class="flex min-w-0 items-center gap-x-4">
                             <span class="flex size-10 shrink-0 items-center justify-center rounded-md bg-indigo-50 text-indigo-600">
                                 <span class="outcraft-icon !text-[22px]" x-text="campaignAvatarIcon(campaign)"></span>
@@ -73,9 +78,6 @@
                             </div>
                         </div>
                         <div class="flex flex-none items-center gap-x-4 self-center">
-                            <button type="button" x-on:click.stop="openCampaignDetail(campaign)" class="hidden h-9 items-center rounded-md bg-white px-2.5 text-sm font-semibold text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 transition hover:bg-gray-50 sm:inline-flex">
-                                Open<span class="sr-only" x-text="`, ${campaign.name}`"></span>
-                            </button>
                             <div class="relative flex h-9 flex-none items-center" x-on:click.stop="null" x-on:keydown.escape.window="actionsOpen = false" x-on:click.outside="actionsOpen = false">
                                 <button type="button" x-on:click="actionsOpen = !actionsOpen" class="relative inline-flex items-center text-gray-500 transition hover:text-gray-900" aria-label="Open options">
                                     <span class="absolute -inset-2.5"></span>
@@ -92,9 +94,9 @@
                                     x-transition:leave-end="opacity-0 translate-y-2"
                                     class="absolute -right-2.5 top-full z-40 mt-2 w-32 origin-top-right rounded-md bg-white py-2 shadow-lg ring-1 ring-gray-900/5"
                                 >
-                                    <button type="button" x-on:click="actionsOpen = false; openCampaignDetail(campaign)" class="block w-full px-3 py-1 text-left text-sm leading-6 text-gray-900 transition hover:bg-gray-50">Edit</button>
-                                    <button type="button" class="block w-full px-3 py-1 text-left text-sm leading-6 text-gray-900 transition hover:bg-gray-50">Duplicate</button>
-                                    <button type="button" class="block w-full px-3 py-1 text-left text-sm leading-6 text-gray-900 transition hover:bg-gray-50" x-text="activeCampaignPageTab === 'Archived' ? 'Restore' : 'Archive'"></button>
+                                    <button x-show="activeCampaignPageTab !== 'Archived'" type="button" x-on:click="actionsOpen = false; openCampaignDetail(campaign)" class="block w-full px-3 py-1 text-left text-sm leading-6 text-gray-900 transition hover:bg-gray-50">Edit</button>
+                                    <button x-show="activeCampaignPageTab !== 'Archived'" type="button" class="block w-full px-3 py-1 text-left text-sm leading-6 text-gray-900 transition hover:bg-gray-50">Duplicate</button>
+                                    <button type="button" x-on:click="actionsOpen = false; activeCampaignPageTab === 'Archived' ? restoreCampaign(campaign) : archiveCampaign(campaign)" class="block w-full px-3 py-1 text-left text-sm leading-6 text-gray-900 transition hover:bg-gray-50" x-text="activeCampaignPageTab === 'Archived' ? 'Restore' : 'Archive'"></button>
                                 </div>
                             </div>
                         </div>
@@ -134,12 +136,6 @@
                                     <p class="truncate text-xs leading-5 text-gray-500" x-text="variant"></p>
                                 </template>
                             </div>
-                        </div>
-
-                        <div class="flex justify-start lg:w-24 lg:flex-none lg:justify-end">
-                            <button type="button" x-on:click.stop="openAbTestDetail(test)" class="inline-flex h-9 items-center rounded-md bg-white px-2.5 text-sm font-semibold text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 transition hover:bg-gray-50">
-                                Open<span class="sr-only" x-text="`, ${test.name}`"></span>
-                            </button>
                         </div>
                     </li>
                 </template>

@@ -84,7 +84,7 @@
 	                                    <button
 	                                        x-show="campaignSetup.source === 'Klaviyo'"
 	                                        type="button"
-	                                        x-on:click="campaignSetup.klaviyoEventsGuideOpen = true"
+	                                        x-on:click="openKlaviyoEventsGuide()"
 	                                        class="mt-6 flex w-full items-center justify-between gap-4 rounded-lg bg-white p-5 text-left shadow-sm outline outline-1 -outline-offset-1 outline-gray-300 transition hover:outline-2 hover:-outline-offset-2 hover:outline-indigo-600 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600"
 	                                    >
 	                                        <span class="min-w-0">
@@ -264,7 +264,7 @@
                                         <button
                                             x-show="campaignSetup.source === 'Klaviyo'"
                                             type="button"
-                                            x-on:click="campaignSetup.klaviyoEventsGuideOpen = true"
+                                            x-on:click="openKlaviyoEventsGuide()"
                                             class="mt-6 flex w-full items-center justify-between gap-4 rounded-lg bg-white p-5 text-left shadow-sm outline outline-1 -outline-offset-1 outline-gray-300 transition hover:outline-2 hover:-outline-offset-2 hover:outline-indigo-600 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600"
                                         >
                                             <span class="min-w-0">
@@ -975,11 +975,12 @@
 
                                             <template x-for="agent in campaignBuilderAiAgentOptions()" :key="`campaign-agent-${agent.id}`">
                                                 <button
-                                                    type="button"
-                                                    x-on:click="selectCampaignAiAgent(agent)"
-                                                    class="flex w-full items-center gap-4 rounded-lg bg-white p-4 text-left shadow-sm outline outline-1 -outline-offset-1 transition hover:outline-2 hover:-outline-offset-2 hover:outline-indigo-600 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600"
-                                                    :class="campaignSetup.selectedAiAgentId === agent.id ? 'outline-2 -outline-offset-2 outline-indigo-600' : 'outline-gray-300'"
-                                                >
+	                                                type="button"
+	                                                x-on:click="selectCampaignAiAgent(agent)"
+	                                                data-card-ignore
+	                                                class="oc-selectable-card flex w-full items-center gap-4 rounded-lg bg-white p-4 text-left shadow-sm outline outline-1 -outline-offset-1 transition hover:outline-2 hover:-outline-offset-2 hover:outline-indigo-600 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600"
+	                                                :class="campaignSetup.selectedAiAgentId === agent.id ? 'outline-2 -outline-offset-2 outline-indigo-600' : 'outline-gray-300'"
+	                                            >
                                                     <span class="inline-flex size-10 shrink-0 items-center justify-center">
                                                         <img :src="aiAgentFlagUrl(agent)" :alt="`${aiAgentTitle(agent)} flag`" class="size-[34px] object-contain" loading="lazy">
                                                     </span>
@@ -995,15 +996,16 @@
                                             </template>
 
                                             <button
-                                                type="button"
-                                                x-on:click="openAiAgentCreateModalFromCampaignSetup()"
-                                                class="flex w-full items-center gap-4 rounded-lg bg-white p-4 text-left shadow-sm outline outline-1 -outline-offset-1 outline-gray-300 transition hover:outline-2 hover:-outline-offset-2 hover:outline-indigo-600 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600"
-                                            >
+	                                                type="button"
+	                                                x-on:click="openAiAgentCreateModalFromCampaignSetup()"
+	                                                data-card-ignore
+	                                                class="oc-selectable-card flex w-full items-center gap-4 rounded-lg bg-white p-4 text-left shadow-sm outline outline-1 -outline-offset-1 outline-gray-300 transition hover:outline-2 hover:-outline-offset-2 hover:outline-indigo-600 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600"
+	                                            >
                                                 <span class="flex size-10 shrink-0 items-center justify-center rounded-md oc-primary-bg text-white">
                                                     <span class="outcraft-icon !text-[20px] text-white">plus</span>
                                                 </span>
                                                 <span class="min-w-0">
-                                                    <span class="block text-sm font-semibold leading-6 text-gray-950">Create New Agent</span>
+                                                    <span class="block text-sm font-semibold leading-6 text-gray-950">Add New Agent</span>
                                                     <span class="block text-sm leading-6 text-gray-500">Start a fresh AI agent profile for this campaign setup.</span>
                                                 </span>
                                             </button>
@@ -2272,45 +2274,52 @@
 	                                    <h2 class="mt-2 text-2xl font-bold leading-8 tracking-tight text-gray-950" x-text="campaignSetupHeading('events')"></h2>
 	                                    <p class="mt-2 max-w-3xl text-sm leading-6 text-gray-600" x-text="campaignSetupDescription('events')"></p>
 	                                </div>
-	                                <div data-card-surface class="overflow-hidden rounded-lg border border-gray-200 bg-white shadow-sm">
-		                                <div class="flex w-full items-center justify-between gap-4 px-5 py-5 text-left">
-		                                    <div class="flex min-w-0 items-center gap-4">
+	                                <div data-card-surface class="rounded-lg bg-white p-6 shadow-sm outline outline-1 -outline-offset-1 outline-gray-300">
+		                                <div class="flex items-start justify-between gap-4">
+		                                    <div class="flex min-w-0 items-start gap-4">
 		                                        <span class="flex size-[60px] shrink-0 items-center justify-center rounded-md" :class="leadSourceLogoContainerClass(campaignSetup.source)">
 		                                            <span x-show="leadSourceLogos[campaignSetup.source]" class="outcraft-source-logo outcraft-source-logo-lg" x-html="leadSourceLogos[campaignSetup.source]"></span>
 		                                            <span x-show="! leadSourceLogos[campaignSetup.source]" class="outcraft-icon !text-[32px]" x-text="leadSourceIcon(campaignSetup.source)"></span>
 		                                        </span>
-		                                        <span class="min-w-0">
-		                                            <span class="block text-sm font-bold text-gray-950" x-text="leadSourceConnectionTitle()"></span>
-		                                            <span class="mt-1 block text-sm leading-6 text-gray-500" x-text="leadSourceConnectionDescription()"></span>
-		                                        </span>
+		                                        <div class="min-w-0">
+		                                            <p class="text-xs font-semibold uppercase tracking-wide text-gray-400">Selected Lead Source</p>
+		                                            <h3 class="text-sm font-bold text-gray-950" x-text="campaignSetup.source || 'Lead Source'"></h3>
+		                                            <p class="mt-2 text-sm leading-6 text-gray-600">Connect your source to use real customer data, merge tags, and event triggers. You can skip this step, but AI will have less context to personalize conversations.</p>
+		                                        </div>
 		                                    </div>
-		                                    <span class="flex shrink-0 flex-col items-end gap-2">
-		                                        <span
-		                                            class="inline-flex rounded-md px-2 py-1 text-xs font-medium ring-1 ring-inset"
-		                                            :class="! requiresIntegration() || campaignSetup.integrationStatus === 'Connected' ? 'bg-green-50 text-green-700 ring-green-600/20' : (campaignSetup.integrationStatus === 'Skipped for Now' ? 'bg-amber-50 text-amber-700 ring-amber-600/20' : 'bg-gray-50 text-gray-600 ring-gray-500/10')"
-		                                            x-text="leadSourceConnectionStatusLabel()"
-		                                        ></span>
-		                                        <span class="text-xs leading-5 text-gray-500" x-text="leadSourceConnectedAtLabel()"></span>
-		                                    </span>
+		                                    <span class="inline-flex shrink-0 rounded-md bg-green-50 px-2 py-1 text-xs font-medium text-green-700 ring-1 ring-inset ring-green-600/20">Connected</span>
 		                                </div>
 
-	                                    <div class="overflow-x-auto border-t border-gray-200">
+		                                <button
+		                                    x-show="campaignSetup.source === 'Klaviyo'"
+		                                    type="button"
+		                                    x-on:click="openKlaviyoEventsGuide()"
+		                                    class="mt-6 flex w-full items-center justify-between gap-4 rounded-lg bg-white p-5 text-left shadow-sm outline outline-1 -outline-offset-1 outline-gray-300 transition hover:outline-2 hover:-outline-offset-2 hover:outline-indigo-600 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600"
+		                                >
+		                                    <span class="min-w-0">
+		                                        <span class="block text-sm font-bold text-gray-950">How to connect Klaviyo events</span>
+		                                        <span class="mt-1 block text-sm leading-6 text-gray-500">Create Checkout Started and Order Placed flows with webhook actions.</span>
+		                                    </span>
+		                                    <span class="outcraft-icon shrink-0 !text-[20px] text-gray-400">arrow_forward</span>
+		                                </button>
+
+	                                    <div x-cloak x-show="campaignSetup.leadSourceEventsConfigured" x-transition.opacity class="mt-6 overflow-x-auto rounded-lg border border-gray-200">
 	                                        <table class="min-w-full divide-y divide-gray-200 text-left text-sm">
 	                                            <thead class="bg-gray-50">
 	                                                <tr>
 	                                                    <th class="px-6 py-4 font-semibold text-gray-950">Event</th>
-	                                                    <th class="px-6 py-4 font-semibold text-gray-950">Dispatches (limit / current)</th>
+	                                                    <th class="px-6 py-4 font-semibold text-gray-950">Dispatches</th>
 	                                                    <th class="px-6 py-4 font-semibold text-gray-950">Is Enabled</th>
 	                                                    <th class="px-6 py-4"><span class="sr-only">Actions</span></th>
 	                                                </tr>
 	                                            </thead>
-	                                            <tbody class="divide-y divide-gray-100">
+	                                            <tbody class="divide-y divide-gray-100 bg-white">
 	                                                <template x-for="event in campaignSetup.leadSourceEvents" :key="event.id">
 	                                                    <tr>
-		                                                    <td class="px-6 py-5 text-sm font-semibold text-green-700" x-text="event.label"></td>
+		                                                    <td class="px-6 py-5 text-sm font-semibold text-gray-950" x-text="event.label"></td>
 	                                                        <td class="px-6 py-5 text-sm leading-6 text-gray-900" x-text="leadSourceEventDispatchSummary(event)"></td>
 	                                                        <td class="px-6 py-5">
-	                                                            <button type="button" x-on:click="toggleLeadSourceEvent(event.id)" role="switch" :aria-checked="event.enabled" class="relative inline-flex h-6 w-11 shrink-0 self-center rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600" :class="event.enabled ? 'bg-green-500' : 'bg-gray-200'">
+	                                                            <button type="button" x-on:click="toggleLeadSourceEvent(event.id)" role="switch" :aria-checked="event.enabled" class="relative inline-flex h-6 w-11 shrink-0 self-center rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600" :class="event.enabled ? 'bg-indigo-600' : 'bg-gray-200'">
 	                                                                <span class="pointer-events-none inline-block size-5 rounded-full bg-white shadow transition duration-200 ease-in-out" :class="event.enabled ? 'translate-x-5' : 'translate-x-0'"></span>
 	                                                            </button>
 	                                                        </td>
@@ -2324,19 +2333,6 @@
 	                                            </tbody>
 	                                        </table>
 	                                    </div>
-
-		                                <button
-		                                    x-show="campaignSetup.source === 'Klaviyo'"
-		                                    type="button"
-		                                    x-on:click="campaignSetup.klaviyoEventsGuideOpen = true"
-		                                    class="flex w-full items-center justify-between gap-4 border-t border-gray-200 px-5 py-5 text-left transition hover:bg-gray-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600"
-		                                >
-		                                    <span class="min-w-0">
-		                                        <span class="block text-sm font-bold text-gray-950">How to connect Klaviyo events</span>
-		                                        <span class="mt-1 block text-sm leading-6 text-gray-500">Create Checkout Started and Order Placed flows with webhook actions.</span>
-		                                    </span>
-		                                    <span class="outcraft-icon shrink-0 !text-[20px] text-gray-400">arrow_forward</span>
-		                                </button>
 	                                </div>
 	                            </section>
 
@@ -2710,7 +2706,7 @@
 	                                x-transition:leave="transition ease-in duration-100"
 	                                x-transition:leave-start="opacity-100 translate-y-0 scale-100"
 	                                x-transition:leave-end="opacity-0 translate-y-2 scale-95"
-	                                class="relative w-full max-w-4xl overflow-hidden rounded-lg bg-white shadow-2xl ring-1 ring-gray-900/10"
+	                                class="relative w-full max-w-xl overflow-hidden rounded-lg bg-white shadow-2xl ring-1 ring-gray-900/10"
 	                                role="dialog"
 	                                aria-modal="true"
 	                                aria-labelledby="lead-source-event-settings-title"
@@ -2723,7 +2719,7 @@
 	                                    <h2 id="lead-source-event-settings-title" class="text-xl font-bold leading-8 text-gray-950">Edit external event branch</h2>
 	                                    <p class="mt-2 text-sm leading-6 text-gray-500">Configure dispatch limits for the selected lead source event.</p>
 
-	                                    <div class="mt-8 grid gap-6 md:grid-cols-2">
+	                                    <div class="mt-8 grid gap-6">
 	                                        <label class="block">
 	                                            <span class="block text-sm/6 font-semibold text-gray-900">Dispatches limit</span>
 	                                            <input x-model="campaignSetup.leadSourceEventForm.dispatchesLimit" type="number" inputmode="numeric" placeholder="999999991" class="mt-2 block w-full rounded-md bg-white px-3 py-1.5 text-sm/6 text-gray-900 shadow-sm outline outline-1 -outline-offset-1 outline-gray-300 placeholder:text-gray-400 focus:outline-2 focus:-outline-offset-2 focus:outline-indigo-600">

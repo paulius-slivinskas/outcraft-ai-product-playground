@@ -10,7 +10,7 @@
         <section x-cloak x-show="! campaignBuilderOpen && activeNav === 'AI Agents'" class="mx-6 mb-6 mt-4 max-w-4xl space-y-4">
             <div class="space-y-3">
                 <template x-for="agent in aiAgents" :key="agent.id">
-                    <div class="group flex w-full items-center gap-3 rounded-lg bg-white p-4 text-left shadow-sm outline outline-1 -outline-offset-1 outline-gray-300 transition hover:outline-2 hover:-outline-offset-2 hover:outline-indigo-600">
+                    <div class="oc-selectable-card group flex w-full items-center gap-3 rounded-lg bg-white p-4 text-left shadow-sm outline outline-1 -outline-offset-1 outline-gray-300 transition hover:outline-2 hover:-outline-offset-2 hover:outline-indigo-600">
                         <button
                             type="button"
                             x-on:click="openAiAgentCreateModal(agent)"
@@ -72,7 +72,7 @@
             </button>
         </section>
 
-        <div x-cloak x-show="aiAgentLanguageBatchModalOpen" x-transition.opacity x-on:keydown.escape.window="closeAiAgentLanguageBatchModal()" class="fixed inset-0 z-50 flex items-center justify-center bg-gray-950/30 p-4">
+        <div x-cloak x-show="aiAgentLanguageBatchModalOpen" x-transition.opacity x-on:keydown.escape.window="closeAiAgentLanguageBatchModal()" class="fixed inset-0 z-[70] flex items-center justify-center bg-gray-950/30 p-4">
             <div x-on:click="closeAiAgentLanguageBatchModal()" class="absolute inset-0"></div>
             <div
                 x-show="aiAgentLanguageBatchModalOpen"
@@ -82,7 +82,7 @@
                 x-transition:leave="transition ease-in duration-100"
                 x-transition:leave-start="opacity-100 translate-y-0 scale-100"
                 x-transition:leave-end="opacity-0 translate-y-2 scale-95"
-                class="relative flex max-h-[min(780px,calc(100vh-2rem))] w-full max-w-3xl flex-col overflow-hidden rounded-lg bg-white shadow-xl ring-1 ring-gray-900/10"
+                class="relative flex max-h-[min(720px,calc(100vh-2rem))] w-full max-w-xl flex-col overflow-hidden rounded-lg bg-white shadow-xl ring-1 ring-gray-900/10"
                 role="dialog"
                 aria-modal="true"
                 aria-labelledby="add-ai-agent-languages-title"
@@ -91,7 +91,7 @@
                     <div class="flex items-start justify-between gap-4">
                         <div class="min-w-0">
                             <h2 id="add-ai-agent-languages-title" class="text-xl font-bold leading-8 text-gray-950">Add Languages</h2>
-                            <p class="mt-2 max-w-2xl text-sm leading-6 text-gray-500" x-text="aiAgentLanguageBatchContext === 'campaign-creation' ? 'Select one or more languages to configure additional AI agents for this campaign.' : 'Select one or more languages to configure additional AI agents.'"></p>
+                            <p class="mt-2 max-w-2xl text-sm leading-6 text-gray-500" x-text="['campaign-creation', 'campaign-detail'].includes(aiAgentLanguageBatchContext) ? 'Select one or more languages to configure additional AI agents for this campaign.' : 'Select one or more languages to configure additional AI agents.'"></p>
                         </div>
                         <button type="button" x-on:click="closeAiAgentLanguageBatchModal()" class="inline-flex size-8 shrink-0 items-center justify-center rounded-md text-gray-400 transition hover:bg-gray-50 hover:text-gray-700" aria-label="Close">
                             <span class="outcraft-icon !text-[20px]">close</span>
@@ -117,8 +117,9 @@
                     <div class="space-y-3">
                         <template x-for="language in filteredAiAgentLanguageBatchOptions()" :key="`ai-agent-language-${language.code}`">
                             <label
-                                class="flex w-full cursor-pointer items-center gap-4 rounded-lg border border-gray-200 bg-white p-4 text-left transition hover:bg-gray-50 focus-within:outline focus-within:outline-2 focus-within:outline-offset-2 focus-within:outline-indigo-600"
-                                :class="aiAgentLanguageSelectedForBatch(language.code) ? 'border-indigo-600 ring-2 ring-indigo-100' : ''"
+                                data-card-surface
+                                class="oc-selectable-card flex w-full cursor-pointer items-center gap-4 rounded-lg bg-white p-4 text-left shadow-sm outline outline-1 -outline-offset-1 outline-gray-300 transition hover:outline-2 hover:-outline-offset-2 hover:outline-indigo-600 focus-within:outline focus-within:outline-2 focus-within:-outline-offset-2 focus-within:outline-indigo-600"
+                                :class="aiAgentLanguageSelectedForBatch(language.code) ? 'outline-2 -outline-offset-2 outline-indigo-600' : 'outline-gray-300'"
                             >
                                 <x-outcraft.checkbox
                                     mark-when="aiAgentLanguageSelectedForBatch(language.code)"
@@ -228,8 +229,45 @@
                                 </label>
 
                                 <label class="block lg:col-span-2">
-                                    <span class="block text-sm/6 font-semibold text-gray-900">Call Greeting Phrase<span class="text-indigo-400">*</span></span>
-                                    <textarea x-model="aiAgentForm.callGreeting" rows="2" class="mt-2 block min-h-[72px] w-full resize-y rounded-md bg-white px-3 py-2 text-sm/6 text-gray-700 shadow-sm outline outline-1 -outline-offset-1 outline-gray-300 placeholder:text-gray-400 focus:outline-2 focus:-outline-offset-2 focus:outline-indigo-600"></textarea>
+                                    <span class="mb-2 flex items-center justify-between gap-3">
+                                        <span class="block text-sm/6 font-semibold text-gray-900">Call Greeting Phrase<span class="text-indigo-400">*</span></span>
+                                        <span class="relative" x-data="{ fieldActionsOpen: false }" x-on:click.outside="fieldActionsOpen = false">
+                                            <button type="button" x-on:click="fieldActionsOpen = ! fieldActionsOpen" class="inline-flex size-7 items-center justify-center rounded-md text-gray-400 transition hover:bg-gray-50 hover:text-gray-700" aria-label="Call greeting custom field actions">
+                                                <span class="outcraft-icon !text-[18px]">more_vert</span>
+                                            </button>
+                                            <span x-cloak x-show="fieldActionsOpen" x-transition:enter="transition ease-out duration-200" x-transition:enter-start="opacity-0 translate-y-3" x-transition:enter-end="opacity-100 translate-y-0" x-transition:leave="transition ease-in duration-150" x-transition:leave-start="opacity-100 translate-y-0" x-transition:leave-end="opacity-0 translate-y-2" class="absolute right-0 z-40 mt-2 w-52 rounded-md bg-white py-1 shadow-lg ring-1 ring-gray-900/10">
+                                                <button type="button" x-on:click="openCustomFieldTextInput('aiAgentCallGreeting'); fieldActionsOpen = false" class="flex w-full items-center gap-2 px-3 py-2 text-left text-sm font-medium text-gray-700 transition hover:bg-gray-50 hover:text-gray-950">
+                                                    <span class="text-xs text-gray-400">{+}</span>
+                                                    Open Custom Fields
+                                                </button>
+                                                <button type="button" x-on:click="fieldActionsOpen = false" class="flex w-full items-center gap-2 px-3 py-2 text-left text-sm font-medium text-gray-700 transition hover:bg-gray-50 hover:text-gray-950">
+                                                    <span class="outcraft-icon !text-[15px] text-gray-400">settings</span>
+                                                    Configure Custom Fields
+                                                </button>
+                                            </span>
+                                        </span>
+                                    </span>
+                                    <div data-component="custom-field-text-input" class="mt-2 overflow-hidden rounded-md border border-gray-300 bg-white shadow-sm transition focus-within:border-indigo-600 focus-within:ring-1 focus-within:ring-indigo-600">
+                                        <div class="relative grid min-w-0 overflow-hidden transition-[grid-template-columns] duration-200 ease-out" :class="customFieldTextInputState('aiAgentCallGreeting').layoutOpen ? 'lg:grid-cols-[minmax(0,1fr)_18rem]' : 'lg:grid-cols-1'">
+                                            <textarea x-model="aiAgentForm.callGreeting" rows="2" class="block min-h-[64px] min-w-0 w-full resize-y border-0 bg-white px-5 py-4 text-sm/6 text-gray-700 outline-none placeholder:text-gray-400 focus:ring-0"></textarea>
+                                            <aside x-cloak x-show="customFieldTextInputState('aiAgentCallGreeting').open" x-transition:enter="transition ease-out duration-200" x-transition:enter-start="translate-x-full opacity-0" x-transition:enter-end="translate-x-0 opacity-100" x-transition:leave="transition ease-in duration-150" x-transition:leave-start="translate-x-0 opacity-100" x-transition:leave-end="translate-x-full opacity-0" class="min-w-0 border-t border-gray-200 bg-white lg:border-t-0 lg:border-l lg:border-gray-200">
+                                                <div class="flex items-center gap-2 border-b border-gray-200 px-4 py-3">
+                                                    <label class="min-w-0 flex-1">
+                                                        <input :value="customFieldTextInputState('aiAgentCallGreeting').search" x-on:input="customFieldTextInputState('aiAgentCallGreeting').search = $event.target.value" type="search" placeholder="Search Custom Fields" class="block h-9 w-full rounded-md bg-white px-3 py-1.5 text-sm text-gray-900 outline outline-1 -outline-offset-1 outline-gray-300 placeholder:text-gray-400 focus:outline-2 focus:-outline-offset-2 focus:outline-indigo-600">
+                                                    </label>
+                                                    <button type="button" x-on:click="closeCustomFieldTextInput('aiAgentCallGreeting')" class="inline-flex size-7 items-center justify-center rounded-md text-gray-400 transition hover:bg-white hover:text-gray-700" aria-label="Close custom fields">
+                                                        <span class="outcraft-icon !text-[18px]">close</span>
+                                                    </button>
+                                                </div>
+                                                <div class="flex flex-wrap gap-2 px-4 py-4">
+                                                    <template x-for="tag in filteredCustomFieldTextInputTags('aiAgentCallGreeting')" :key="`ai-agent-greeting-${tag}`">
+                                                        <button type="button" class="inline-flex h-8 items-center rounded-md bg-white px-2.5 text-sm font-medium text-gray-600 shadow-sm ring-1 ring-inset ring-gray-200 transition hover:bg-gray-50 hover:text-gray-900" x-text="tag"></button>
+                                                    </template>
+                                                    <p x-show="filteredCustomFieldTextInputTags('aiAgentCallGreeting').length === 0" class="text-sm text-gray-500">No Custom Fields Found.</p>
+                                                </div>
+                                            </aside>
+                                        </div>
+                                    </div>
                                     <button type="button" x-on:click="aiAgentForm.callGreeting = 'Hey, is this @{{first_name}}?'" class="mt-2 text-sm font-semibold text-indigo-600 hover:text-indigo-500">Use Default</button>
                                 </label>
                         </div>

@@ -10,7 +10,7 @@
         <section x-cloak x-show="! campaignBuilderOpen && activeNav === 'Brands'" class="mx-6 mb-6 mt-4 max-w-4xl space-y-4">
             <div class="space-y-3">
                 <template x-for="company in campaignBuilderCompanyOptions()" :key="`brand-page-company-${company.id}`">
-                    <div class="group flex w-full items-center gap-3 rounded-lg bg-white p-4 text-left shadow-sm outline outline-1 -outline-offset-1 outline-gray-300 transition hover:outline-2 hover:-outline-offset-2 hover:outline-indigo-600">
+                    <div class="oc-selectable-card group flex w-full items-center gap-3 rounded-lg bg-white p-4 text-left shadow-sm outline outline-1 -outline-offset-1 outline-gray-300 transition hover:outline-2 hover:-outline-offset-2 hover:outline-indigo-600">
                         <button
                             type="button"
                             x-on:click="openCampaignBuilderBrandEditModal(company)"
@@ -60,7 +60,7 @@
                 <button
                     type="button"
                     x-on:click="openBrandCreateModal()"
-                    class="flex w-full items-center gap-4 rounded-lg bg-white p-4 text-left shadow-sm outline outline-1 -outline-offset-1 outline-gray-300 transition hover:outline-2 hover:-outline-offset-2 hover:outline-indigo-600 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600"
+                    class="oc-selectable-card flex w-full items-center gap-4 rounded-lg bg-white p-4 text-left shadow-sm outline outline-1 -outline-offset-1 outline-gray-300 transition hover:outline-2 hover:-outline-offset-2 hover:outline-indigo-600 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600"
                 >
                     <span class="flex size-10 shrink-0 items-center justify-center rounded-md oc-primary-bg text-white">
                         <span class="outcraft-icon !text-[20px] text-white">plus</span>

@@ -1182,6 +1182,7 @@
 	                    discountCodeModalOpen: false,
 	                    integrationSkipModalOpen: false,
 	                    klaviyoEventsGuideOpen: false,
+	                    leadSourceEventsConfigured: false,
 	                    leadSourceEventModalOpen: false,
 	                    leadSourceEventEditingId: null,
 	                    leadSourceEventForm: {
@@ -3152,7 +3153,7 @@
                         : 'Choose a reusable AI agent profile before setting up the campaign.';
                 },
                 campaignBuilderCreateAgentLabel() {
-                    return this.onboardingCampaignFlow ? 'Create New AI Agent' : 'Create New Agent';
+                    return 'Add New Agent';
                 },
                 campaignBuilderCreateAgentDescription() {
                     return this.onboardingCampaignFlow
@@ -3556,11 +3557,12 @@
                     this.aiAgentLanguageBatchSelection = [];
                 },
                 filteredAiAgentLanguageBatchOptions() {
-                    const existingCodes = new Set(
-                        this.aiAgentLanguageBatchContext === 'campaign-creation'
-                            ? this.campaignBuilderAiAgentOptions().map((agent) => agent.languageCode)
-                            : this.aiAgents.map((agent) => agent.languageCode)
-                    );
+                    const existingAgents = this.aiAgentLanguageBatchContext === 'campaign-creation'
+                        ? this.campaignBuilderAiAgentOptions()
+                        : (this.aiAgentLanguageBatchContext === 'campaign-detail'
+                            ? this.campaignDetailSelectedAgents()
+                            : this.aiAgents);
+                    const existingCodes = new Set(existingAgents.map((agent) => agent.languageCode));
                     const query = String(this.aiAgentLanguageSearch || '').trim().toLowerCase();
 
                     return this.campaignSetupLanguageOptions.filter((language) => {
@@ -3684,6 +3686,31 @@
                             this.selectCampaignAiAgent(records[0]);
                         }
 
+                        this.closeAiAgentLanguageBatchModal();
+                        this.scheduleCampaignBuilderLayoutUpdate();
+                        return;
+                    }
+
+                    if (this.aiAgentLanguageBatchContext === 'campaign-detail') {
+                        const records = selectedLanguages
+                            .filter((language) => ! this.campaignDetailSelectedAgents().some((agent) => agent.languageCode === language.code))
+                            .map((language, index) => this.ensureAiAgentForLanguage(language, index))
+                            .filter(Boolean);
+
+                        if (records.length === 0) {
+                            this.closeAiAgentLanguageBatchModal();
+                            return;
+                        }
+
+                        records.forEach((agent) => {
+                            if (! this.campaignDetailSelectedAgentIds.includes(agent.id)) {
+                                this.campaignDetailSelectedAgentIds.push(agent.id);
+                            }
+                        });
+
+                        this.selectCampaignAiAgent(records[0]);
+                        this.syncSelectedCampaignAgentAssignments();
+                        this.markCampaignDetailPanelChanged('campaign-agent');
                         this.closeAiAgentLanguageBatchModal();
                         this.scheduleCampaignBuilderLayoutUpdate();
                         return;
@@ -5384,6 +5411,9 @@
 	                leadSourceConnectedAtLabel() {
 	                    return this.campaignSetup.integrationStatus === 'Connected' ? '5 hours ago' : '-';
 	                },
+	                openKlaviyoEventsGuide() {
+	                    this.campaignSetup.klaviyoEventsGuideOpen = true;
+	                },
 	                leadSourceEventDispatchSummary(event) {
 	                    const limit = String(event?.dispatchesLimit || '').trim() || 'Unlimited';
 	                    const current = Number(event?.currentDispatches || 0);
@@ -6247,7 +6277,9 @@
                         }
                     }, 180);
                 },
-                closeCampaignSetupOverlays() {
+	                closeCampaignSetupOverlays() {
+	                    const klaviyoEventsGuideWasOpen = this.campaignSetup.klaviyoEventsGuideOpen;
+
                     this.campaignSetup.sequenceModalOpen = false;
                     this.campaignSetup.sequenceActionOpen = '';
                     this.campaignSetup.sequenceEditingIndex = null;
@@ -6266,6 +6298,11 @@
 		                    this.campaignSetup.discountCodeModalOpen = false;
 		                    this.campaignSetup.integrationSkipModalOpen = false;
 		                    this.campaignSetup.klaviyoEventsGuideOpen = false;
+		                    if (klaviyoEventsGuideWasOpen) {
+		                        this.campaignSetup.leadSourceEventsConfigured = true;
+		                        this.campaignSetup.integrationStatus = this.requiresIntegration() ? 'Connected' : 'No Integration Required';
+		                        this.scheduleCampaignBuilderLayoutUpdate();
+		                    }
 		                    this.campaignSetup.leadSourceEventModalOpen = false;
 		                    this.campaignSetup.leadSourceEventEditingId = null;
 		                    this.campaignSetup.briefBuilderItemModalOpen = false;
@@ -7709,6 +7746,49 @@
                         ...this.archivedCampaigns,
                     ];
                 },
+                archiveCampaign(campaign) {
+                    if (! campaign) {
+                        return;
+                    }
+
+                    const campaignName = campaign.name;
+                    const archivedCampaign = {
+                        ...campaign,
+                        previousStatus: campaign.status || 'Running',
+                        status: 'Archived',
+                        change: '',
+                        modified: 'just now',
+                    };
+
+                    this.pinnedCampaigns = this.pinnedCampaigns.filter((item) => item.name !== campaignName);
+
+                    if (! this.archivedCampaigns.some((item) => item.name === campaignName)) {
+                        this.archivedCampaigns.unshift(archivedCampaign);
+                    }
+                },
+                restoreCampaign(campaign) {
+                    if (! campaign) {
+                        return;
+                    }
+
+                    const campaignName = campaign.name;
+                    const restoredCampaign = {
+                        ...campaign,
+                        status: campaign.previousStatus || 'Draft',
+                        modified: 'just now',
+                    };
+
+                    delete restoredCampaign.previousStatus;
+                    this.archivedCampaigns = this.archivedCampaigns.filter((item) => item.name !== campaignName);
+
+                    if (! this.pinnedCampaigns.some((item) => item.name === campaignName)) {
+                        this.pinnedCampaigns.unshift(restoredCampaign);
+                    }
+
+                    if (this.archivedCampaigns.length === 0) {
+                        this.activeCampaignPageTab = 'Campaigns';
+                    }
+                },
                 campaignSlug(value) {
                     return String(value || '')
                         .toLowerCase()
@@ -8145,8 +8225,9 @@
                     }
                 },
                 openCampaignDetailAgentPicker() {
-                    this.campaignDetailAgentPickerIds = [...this.campaignDetailSelectedAgentIds];
-                    this.campaignDetailAgentPickerOpen = true;
+                    this.campaignDetailAgentPickerOpen = false;
+                    this.campaignDetailAgentPickerIds = [];
+                    this.openAiAgentLanguageBatchModal('campaign-detail');
                 },
                 closeCampaignDetailAgentPicker() {
                     this.campaignDetailAgentPickerOpen = false;

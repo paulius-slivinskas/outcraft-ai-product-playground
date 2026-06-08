@@ -171,20 +171,21 @@
                 </aside>
 
                 <div class="min-w-0 flex-1 lg:px-12 lg:py-8" :class="campaignDetailMobilePanelOpen ? 'block' : 'hidden lg:block'">
-                    <div class="mb-6 px-1 lg:hidden">
-                        <h2 class="text-lg font-semibold leading-7 text-gray-950" x-text="activeCampaignDetailPanelMeta()?.label || 'Campaign Settings'"></h2>
-                        <p class="mt-1 text-sm leading-6 text-gray-500" x-text="activeCampaignDetailPanelMeta()?.description || ''"></p>
-                    </div>
+                    <div class="w-full lg:mx-auto lg:max-w-2xl">
+                        <div class="mb-6 px-1 lg:hidden">
+                            <h2 class="text-lg font-semibold leading-7 text-gray-950" x-text="activeCampaignDetailPanelMeta()?.label || 'Campaign Settings'"></h2>
+                            <p class="mt-1 text-sm leading-6 text-gray-500" x-text="activeCampaignDetailPanelMeta()?.description || ''"></p>
+                        </div>
 
-                    <div
-                        x-cloak
-                        x-show="activeCampaignDetailPanel === 'company-brand'"
-                        x-transition:enter="transition ease-out duration-200"
-                        x-transition:enter-start="opacity-0 translate-y-3"
-                        x-transition:enter-end="opacity-100 translate-y-0"
-                        x-on:click="markCampaignDetailClickChanged($event)"
-                        class="min-w-0 space-y-6"
-                    >
+                        <div
+                            x-cloak
+                            x-show="activeCampaignDetailPanel === 'company-brand'"
+                            x-transition:enter="transition ease-out duration-200"
+                            x-transition:enter-start="opacity-0 translate-y-3"
+                            x-transition:enter-end="opacity-100 translate-y-0"
+                            x-on:click="markCampaignDetailClickChanged($event)"
+                            class="min-w-0 space-y-6"
+                        >
                         <div class="hidden lg:block">
                             <h2 class="text-base font-semibold leading-7 text-gray-950">Brand</h2>
                             <p class="mt-1 text-sm leading-6 text-gray-500">Select the brand profile this campaign should use for website, positioning, and legal context.</p>
@@ -203,9 +204,8 @@
                                 type="button"
                                 data-campaign-detail-ignore-change
                                 x-on:click.stop="openCampaignDetailBrandPicker()"
-                                class="inline-flex h-10 items-center justify-center gap-2 rounded-md bg-white px-3.5 text-sm font-semibold text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 transition hover:bg-gray-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600"
+                                class="inline-flex h-10 items-center justify-center rounded-md bg-white px-3.5 text-sm font-semibold text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 transition hover:bg-gray-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600"
                             >
-                                <span class="outcraft-icon !text-[18px] text-gray-500">swap_horiz</span>
                                 Change Brand
                             </button>
                         </div>
@@ -213,7 +213,7 @@
                         <div x-show="campaignCreationV2Open" class="space-y-3">
                             <template x-for="company in campaignBuilderCompanyOptions()" :key="`campaign-detail-brand-${company.id}`">
                                 <div
-                                    class="group flex w-full items-center gap-3 rounded-lg bg-white p-4 text-left shadow-sm outline transition hover:outline-2 hover:-outline-offset-2 hover:outline-indigo-600"
+                                    class="oc-selectable-card group flex w-full items-center gap-3 rounded-lg bg-white p-4 text-left shadow-sm outline transition hover:outline-2 hover:-outline-offset-2 hover:outline-indigo-600"
                                     :class="campaignDetailBrandOptionSelected(company) ? 'outline-2 -outline-offset-2 outline-indigo-600' : 'outline-1 -outline-offset-1 outline-gray-300'"
                                 >
                                     <button
@@ -270,7 +270,7 @@
                                 type="button"
                                 data-campaign-detail-ignore-change
                                 x-on:click.stop="openBrandCreateModal(null, { returnToCampaignDetail: true })"
-                                class="flex w-full items-center gap-4 rounded-lg bg-white p-4 text-left shadow-sm outline outline-1 -outline-offset-1 outline-gray-300 transition hover:outline-2 hover:-outline-offset-2 hover:outline-indigo-600 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600"
+                                class="oc-selectable-card flex w-full items-center gap-4 rounded-lg bg-white p-4 text-left shadow-sm outline outline-1 -outline-offset-1 outline-gray-300 transition hover:outline-2 hover:-outline-offset-2 hover:outline-indigo-600 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600"
                             >
                                 <span class="flex size-10 shrink-0 items-center justify-center rounded-md oc-primary-bg text-white">
                                     <span class="outcraft-icon !text-[20px] text-white">plus</span>
@@ -283,15 +283,15 @@
                         </div>
                     </div>
 
-                    <div
-                        x-cloak
-                        x-show="activeCampaignDetailPanel === 'campaign-agent'"
-                        x-transition:enter="transition ease-out duration-200"
-                        x-transition:enter-start="opacity-0 translate-y-3"
-                        x-transition:enter-end="opacity-100 translate-y-0"
-                        x-on:click="markCampaignDetailClickChanged($event)"
-                        class="min-w-0 space-y-6"
-                    >
+                        <div
+                            x-cloak
+                            x-show="activeCampaignDetailPanel === 'campaign-agent'"
+                            x-transition:enter="transition ease-out duration-200"
+                            x-transition:enter-start="opacity-0 translate-y-3"
+                            x-transition:enter-end="opacity-100 translate-y-0"
+                            x-on:click="markCampaignDetailClickChanged($event)"
+                            class="min-w-0 space-y-6"
+                        >
                         <div class="hidden lg:block">
                             <h2 class="text-base font-semibold leading-7 text-gray-950">AI Agents</h2>
                             <p class="mt-1 text-sm leading-6 text-gray-500">Assign one or more reusable AI agent profiles to this campaign.</p>
@@ -303,7 +303,7 @@
 
                         <div class="space-y-3">
                             <template x-for="agent in campaignDetailSelectedAgents()" :key="`campaign-detail-agent-${agent.id}`">
-                                <div class="group flex w-full items-center gap-3 rounded-lg bg-white p-4 shadow-sm outline outline-1 -outline-offset-1 outline-gray-300 transition hover:outline-2 hover:-outline-offset-2 hover:outline-indigo-600">
+                                <div class="oc-selectable-card group flex w-full items-center gap-3 rounded-lg bg-white p-4 shadow-sm outline outline-1 -outline-offset-1 outline-gray-300 transition hover:outline-2 hover:-outline-offset-2 hover:outline-indigo-600">
                                     <button
                                         type="button"
                                         data-campaign-detail-ignore-change
@@ -377,22 +377,23 @@
                         </div>
                     </div>
 
-                    <div
-                        x-cloak
-                        x-show="activeCampaignDetailPanel.startsWith('campaign-') && activeCampaignDetailPanel !== 'campaign-agent'"
-                        x-transition:enter="transition ease-out duration-200"
-                        x-transition:enter-start="opacity-0 translate-y-3"
-                        x-transition:enter-end="opacity-100 translate-y-0"
-                        x-on:input="markCampaignDetailPanelChanged()"
-                        x-on:change="markCampaignDetailPanelChanged()"
-                        x-on:click="markCampaignDetailClickChanged($event)"
-                        class="min-w-0"
-                    >
+                        <div
+                            x-cloak
+                            x-show="activeCampaignDetailPanel.startsWith('campaign-') && activeCampaignDetailPanel !== 'campaign-agent'"
+                            x-transition:enter="transition ease-out duration-200"
+                            x-transition:enter-start="opacity-0 translate-y-3"
+                            x-transition:enter-end="opacity-100 translate-y-0"
+                            x-on:input="markCampaignDetailPanelChanged()"
+                            x-on:change="markCampaignDetailPanelChanged()"
+                            x-on:click="markCampaignDetailClickChanged($event)"
+                            class="min-w-0"
+                        >
                         <div class="mb-6 hidden lg:block">
                             <h2 class="text-base font-semibold leading-7 text-gray-950" x-text="activeCampaignDetailPanelMeta()?.label || 'Campaign Setup'"></h2>
                             <p class="mt-1 text-sm leading-6 text-gray-500" x-text="activeCampaignDetailPanelMeta()?.description || ''"></p>
                         </div>
                         @include('filament.pages.outreach.campaign-builder.campaign-setup')
+                        </div>
                     </div>
                 </div>
             </div>
@@ -413,48 +414,74 @@
                     </div>
 
                     <div class="min-h-0 flex-1 overflow-y-auto px-6 py-5">
-                        <div class="space-y-2">
+                        <div class="space-y-3">
                             <template x-for="brand in brands" :key="`campaign-brand-picker-${brand.id}`">
-                                <button
-                                    type="button"
-                                    x-on:click.stop="selectCampaignDetailBrand(brand.id)"
-                                    class="flex w-full items-center gap-4 rounded-md px-2 py-2 text-left transition hover:bg-gray-50"
-                                    :class="campaignDetailSelectedBrandId === brand.id ? 'bg-indigo-50 text-indigo-600' : 'text-gray-900'"
+                                <div
+                                    class="oc-selectable-card group flex w-full items-center gap-3 rounded-lg bg-white p-4 text-left shadow-sm outline transition hover:outline-2 hover:-outline-offset-2 hover:outline-indigo-600"
+                                    :class="campaignDetailSelectedBrandId === brand.id ? 'outline-2 -outline-offset-2 outline-indigo-600' : 'outline-1 -outline-offset-1 outline-gray-300'"
                                 >
-                                    <span data-icon-tile class="flex size-10 shrink-0 items-center justify-center rounded-md bg-indigo-50 text-sm font-bold text-indigo-600" x-text="brandInitials(brand.name)"></span>
-                                    <span class="min-w-0 flex-1">
-                                        <span class="block truncate text-sm font-semibold leading-6" :class="campaignDetailSelectedBrandId === brand.id ? 'text-indigo-600' : 'text-gray-950'" x-text="brand.name"></span>
-                                        <span class="block truncate text-sm leading-5 text-gray-500">
-                                            <span x-text="brand.website"></span>
-                                            <span aria-hidden="true"> &middot; </span>
-                                            <span x-text="brand.industry"></span>
+                                    <button
+                                        type="button"
+                                        x-on:click.stop="selectCampaignDetailBrand(brand.id)"
+                                        class="flex min-w-0 flex-1 items-center gap-4 text-left focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600"
+                                    >
+                                        <span data-icon-tile class="flex size-10 shrink-0 items-center justify-center rounded-md bg-indigo-50 text-sm font-bold text-indigo-600" x-text="brandInitials(brand.name)"></span>
+                                        <span class="min-w-0">
+                                            <span class="block truncate text-sm font-semibold leading-6 text-gray-950" x-text="brand.name"></span>
+                                            <span class="block truncate text-sm leading-6 text-gray-500" x-text="brand.website"></span>
                                         </span>
+                                    </button>
+                                    <span class="relative flex shrink-0 items-center" x-data="{ actionsOpen: false }" x-on:click.stop="null" x-on:click.outside="actionsOpen = false" x-on:keydown.escape.window="actionsOpen = false">
+                                        <button
+                                            type="button"
+                                            x-on:click.stop="actionsOpen = ! actionsOpen"
+                                            class="inline-flex size-9 items-center justify-center rounded-md text-gray-400 transition hover:bg-gray-50 hover:text-gray-700 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600"
+                                            :aria-label="`More actions for ${brand.name}`"
+                                            aria-haspopup="menu"
+                                            :aria-expanded="actionsOpen.toString()"
+                                        >
+                                            <span class="outcraft-icon !text-[20px]">more_vert</span>
+                                        </button>
+                                        <div x-cloak x-show="actionsOpen" x-transition:enter="transition ease-out duration-100" x-transition:enter-start="opacity-0 translate-y-1" x-transition:enter-end="opacity-100 translate-y-0" x-transition:leave="transition ease-in duration-75" x-transition:leave-start="opacity-100 translate-y-0" x-transition:leave-end="opacity-0 translate-y-1" data-dropdown-surface class="absolute right-0 top-10 z-40 w-36 rounded-md bg-white p-1 text-sm shadow-lg ring-1 ring-gray-900/10" role="menu">
+                                            <button
+                                                type="button"
+                                                x-on:click.stop="actionsOpen = false; openCampaignBuilderBrandEditModal(brand)"
+                                                class="flex w-full items-center gap-2 rounded px-3 py-2 text-left text-gray-700 transition hover:bg-gray-50"
+                                                role="menuitem"
+                                            >
+                                                <span class="outcraft-icon !text-[17px] text-gray-400">edit</span>
+                                                Edit
+                                            </button>
+                                            <button
+                                                type="button"
+                                                x-on:click.stop="actionsOpen = false; deleteCampaignBuilderBrand(brand)"
+                                                class="flex w-full items-center gap-2 rounded px-3 py-2 text-left text-red-600 transition hover:bg-red-50"
+                                                role="menuitem"
+                                            >
+                                                <span class="outcraft-icon !text-[17px]">delete</span>
+                                                Remove
+                                            </button>
+                                        </div>
                                     </span>
-                                    <span x-show="campaignDetailSelectedBrandId === brand.id" class="outcraft-icon shrink-0 !text-[22px] text-indigo-600">check_circle</span>
-                                </button>
+                                </div>
                             </template>
 
                             <button
                                 type="button"
                                 x-on:click.stop="closeCampaignDetailBrandPicker(); openBrandCreateModal(null, { returnToCampaignDetail: true })"
-                                class="flex w-full items-center gap-4 rounded-md px-2 py-2 text-left transition hover:bg-gray-50"
+                                class="oc-selectable-card flex w-full items-center gap-4 rounded-lg bg-white p-4 text-left shadow-sm outline outline-1 -outline-offset-1 outline-gray-300 transition hover:outline-2 hover:-outline-offset-2 hover:outline-indigo-600 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600"
                             >
                                 <span class="flex size-10 shrink-0 items-center justify-center rounded-md oc-primary-bg text-white">
                                     <span class="outcraft-icon !text-[20px] text-white">plus</span>
                                 </span>
-                                <span class="min-w-0 flex-1">
-                                    <span class="block truncate text-sm font-semibold leading-6 text-gray-950">Create New Brand</span>
-                                    <span class="block truncate text-sm leading-5 text-gray-500">Start a fresh company profile for this campaign.</span>
+                                <span class="min-w-0">
+                                    <span class="block text-sm font-semibold leading-6 text-gray-950">Create New Brand</span>
+                                    <span class="block text-sm leading-6 text-gray-500">Start a fresh company profile for this campaign.</span>
                                 </span>
                             </button>
                         </div>
                     </div>
 
-                    <div class="flex items-center justify-end border-t border-gray-100 bg-white px-6 py-4">
-                        <button type="button" x-on:click="closeCampaignDetailBrandPicker()" class="inline-flex h-10 items-center justify-center rounded-md bg-white px-4 text-sm font-semibold text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 transition hover:bg-gray-50">
-                            Cancel
-                        </button>
-                    </div>
                 </div>
             </div>
 

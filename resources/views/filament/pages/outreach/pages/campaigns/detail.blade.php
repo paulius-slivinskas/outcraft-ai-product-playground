@@ -440,7 +440,8 @@
                                     </span>
                                     <input
                                         type="checkbox"
-                                        class="size-4 shrink-0 rounded border-gray-300 text-indigo-600 focus:ring-indigo-600"
+                                        data-outcraft-checkbox
+                                        class="size-4 shrink-0"
                                         :checked="campaignDetailAgentPickerSelected(agent.id)"
                                         :disabled="campaignDetailAgentPickerLocked(agent.id)"
                                         x-on:change="toggleCampaignDetailAgentPicker(agent.id)"

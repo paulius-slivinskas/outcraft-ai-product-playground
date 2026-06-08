@@ -111,7 +111,8 @@
                                         >
                                             <input
                                                 type="checkbox"
-                                                class="size-4 shrink-0 rounded border-gray-300 text-indigo-600 focus:ring-indigo-600"
+                                                data-outcraft-checkbox
+                                                class="size-4 shrink-0"
                                                 :checked="campaignCreationAiAgentSelected(agent.id)"
                                                 x-on:change="toggleCampaignCreationAiAgent(agent)"
                                             >

@@ -209,6 +209,48 @@
             border-color: var(--oc-primary-600) !important;
             --tw-ring-color: var(--oc-primary-600) !important;
         }
+        .outcraft-page [data-outcraft-checkbox] {
+            appearance: none;
+            background-color: #fff;
+            background-position: center;
+            background-repeat: no-repeat;
+            background-size: 100% 100%;
+            border: 1px solid rgb(209 213 219);
+            border-radius: 0.125rem;
+            color: var(--oc-primary-600);
+            cursor: pointer;
+            forced-color-adjust: auto;
+            height: 1rem;
+            width: 1rem;
+        }
+        .outcraft-page [data-outcraft-checkbox]:checked,
+        .outcraft-page [data-outcraft-checkbox]:indeterminate {
+            background-color: var(--oc-primary-600);
+            border-color: var(--oc-primary-600);
+        }
+        .outcraft-page [data-outcraft-checkbox]:checked {
+            background-image: url("data:image/svg+xml,%3csvg viewBox='0 0 16 16' fill='none' xmlns='http://www.w3.org/2000/svg'%3e%3cpath d='M12.207 5.793a1 1 0 0 1 0 1.414l-5 5a1 1 0 0 1-1.414 0l-2-2a1 1 0 1 1 1.414-1.414L6.5 10.086l4.293-4.293a1 1 0 0 1 1.414 0Z' fill='white'/%3e%3c/svg%3e");
+        }
+        .outcraft-page [data-outcraft-checkbox]:indeterminate {
+            background-image: url("data:image/svg+xml,%3csvg viewBox='0 0 16 16' fill='none' xmlns='http://www.w3.org/2000/svg'%3e%3cpath d='M4 8h8' stroke='white' stroke-width='2' stroke-linecap='round'/%3e%3c/svg%3e");
+        }
+        .outcraft-page [data-outcraft-checkbox]:focus {
+            outline: none;
+        }
+        .outcraft-page [data-outcraft-checkbox]:focus-visible {
+            outline: 2px solid var(--oc-primary-600);
+            outline-offset: 2px;
+        }
+        .outcraft-page [data-outcraft-checkbox]:disabled {
+            background-color: rgb(243 244 246);
+            border-color: rgb(209 213 219);
+            cursor: not-allowed;
+        }
+        .outcraft-page [data-outcraft-checkbox]:disabled:checked,
+        .outcraft-page [data-outcraft-checkbox]:disabled:indeterminate {
+            background-color: rgb(243 244 246);
+            border-color: rgb(209 213 219);
+        }
         .outcraft-page [data-outcraft-pagination] {
             border-radius: 0.5rem !important;
         }

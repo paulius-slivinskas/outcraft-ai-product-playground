@@ -354,7 +354,8 @@
                                         type="checkbox"
                                         :checked="isLeadInteractionChannelSelected(channel.label)"
                                         x-on:change="toggleLeadInteractionChannel(channel.label)"
-                                        class="size-4 rounded border-gray-300 text-[rgb(var(--oc-primary-600-rgb))] accent-[rgb(var(--oc-primary-600-rgb))] focus:ring-[rgb(var(--oc-primary-600-rgb))]"
+                                        data-outcraft-checkbox
+                                        class="size-4 shrink-0"
                                     >
                                     <span class="min-w-0 flex-1 truncate font-medium" x-text="channel.label"></span>
                                     <span class="shrink-0 text-xs text-gray-500" x-text="channel.count"></span>

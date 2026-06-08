@@ -15,14 +15,9 @@
                             :checked="allVisibleLeadsSelected()"
                             x-effect="$el.indeterminate = someVisibleLeadsSelected()"
                             x-on:change="toggleVisibleLeadSelection()"
-                            class="col-start-1 row-start-1 appearance-none rounded border border-gray-300 bg-white checked:border-indigo-600 checked:bg-indigo-600 indeterminate:border-indigo-600 indeterminate:bg-indigo-600 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600"
+                            data-outcraft-checkbox
+                            class="col-start-1 row-start-1 size-4"
                         >
-                        <svg x-show="allVisibleLeadsSelected()" viewBox="0 0 14 14" fill="none" class="pointer-events-none col-start-1 row-start-1 size-3 self-center justify-self-center stroke-white">
-                            <path d="M3 8L6 11L11 3.5" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
-                        </svg>
-                        <svg x-show="someVisibleLeadsSelected()" viewBox="0 0 14 14" fill="none" class="pointer-events-none col-start-1 row-start-1 size-3 self-center justify-self-center stroke-white">
-                            <path d="M3 7H11" stroke-width="2" stroke-linecap="round" />
-                        </svg>
                     </span>
                     <span>Select All</span>
                 </label>
@@ -148,11 +143,9 @@
                                         :checked="isLeadSelected(row)"
                                         x-on:change="toggleLeadSelection(row)"
                                         :aria-label="`Select ${row.name || 'lead'}`"
-                                        class="col-start-1 row-start-1 appearance-none rounded border border-gray-300 bg-white checked:border-indigo-600 checked:bg-indigo-600 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600"
+                                        data-outcraft-checkbox
+                                        class="col-start-1 row-start-1 size-4"
                                     >
-                                    <svg x-show="isLeadSelected(row)" viewBox="0 0 14 14" fill="none" class="pointer-events-none col-start-1 row-start-1 size-3 self-center justify-self-center stroke-white">
-                                        <path d="M3 8L6 11L11 3.5" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
-                                    </svg>
                                 </label>
                             </div>
                             <div class="grid min-w-0 flex-1 grid-cols-[minmax(0,1fr)_minmax(0,0.5fr)_minmax(0,0.5fr)] items-start gap-x-4 max-sm:grid-cols-2 max-sm:gap-y-5">

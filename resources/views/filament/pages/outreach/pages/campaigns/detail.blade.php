@@ -190,7 +190,27 @@
                             <p class="mt-1 text-sm leading-6 text-gray-500">Select the brand profile this campaign should use for website, positioning, and legal context.</p>
                         </div>
 
-                        <div class="space-y-3">
+                        <div x-show="! campaignCreationV2Open" class="space-y-4">
+                            <div class="flex w-full items-center gap-4 rounded-lg border border-gray-200 bg-white p-4 shadow-sm">
+                                <span data-icon-tile class="flex size-10 shrink-0 items-center justify-center rounded-md bg-indigo-50 text-sm font-bold text-indigo-600" x-text="brandInitials(selectedCampaignDetailBrand()?.name || 'Brand')"></span>
+                                <span class="min-w-0">
+                                    <span class="block truncate text-sm font-semibold leading-6 text-gray-950" x-text="selectedCampaignDetailBrand()?.name || 'No brand selected'"></span>
+                                    <span class="block truncate text-sm leading-6 text-gray-500" x-text="selectedCampaignDetailBrand()?.website || 'Choose a brand to assign to this campaign.'"></span>
+                                </span>
+                            </div>
+
+                            <button
+                                type="button"
+                                data-campaign-detail-ignore-change
+                                x-on:click.stop="openCampaignDetailBrandPicker()"
+                                class="inline-flex h-10 items-center justify-center gap-2 rounded-md bg-white px-3.5 text-sm font-semibold text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 transition hover:bg-gray-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600"
+                            >
+                                <span class="outcraft-icon !text-[18px] text-gray-500">swap_horiz</span>
+                                Change Brand
+                            </button>
+                        </div>
+
+                        <div x-show="campaignCreationV2Open" class="space-y-3">
                             <template x-for="company in campaignBuilderCompanyOptions()" :key="`campaign-detail-brand-${company.id}`">
                                 <div
                                     class="group flex w-full items-center gap-3 rounded-lg bg-white p-4 text-left shadow-sm outline transition hover:outline-2 hover:-outline-offset-2 hover:outline-indigo-600"
@@ -413,6 +433,20 @@
                                     <span x-show="campaignDetailSelectedBrandId === brand.id" class="outcraft-icon shrink-0 !text-[22px] text-indigo-600">check_circle</span>
                                 </button>
                             </template>
+
+                            <button
+                                type="button"
+                                x-on:click.stop="closeCampaignDetailBrandPicker(); openBrandCreateModal(null, { returnToCampaignDetail: true })"
+                                class="flex w-full items-center gap-4 rounded-md px-2 py-2 text-left transition hover:bg-gray-50"
+                            >
+                                <span class="flex size-10 shrink-0 items-center justify-center rounded-md oc-primary-bg text-white">
+                                    <span class="outcraft-icon !text-[20px] text-white">plus</span>
+                                </span>
+                                <span class="min-w-0 flex-1">
+                                    <span class="block truncate text-sm font-semibold leading-6 text-gray-950">Create New Brand</span>
+                                    <span class="block truncate text-sm leading-5 text-gray-500">Start a fresh company profile for this campaign.</span>
+                                </span>
+                            </button>
                         </div>
                     </div>
 

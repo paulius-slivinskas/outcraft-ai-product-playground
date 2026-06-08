@@ -39,15 +39,11 @@
                         <span class="outcraft-icon !text-[18px] text-white">add</span>
                         <span x-text="activeCampaignPageTab === 'A/B Tests' ? 'Create New Test' : 'Create New'"></span>
                     </button>
-                    <button x-show="activeCampaignPageTab === 'Campaigns'" type="button" x-on:click="startCampaignCreationV2()" class="inline-flex h-10 shrink-0 items-center gap-2 rounded-md bg-white px-3.5 text-sm font-semibold text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 transition hover:bg-gray-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600">
-                        <span class="outcraft-icon !text-[18px] text-gray-500">rocket</span>
-                        Create New Campaign #2
-                    </button>
                 </div>
             </div>
         </section>
 
-        <section data-card-surface x-cloak x-show="! campaignBuilderOpen && ! campaignDetailOpen && ! campaignCreationV2Open && ! abTestDetailOpen && activeNav === 'Campaigns' && activeCampaignPageTab !== 'A/B Tests'" class="mx-6 mb-6 mt-4 overflow-hidden rounded-lg bg-white shadow-sm ring-1 ring-gray-900/5">
+        <section data-card-surface x-cloak x-show="! campaignBuilderOpen && ! campaignDetailOpen && ! campaignCreationV2Open && ! abTestDetailOpen && activeNav === 'Campaigns' && activeCampaignPageTab !== 'A/B Tests'" class="mx-6 mb-6 mt-4 overflow-hidden rounded-lg border border-gray-200 bg-white shadow-sm">
             <ul role="list" class="divide-y divide-gray-100">
                 <template x-for="campaign in campaignsPageRows()" :key="activeCampaignPageTab + campaign.name">
                     <li x-data="{ actionsOpen: false }" x-on:click="openCampaignDetail(campaign)" class="flex cursor-pointer items-center justify-between gap-x-6 px-6 py-5 transition hover:bg-gray-50">
@@ -107,7 +103,7 @@
             </ul>
         </section>
 
-        <section data-card-surface x-cloak x-show="! campaignBuilderOpen && ! campaignDetailOpen && ! campaignCreationV2Open && ! abTestDetailOpen && activeNav === 'Campaigns' && activeCampaignPageTab === 'A/B Tests'" class="mx-6 mb-6 mt-4 overflow-hidden rounded-lg bg-white shadow-sm ring-1 ring-gray-900/5">
+        <section data-card-surface x-cloak x-show="! campaignBuilderOpen && ! campaignDetailOpen && ! campaignCreationV2Open && ! abTestDetailOpen && activeNav === 'Campaigns' && activeCampaignPageTab === 'A/B Tests'" class="mx-6 mb-6 mt-4 overflow-hidden rounded-lg border border-gray-200 bg-white shadow-sm">
             <ul role="list" class="divide-y divide-gray-100">
                 <template x-for="test in abTestCampaigns" :key="test.name">
                     <li x-on:click="openAbTestDetail(test)" class="flex cursor-pointer flex-col gap-4 px-4 py-5 transition hover:bg-gray-50 sm:px-6 lg:flex-row lg:items-start lg:gap-6">

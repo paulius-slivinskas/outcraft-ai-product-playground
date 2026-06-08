@@ -185,7 +185,7 @@
                         </ol>
                     </nav>
                     </div>
-                    <div x-show="campaignBuilderStep >= companySetupStartStep() && campaignSetupModeSelected && ! onboardingCampaignFlow" class="mt-auto flex h-[72px] items-center">
+                    <div x-show="campaignBuilderStep >= companySetupStartStep() && campaignSetupModeSelected && ! onboardingCampaignFlow" class="-mb-6 mt-auto flex h-[69px] items-center">
                         <button type="button" x-on:click="openCampaignCancelConfirm()" class="inline-flex h-9 items-center rounded-md px-2 text-sm font-semibold text-gray-600 transition hover:bg-gray-50 hover:text-gray-950 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600">
                             Cancel Setup
                         </button>

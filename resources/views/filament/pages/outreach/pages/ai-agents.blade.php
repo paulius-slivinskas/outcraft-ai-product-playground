@@ -97,31 +97,41 @@
                             <span class="outcraft-icon !text-[20px]">close</span>
                         </button>
                     </div>
-                    <label class="mt-5 block">
+                    <label class="relative mt-5 block">
                         <span class="sr-only">Search Languages</span>
-                        <input x-ref="aiAgentLanguageSearch" x-model="aiAgentLanguageSearch" type="search" placeholder="Search Languages" class="block h-10 w-full rounded-md bg-white px-3 py-1.5 text-sm text-gray-900 outline outline-1 -outline-offset-1 outline-gray-300 placeholder:text-gray-400 focus:outline-2 focus:-outline-offset-2 focus:outline-indigo-600">
+                        <input x-ref="aiAgentLanguageSearch" x-model="aiAgentLanguageSearch" type="text" placeholder="Search Languages" class="block h-10 w-full rounded-md bg-white py-1.5 pl-3 pr-10 text-sm text-gray-900 outline outline-1 -outline-offset-1 outline-gray-300 placeholder:text-gray-400 focus:outline-2 focus:-outline-offset-2 focus:outline-indigo-600">
+                        <button
+                            type="button"
+                            x-cloak
+                            x-show="aiAgentLanguageSearch"
+                            x-on:click="aiAgentLanguageSearch = ''; $nextTick(() => $refs.aiAgentLanguageSearch?.focus())"
+                            class="absolute right-2 top-1/2 inline-flex size-7 -translate-y-1/2 items-center justify-center rounded-md text-gray-400 transition hover:bg-gray-50 hover:text-gray-700"
+                            aria-label="Clear language search"
+                        >
+                            <span class="outcraft-icon !text-[16px]">x</span>
+                        </button>
                     </label>
                 </div>
 
                 <div class="min-h-0 flex-1 overflow-y-auto px-6 py-5 sm:px-8">
                     <div class="space-y-3">
                         <template x-for="language in filteredAiAgentLanguageBatchOptions()" :key="`ai-agent-language-${language.code}`">
-                            <button
-                                type="button"
-                                x-on:click="toggleAiAgentLanguageSelection(language.code)"
-                                class="flex w-full items-center gap-4 rounded-lg border border-gray-200 bg-white p-4 text-left transition hover:bg-gray-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600"
+                            <label
+                                class="flex w-full cursor-pointer items-center gap-4 rounded-lg border border-gray-200 bg-white p-4 text-left transition hover:bg-gray-50 focus-within:outline focus-within:outline-2 focus-within:outline-offset-2 focus-within:outline-indigo-600"
                                 :class="aiAgentLanguageSelectedForBatch(language.code) ? 'border-indigo-600 ring-2 ring-indigo-100' : ''"
                             >
-                                <span class="inline-flex size-5 shrink-0 items-center justify-center rounded border transition" :class="aiAgentLanguageSelectedForBatch(language.code) ? 'border-indigo-600 bg-indigo-600 text-white' : 'border-gray-300 bg-white text-transparent shadow-sm'">
-                                    <span class="outcraft-icon !text-[13px]">check</span>
-                                </span>
+                                <x-outcraft.checkbox
+                                    mark-when="aiAgentLanguageSelectedForBatch(language.code)"
+                                    x-bind:checked="aiAgentLanguageSelectedForBatch(language.code)"
+                                    x-on:change="toggleAiAgentLanguageSelection(language.code)"
+                                />
                                 <span class="inline-flex size-7 shrink-0 overflow-hidden rounded-full ring-1 ring-gray-200">
                                     <img :src="campaignSetupFlagUrl(language)" :alt="`${campaignSetupLanguageDisplay(language)} flag`" class="size-full object-cover" loading="lazy">
                                 </span>
                                 <span class="min-w-0 flex-1">
                                     <span class="block truncate text-sm font-semibold text-gray-950" x-text="campaignSetupLanguageDisplay(language)"></span>
                                 </span>
-                            </button>
+                            </label>
                         </template>
                         <p x-show="filteredAiAgentLanguageBatchOptions().length === 0" class="px-1 py-6 text-center text-sm text-gray-500">No Languages Found.</p>
                     </div>
@@ -224,35 +234,62 @@
                                 </label>
                         </div>
 
-                        <div class="rounded-lg border border-gray-200 bg-white p-5">
-                            <div class="mb-4">
-                                <h3 class="text-sm/6 font-semibold text-gray-900">Assigned Campaigns</h3>
-                                <p class="mt-1 text-sm leading-6 text-gray-500">Choose which campaigns use this AI agent.</p>
-                            </div>
+	                        <div class="overflow-hidden rounded-lg border border-gray-200 bg-white">
+	                            <button type="button" x-on:click="aiAgentCampaignAssignmentsOpen = ! aiAgentCampaignAssignmentsOpen" class="flex w-full items-center justify-between gap-4 px-5 py-4 text-left transition hover:bg-gray-50">
+	                                <span>
+	                                    <span class="block text-base/7 font-semibold text-gray-900">Assigned Campaigns</span>
+	                                    <span class="mt-1 block text-sm leading-6 text-gray-600" x-text="aiAgentCampaignAssignmentsOpen ? 'Choose which campaigns use this AI agent.' : aiAgentCampaignAssignmentSummary()"></span>
+	                                </span>
+	                                <span class="outcraft-icon shrink-0 !text-[18px] text-gray-400 transition" :class="aiAgentCampaignAssignmentsOpen ? 'rotate-180' : ''">keyboard_arrow_down</span>
+	                            </button>
 
-                            <div x-show="campaignAssignmentRows().length === 0" class="rounded-md bg-gray-50 p-4 text-sm text-gray-500 ring-1 ring-inset ring-gray-200">
-                                No campaigns yet.
-                            </div>
+	                            <div x-show="aiAgentCampaignAssignmentsOpen" x-transition:enter="transition ease-out duration-200" x-transition:enter-start="opacity-0 translate-y-3" x-transition:enter-end="opacity-100 translate-y-0" x-transition:leave="transition ease-in duration-150" x-transition:leave-start="opacity-100 translate-y-0" x-transition:leave-end="opacity-0 translate-y-2" class="border-t border-gray-200 p-5">
+	                                <label class="relative block">
+	                                    <span class="sr-only">Search campaigns</span>
+	                                    <input
+	                                        type="text"
+	                                        x-model.debounce.150ms="aiAgentCampaignAssignmentSearch"
+	                                        placeholder="Search campaigns"
+	                                        class="block h-10 w-full rounded-md bg-white py-1.5 pl-3 pr-10 text-sm/6 text-gray-900 shadow-sm outline outline-1 -outline-offset-1 outline-gray-300 placeholder:text-gray-400 focus:outline-2 focus:-outline-offset-2 focus:outline-indigo-600"
+	                                    >
+	                                    <button
+	                                        type="button"
+	                                        x-cloak
+	                                        x-show="aiAgentCampaignAssignmentSearch"
+	                                        x-on:click="aiAgentCampaignAssignmentSearch = ''"
+	                                        class="absolute right-2 top-1/2 inline-flex size-7 -translate-y-1/2 items-center justify-center rounded-md text-gray-400 transition hover:bg-gray-50 hover:text-gray-700"
+	                                        aria-label="Clear campaign search"
+	                                    >
+	                                        <span class="outcraft-icon !text-[16px]">x</span>
+	                                    </button>
+	                                </label>
 
-                            <div class="space-y-1">
-                                <template x-for="campaign in campaignAssignmentRows()" :key="`agent-assignment-${campaign.name}`">
-                                    <label
-                                        class="flex items-center gap-3 rounded-md px-2 py-2 transition"
-                                        :class="aiAgentCampaignAssignmentLocked(campaign.name) ? 'cursor-not-allowed opacity-60' : 'cursor-pointer hover:bg-gray-50'"
-                                    >
-                                        <input
-                                            type="checkbox"
-                                            data-outcraft-checkbox
-                                            class="size-4 shrink-0"
-                                            :checked="aiAgentCampaignAssignmentSelected(campaign.name)"
-                                            :disabled="aiAgentCampaignAssignmentLocked(campaign.name)"
-                                            x-on:change="toggleAiAgentCampaignAssignment(campaign.name)"
-                                        >
-                                        <span class="min-w-0 flex-1 truncate text-sm font-medium leading-6 text-gray-950" x-text="campaign.name"></span>
-                                    </label>
-                                </template>
-                            </div>
-                        </div>
+	                                <div x-show="campaignAssignmentRows().length === 0" class="mt-4 rounded-md bg-gray-50 p-4 text-sm text-gray-500 ring-1 ring-inset ring-gray-200">
+	                                    No campaigns yet.
+	                                </div>
+
+	                                <div x-show="campaignAssignmentRows().length > 0 && filteredCampaignAssignmentRows().length === 0" class="mt-4 rounded-md bg-gray-50 p-4 text-sm text-gray-500 ring-1 ring-inset ring-gray-200">
+	                                    No campaigns match your search.
+	                                </div>
+
+	                                <div class="mt-4 space-y-1">
+	                                    <template x-for="campaign in filteredCampaignAssignmentRows()" :key="`agent-assignment-${campaign.name}`">
+	                                        <label
+	                                            class="flex items-center gap-3 rounded-md px-2 py-2 transition"
+	                                            :class="aiAgentCampaignAssignmentLocked(campaign.name) ? 'cursor-not-allowed opacity-60' : 'cursor-pointer hover:bg-gray-50'"
+	                                        >
+	                                            <x-outcraft.checkbox
+	                                                mark-when="aiAgentCampaignAssignmentSelected(campaign.name)"
+	                                                x-bind:checked="aiAgentCampaignAssignmentSelected(campaign.name)"
+	                                                x-bind:disabled="aiAgentCampaignAssignmentLocked(campaign.name)"
+	                                                x-on:change="toggleAiAgentCampaignAssignment(campaign.name)"
+	                                            />
+	                                            <span class="min-w-0 flex-1 truncate text-sm font-medium leading-6 text-gray-950" x-text="campaign.name"></span>
+	                                        </label>
+	                                    </template>
+	                                </div>
+	                            </div>
+	                        </div>
 
                         <div class="overflow-visible rounded-lg border border-gray-200 bg-white">
                             <button type="button" x-on:click="aiAgentAdvancedOpen = ! aiAgentAdvancedOpen" class="flex w-full items-center justify-between gap-4 px-5 py-4 text-left transition hover:bg-gray-50">

@@ -804,6 +804,8 @@
                 aiAgentLanguageSearch: '',
                 aiAgentLanguageBatchSelection: [],
                 aiAgentAdvancedOpen: false,
+                aiAgentCampaignAssignmentsOpen: false,
+                aiAgentCampaignAssignmentSearch: '',
                 aiAgentEditingId: null,
                 aiAgentModalReturnToCampaignBuilder: false,
                 aiAgentModalReturnToCampaignDetail: false,
@@ -3707,6 +3709,8 @@
                     this.aiAgentModalReturnToCampaignBuilder = Boolean(options.returnToCampaignBuilder);
                     this.aiAgentModalReturnToCampaignDetail = Boolean(options.returnToCampaignDetail);
                     this.aiAgentAdvancedOpen = false;
+                    this.aiAgentCampaignAssignmentsOpen = false;
+                    this.aiAgentCampaignAssignmentSearch = '';
                     this.aiAgentCampaignAssignmentIds = agent
                         ? this.campaignsAssignedToAgent(agent.id).map((campaign) => campaign.name)
                         : [];
@@ -3725,15 +3729,10 @@
                     this.aiAgentModalOpen = true;
                 },
                 openAiAgentCreateModalFromCampaignSetup() {
-                    this.openAiAgentCreateModal(null, this.campaignSetup.activeLanguage || 'US');
+                    this.openAiAgentLanguageBatchModal('campaign-creation');
                 },
                 openCampaignCreationAiAgentModal() {
-                    if (this.onboardingCampaignFlow) {
-                        this.openAiAgentLanguageBatchModal('campaign-creation');
-                        return;
-                    }
-
-                    this.openAiAgentCreateModal(null, this.campaignSetup.activeLanguage || 'US', { returnToCampaignBuilder: true });
+                    this.openAiAgentLanguageBatchModal('campaign-creation');
                 },
                 closeAiAgentCreateModal() {
                     this.aiAgentModalOpen = false;
@@ -3742,6 +3741,8 @@
                     this.aiAgentModalReturnToCampaignDetail = false;
                     this.aiAgentCampaignAssignmentIds = [];
                     this.aiAgentAdvancedOpen = false;
+                    this.aiAgentCampaignAssignmentsOpen = false;
+                    this.aiAgentCampaignAssignmentSearch = '';
                 },
                 aiAgentStatusClass(status) {
                     return status === 'Ready'
@@ -3865,6 +3866,21 @@
                 },
                 campaignAssignmentRows() {
                     return this.pinnedCampaigns;
+                },
+                filteredCampaignAssignmentRows() {
+                    const query = String(this.aiAgentCampaignAssignmentSearch || '').trim().toLowerCase();
+                    const rows = this.campaignAssignmentRows();
+
+                    if (! query) {
+                        return rows;
+                    }
+
+                    return rows.filter((campaign) => String(campaign.name || '').toLowerCase().includes(query));
+                },
+                aiAgentCampaignAssignmentSummary() {
+                    const count = this.aiAgentCampaignAssignmentIds.length;
+
+                    return `${count} assigned campaign${count === 1 ? '' : 's'}`;
                 },
                 normalizeCampaignAgentIds(agentIds = [], fallbackAgentId = '') {
                     const validIds = [...new Set(agentIds)]
@@ -7802,7 +7818,13 @@
                     ];
                 },
                 campaignDetailSidebarObjectiveLabel() {
-                    return this.campaignSetup.name || this.selectedCampaign?.name || this.campaignSetup.type || this.campaignTypeNameFromCampaign(this.selectedCampaign) || 'Not selected';
+                    if (this.campaignSetup.type) {
+                        return this.campaignSetup.type;
+                    }
+
+                    return this.selectedCampaign?.name
+                        ? this.campaignTypeNameFromCampaign(this.selectedCampaign)
+                        : 'Not selected';
                 },
                 campaignDetailSidebarLeadSourceLabel() {
                     return this.campaignSetup.source || this.selectedCampaign?.source || 'Not selected';

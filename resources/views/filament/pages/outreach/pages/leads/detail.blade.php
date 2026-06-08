@@ -350,13 +350,11 @@
                         >
                             <template x-for="channel in leadInteractionChannelOptions()" :key="channel.label">
                                 <label class="flex w-full cursor-pointer items-center gap-3 px-3 py-2 text-sm text-gray-700 transition hover:bg-gray-50 hover:text-gray-950">
-                                    <input
-                                        type="checkbox"
-                                        :checked="isLeadInteractionChannelSelected(channel.label)"
+                                    <x-outcraft.checkbox
+                                        mark-when="isLeadInteractionChannelSelected(channel.label)"
+                                        x-bind:checked="isLeadInteractionChannelSelected(channel.label)"
                                         x-on:change="toggleLeadInteractionChannel(channel.label)"
-                                        data-outcraft-checkbox
-                                        class="size-4 shrink-0"
-                                    >
+                                    />
                                     <span class="min-w-0 flex-1 truncate font-medium" x-text="channel.label"></span>
                                     <span class="shrink-0 text-xs text-gray-500" x-text="channel.count"></span>
                                 </label>

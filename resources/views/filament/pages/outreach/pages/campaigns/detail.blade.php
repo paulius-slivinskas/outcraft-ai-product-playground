@@ -1,6 +1,15 @@
         <template x-if="! campaignBuilderOpen && (campaignDetailOpen || campaignCreationV2Open) && activeNav === 'Campaigns'">
-        <section data-campaign-detail-host class="mx-3 mb-24 mt-4 pb-24 sm:mx-6 lg:mb-10 lg:mt-6 lg:pb-0">
+        <section data-campaign-detail-host class="mx-3 mb-24 mt-4 pb-24 sm:mx-6 lg:m-0 lg:min-h-screen lg:pb-0">
             <style>
+                @media (min-width: 1024px) {
+                    .outcraft-page main > section[data-campaign-detail-host] {
+                        width: 100% !important;
+                        max-width: none !important;
+                        margin: 0 !important;
+                        padding-bottom: 0 !important;
+                    }
+                }
+
                 [data-campaign-detail-host] [data-campaign-step-actions],
                 [data-campaign-detail-host] .fixed.inset-x-0.bottom-0:not([data-campaign-detail-mobile-action-bar]) {
                     display: none !important;
@@ -40,7 +49,7 @@
                 }
             </style>
 
-            <div class="-mx-3 -mt-4 border-b border-gray-200 bg-white px-3 py-4 sm:-mx-6 sm:px-6 lg:-mt-6 lg:py-5">
+            <div class="-mx-3 -mt-4 border-b border-gray-200 bg-white px-3 py-4 sm:-mx-6 sm:px-6 lg:hidden">
                 <div class="flex max-w-5xl flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
                     <div class="min-w-0">
                         <h1 class="truncate text-xl font-bold leading-tight text-gray-950" x-text="campaignCreationV2Open ? (campaignSetup.name || 'New Campaign') : (selectedCampaign?.name || campaignSetup.name || 'Campaign')"></h1>
@@ -57,7 +66,7 @@
                 </div>
             </div>
 
-            <div class="mt-8 max-w-5xl lg:flex lg:gap-x-16">
+            <div class="mt-8 max-w-5xl lg:m-0 lg:flex lg:min-h-screen lg:max-w-none lg:items-stretch lg:gap-x-0">
                 <div x-show="! campaignDetailMobilePanelOpen" x-transition.opacity class="space-y-6 lg:hidden">
                     <div class="space-y-6 px-1">
                         <div>
@@ -96,9 +105,14 @@
                     </template>
                 </div>
 
-                <aside class="hidden lg:sticky lg:top-6 lg:mb-0 lg:block lg:h-max lg:w-72 lg:flex-none lg:overflow-visible lg:border-0 lg:pb-0">
-                    <nav class="flex-none lg:w-full" aria-label="Campaign settings navigation">
+                <aside class="hidden lg:sticky lg:top-0 lg:mb-0 lg:flex lg:h-screen lg:min-h-screen lg:w-80 lg:flex-none lg:flex-col lg:self-start lg:overflow-hidden lg:border-r lg:border-gray-200 lg:bg-white lg:px-8 lg:py-8 lg:pb-10">
+                    <nav class="min-h-0 flex-1 overflow-y-auto lg:w-full" aria-label="Campaign settings navigation">
                         <div class="space-y-8 whitespace-nowrap">
+                            <div class="space-y-1 px-1">
+                                <h2 class="truncate text-lg font-semibold leading-7 text-gray-950" x-text="campaignCreationV2Open ? (campaignSetup.name || 'New Campaign') : (selectedCampaign?.name || campaignSetup.name || 'Campaign')"></h2>
+                                <p class="text-xs leading-5 text-gray-500">Modified <span x-text="campaignCreationV2Open ? 'just now' : (selectedCampaign?.modified || 'recently')"></span></p>
+                            </div>
+
                             <div class="space-y-4 px-1">
                                 <div>
                                     <p class="text-xs font-semibold uppercase tracking-wide text-gray-400">Campaign Objective:</p>
@@ -123,14 +137,11 @@
                                                 class="group flex w-full min-w-0 items-start text-left disabled:cursor-not-allowed disabled:opacity-45"
                                             >
                                                 <span class="relative flex size-5 shrink-0 items-center justify-center">
-                                                    <svg x-show="activeCampaignDetailPanel !== panel.id && isCampaignDetailPanelChanged(panel.id)" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true" class="size-full text-amber-500 transition">
-                                                        <path d="M10 18a8 8 0 1 0 0-16 8 8 0 0 0 0 16Zm3.857-9.809a.75.75 0 0 0-1.214-.882l-3.483 4.79-1.88-1.88a.75.75 0 1 0-1.06 1.061l2.5 2.5a.75.75 0 0 0 1.137-.089l4-5.5Z" clip-rule="evenodd" fill-rule="evenodd" />
-                                                    </svg>
                                                     <span x-show="activeCampaignDetailPanel === panel.id" aria-hidden="true" class="relative flex size-5 shrink-0 items-center justify-center">
                                                         <span class="absolute size-4 rounded-full oc-primary-bg-soft"></span>
                                                         <span class="relative block size-2 rounded-full oc-primary-bg"></span>
                                                     </span>
-                                                    <span x-show="activeCampaignDetailPanel !== panel.id && ! isCampaignDetailPanelChanged(panel.id)" aria-hidden="true" class="relative flex size-5 shrink-0 items-center justify-center">
+                                                    <span x-show="activeCampaignDetailPanel !== panel.id" aria-hidden="true" class="relative flex size-5 shrink-0 items-center justify-center">
                                                         <span class="size-2 rounded-full bg-gray-300 transition group-hover:bg-gray-400"></span>
                                                     </span>
                                                 </span>
@@ -149,9 +160,17 @@
                             </div>
                         </div>
                     </nav>
+
+                    <div x-show="! campaignCreationV2Open" class="mt-auto flex shrink-0 items-center gap-3 px-1 pt-8">
+                        <button type="button" class="inline-flex h-10 items-center justify-center gap-2 rounded-md bg-white px-3.5 text-sm font-semibold text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 transition hover:bg-gray-50">
+                            <span class="outcraft-icon !text-[17px] text-gray-500">phone_in_talk</span>
+                            Test
+                        </button>
+                        <button type="button" x-on:click="campaignDetailDirtyPanels = []" class="inline-flex h-10 min-w-0 flex-1 items-center justify-center rounded-md bg-indigo-600 px-3.5 text-sm font-semibold text-white shadow-sm transition hover:bg-indigo-500">Save & Publish</button>
+                    </div>
                 </aside>
 
-                <div class="min-w-0 flex-1" :class="campaignDetailMobilePanelOpen ? 'block' : 'hidden lg:block'">
+                <div class="min-w-0 flex-1 lg:px-12 lg:py-8" :class="campaignDetailMobilePanelOpen ? 'block' : 'hidden lg:block'">
                     <div class="mb-6 px-1 lg:hidden">
                         <h2 class="text-lg font-semibold leading-7 text-gray-950" x-text="activeCampaignDetailPanelMeta()?.label || 'Campaign Settings'"></h2>
                         <p class="mt-1 text-sm leading-6 text-gray-500" x-text="activeCampaignDetailPanelMeta()?.description || ''"></p>
@@ -438,14 +457,12 @@
                                             <span x-text="aiAgentVoiceStyle(agent)"></span>
                                         </span>
                                     </span>
-                                    <input
-                                        type="checkbox"
-                                        data-outcraft-checkbox
-                                        class="size-4 shrink-0"
-                                        :checked="campaignDetailAgentPickerSelected(agent.id)"
-                                        :disabled="campaignDetailAgentPickerLocked(agent.id)"
+                                    <x-outcraft.checkbox
+                                        mark-when="campaignDetailAgentPickerSelected(agent.id)"
+                                        x-bind:checked="campaignDetailAgentPickerSelected(agent.id)"
+                                        x-bind:disabled="campaignDetailAgentPickerLocked(agent.id)"
                                         x-on:change="toggleCampaignDetailAgentPicker(agent.id)"
-                                    >
+                                    />
                                 </label>
                             </template>
                         </div>

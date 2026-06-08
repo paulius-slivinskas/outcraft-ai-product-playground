@@ -9,16 +9,13 @@
         <section data-card-surface x-cloak x-show="activeNav === 'Leads' && activeTab === 'Leads' && ! leadDetailOpen" class="mx-6 mb-6 mt-4 overflow-hidden rounded-lg bg-white shadow-sm ring-1 ring-gray-900/5">
             <div class="flex min-h-[74px] items-center justify-between gap-3 bg-white px-6">
                 <label class="inline-flex items-center gap-3 text-sm font-semibold text-gray-700">
-                    <span class="grid size-4 shrink-0 grid-cols-1">
-                        <input
-                            type="checkbox"
-                            :checked="allVisibleLeadsSelected()"
-                            x-effect="$el.indeterminate = someVisibleLeadsSelected()"
-                            x-on:change="toggleVisibleLeadSelection()"
-                            data-outcraft-checkbox
-                            class="col-start-1 row-start-1 size-4"
-                        >
-                    </span>
+                    <x-outcraft.checkbox
+                        mark-when="allVisibleLeadsSelected()"
+                        dash-when="someVisibleLeadsSelected() && ! allVisibleLeadsSelected()"
+                        x-bind:checked="allVisibleLeadsSelected()"
+                        x-effect="$el.indeterminate = someVisibleLeadsSelected()"
+                        x-on:change="toggleVisibleLeadSelection()"
+                    />
                     <span>Select All</span>
                 </label>
 
@@ -137,16 +134,14 @@
                     <template x-for="row in loadingRows()" :key="'lead-' + row.name + row.phone + row.email + row.age">
                         <li x-on:click="openLeadDetails(row)" class="flex cursor-pointer items-start justify-between gap-x-4 px-6 py-4 transition-colors max-sm:px-4 max-sm:py-5" :class="isLeadSelected(row) ? 'hover:bg-gray-100' : 'hover:bg-gray-50'">
                             <div class="pt-1">
-                                <label x-on:click.stop class="grid size-4 shrink-0 grid-cols-1">
-                                    <input
-                                        type="checkbox"
-                                        :checked="isLeadSelected(row)"
+                                <span x-on:click.stop>
+                                    <x-outcraft.checkbox
+                                        mark-when="isLeadSelected(row)"
+                                        x-bind:checked="isLeadSelected(row)"
                                         x-on:change="toggleLeadSelection(row)"
-                                        :aria-label="`Select ${row.name || 'lead'}`"
-                                        data-outcraft-checkbox
-                                        class="col-start-1 row-start-1 size-4"
-                                    >
-                                </label>
+                                        x-bind:aria-label="`Select ${row.name || 'lead'}`"
+                                    />
+                                </span>
                             </div>
                             <div class="grid min-w-0 flex-1 grid-cols-[minmax(0,1fr)_minmax(0,0.5fr)_minmax(0,0.5fr)] items-start gap-x-4 max-sm:grid-cols-2 max-sm:gap-y-5">
                             <div class="min-w-0 max-sm:col-span-2 max-sm:min-h-[56px]">

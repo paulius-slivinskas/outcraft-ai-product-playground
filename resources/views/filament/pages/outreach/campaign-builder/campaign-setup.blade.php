@@ -1152,12 +1152,14 @@
 
                                             <div class="mt-4 flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center sm:gap-x-6 sm:gap-y-3">
                                                 <template x-for="day in outreachWeekdays" :key="day">
-                                                    <button type="button" x-on:click="toggleOutreachDay(day)" role="checkbox" :aria-checked="campaignSetup.outreachDays.includes(day)" class="inline-flex w-fit items-center gap-3 rounded-md text-sm font-semibold leading-6 text-gray-900 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600">
-                                                        <span class="inline-flex size-4 items-center justify-center rounded border transition" :class="campaignSetup.outreachDays.includes(day) ? 'border-indigo-600 bg-indigo-600 text-white' : 'border-gray-300 bg-white text-transparent shadow-sm'">
-                                                            <span class="outcraft-icon !text-[12px]">check</span>
-                                                        </span>
+                                                    <label class="inline-flex w-fit cursor-pointer items-center gap-3 rounded-md text-sm font-semibold leading-6 text-gray-900">
+                                                        <x-outcraft.checkbox
+                                                            mark-when="campaignSetup.outreachDays.includes(day)"
+                                                            x-bind:checked="campaignSetup.outreachDays.includes(day)"
+                                                            x-on:change="toggleOutreachDay(day)"
+                                                        />
                                                         <span x-text="day"></span>
-                                                    </button>
+                                                    </label>
                                                 </template>
                                             </div>
 
@@ -1550,12 +1552,14 @@
 
 	                                        <div class="mt-4 flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center sm:gap-x-6 sm:gap-y-3">
 	                                            <template x-for="day in outreachWeekdays" :key="day">
-	                                                <button type="button" x-on:click="toggleOutreachDay(day)" role="checkbox" :aria-checked="campaignSetup.outreachDays.includes(day)" class="inline-flex w-fit items-center gap-3 rounded-md text-sm font-semibold leading-6 text-gray-900 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600">
-	                                                    <span class="inline-flex size-4 items-center justify-center rounded border transition" :class="campaignSetup.outreachDays.includes(day) ? 'border-indigo-600 bg-indigo-600 text-white' : 'border-gray-300 bg-white text-transparent shadow-sm'">
-	                                                        <span class="outcraft-icon !text-[12px]">check</span>
-	                                                    </span>
+	                                                <label class="inline-flex w-fit cursor-pointer items-center gap-3 rounded-md text-sm font-semibold leading-6 text-gray-900">
+	                                                    <x-outcraft.checkbox
+	                                                        mark-when="campaignSetup.outreachDays.includes(day)"
+	                                                        x-bind:checked="campaignSetup.outreachDays.includes(day)"
+	                                                        x-on:change="toggleOutreachDay(day)"
+	                                                    />
 	                                                    <span x-text="day"></span>
-	                                                </button>
+	                                                </label>
 	                                            </template>
 	                                        </div>
 
@@ -2472,17 +2476,19 @@
                                 <div class="min-h-0 flex-1 overflow-y-auto px-6 py-4">
                                     <div class="space-y-2">
                                         <template x-for="language in filteredCampaignSetupLanguageOptions()" :key="language.code">
-                                            <button type="button" x-on:click="toggleCampaignSetupLanguageSelection(language.code)" class="flex w-full items-center gap-3 rounded-lg border border-gray-200 bg-white p-4 text-left transition hover:bg-gray-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600" :class="campaignSetupLanguageSelectedForBatch(language.code) ? 'border-indigo-600 ring-2 ring-indigo-100' : ''">
-                                                <span class="inline-flex size-5 shrink-0 items-center justify-center rounded border transition" :class="campaignSetupLanguageSelectedForBatch(language.code) ? 'border-indigo-600 bg-indigo-600 text-white' : 'border-gray-300 bg-white text-transparent shadow-sm'">
-                                                    <span class="outcraft-icon !text-[13px]">check</span>
-                                                </span>
+                                            <label class="flex w-full cursor-pointer items-center gap-3 rounded-lg border border-gray-200 bg-white p-4 text-left transition hover:bg-gray-50 focus-within:outline focus-within:outline-2 focus-within:outline-offset-2 focus-within:outline-indigo-600" :class="campaignSetupLanguageSelectedForBatch(language.code) ? 'border-indigo-600 ring-2 ring-indigo-100' : ''">
+                                                <x-outcraft.checkbox
+                                                    mark-when="campaignSetupLanguageSelectedForBatch(language.code)"
+                                                    x-bind:checked="campaignSetupLanguageSelectedForBatch(language.code)"
+                                                    x-on:change="toggleCampaignSetupLanguageSelection(language.code)"
+                                                />
                                                 <span class="inline-flex size-6 shrink-0 overflow-hidden rounded-full ring-1 ring-gray-200">
                                                     <img :src="campaignSetupFlagUrl(language)" :alt="`${campaignSetupLanguageDisplay(language)} flag`" class="size-full object-cover" loading="lazy">
                                                 </span>
                                                 <span class="min-w-0 flex-1">
                                                     <span class="block truncate text-sm font-semibold text-gray-950" x-text="campaignSetupLanguageDisplay(language)"></span>
                                                 </span>
-                                            </button>
+                                            </label>
                                         </template>
                                         <p x-show="filteredCampaignSetupLanguageOptions().length === 0" class="px-1 py-6 text-center text-sm text-gray-500">No Languages Found.</p>
                                     </div>

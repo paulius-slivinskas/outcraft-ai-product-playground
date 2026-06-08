@@ -109,13 +109,11 @@
                                         <label
                                             class="flex min-w-0 flex-1 cursor-pointer items-center gap-4 text-left"
                                         >
-                                            <input
-                                                type="checkbox"
-                                                data-outcraft-checkbox
-                                                class="size-4 shrink-0"
-                                                :checked="campaignCreationAiAgentSelected(agent.id)"
+                                            <x-outcraft.checkbox
+                                                mark-when="campaignCreationAiAgentSelected(agent.id)"
+                                                x-bind:checked="campaignCreationAiAgentSelected(agent.id)"
                                                 x-on:change="toggleCampaignCreationAiAgent(agent)"
-                                            >
+                                            />
                                             <span class="inline-flex size-10 shrink-0 items-center justify-center">
                                                 <img :src="aiAgentFlagUrl(agent)" :alt="`${aiAgentTitle(agent)} flag`" class="size-[34px] object-contain" loading="lazy">
                                             </span>

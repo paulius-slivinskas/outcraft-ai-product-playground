@@ -1,4 +1,4 @@
-        <section x-cloak x-show="! campaignBuilderOpen && activeNav === 'AI Agents'" class="mx-6 mt-5">
+        <section x-cloak x-show="! campaignBuilderOpen && activeNav === 'AI Agents' && ! aiAgentPageInlineEditorOpen" class="mx-6 mt-5">
             <div class="min-h-[54px]">
                 <div>
                     <h1 class="text-xl font-bold leading-tight text-gray-950">AI Agents</h1>
@@ -7,15 +7,11 @@
             </div>
         </section>
 
-        <section x-cloak x-show="! campaignBuilderOpen && activeNav === 'AI Agents'" class="mx-6 mb-6 mt-4 max-w-4xl space-y-4">
+        <section x-cloak x-show="! campaignBuilderOpen && activeNav === 'AI Agents' && ! aiAgentPageInlineEditorOpen" class="mx-6 mb-6 mt-4 max-w-4xl space-y-4">
             <div class="space-y-3">
                 <template x-for="agent in aiAgents" :key="agent.id">
                     <div class="oc-selectable-card group flex w-full items-center gap-3 rounded-lg bg-white p-4 text-left shadow-sm outline outline-1 -outline-offset-1 outline-gray-300 transition hover:outline-2 hover:-outline-offset-2 hover:outline-indigo-600">
-                        <button
-                            type="button"
-                            x-on:click="openAiAgentCreateModal(agent)"
-                            class="flex min-w-0 flex-1 items-center gap-4 text-left focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600"
-                        >
+                        <div class="flex min-w-0 flex-1 items-center gap-4 text-left">
                             <span class="inline-flex size-10 shrink-0 items-center justify-center">
                                 <img :src="aiAgentFlagUrl(agent)" :alt="`${aiAgentTitle(agent)} flag`" class="size-[34px] object-contain" loading="lazy">
                             </span>
@@ -27,6 +23,13 @@
                                     <span x-text="aiAgentVoiceStyle(agent)"></span>
                                 </span>
                             </span>
+                        </div>
+                        <button
+                            type="button"
+                            x-on:click.stop="openAiAgentPageInlineEditor(agent)"
+                            class="relative z-10 inline-flex h-9 shrink-0 items-center justify-center rounded-md bg-white px-3 text-sm font-semibold text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 transition hover:bg-gray-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600"
+                        >
+                            Edit
                         </button>
                         <span class="relative flex shrink-0 items-center" x-data="{ actionsOpen: false }" x-on:click.stop="null" x-on:click.outside="actionsOpen = false" x-on:keydown.escape.window="actionsOpen = false">
                             <button
@@ -70,6 +73,10 @@
                 <span class="outcraft-icon !text-[18px] text-gray-500">add</span>
                 Add AI Agent
             </button>
+        </section>
+
+        <section x-cloak x-show="! campaignBuilderOpen && activeNav === 'AI Agents' && aiAgentPageInlineEditorOpen" x-transition.opacity class="mx-6 mb-10 mt-5">
+            @include('filament.pages.outreach.pages.ai-agents-inline-editor')
         </section>
 
         <div x-cloak x-show="aiAgentLanguageBatchModalOpen" x-transition.opacity x-on:keydown.escape.window="closeAiAgentLanguageBatchModal()" class="fixed inset-0 z-[70] flex items-center justify-center bg-gray-950/30 p-4">

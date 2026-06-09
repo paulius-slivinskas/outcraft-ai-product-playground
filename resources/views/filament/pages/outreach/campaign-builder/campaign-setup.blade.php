@@ -499,8 +499,8 @@
                                     <article class="rounded-lg border border-gray-200 bg-white p-5 shadow-sm">
                                         <div class="flex items-start justify-between gap-4">
                                             <div class="flex min-w-0 items-start gap-3">
-                                                <span class="flex size-9 shrink-0 items-center justify-center rounded-md bg-indigo-50 text-indigo-600">
-                                                    <span class="outcraft-icon !text-[19px]">target</span>
+                                                <span class="flex size-10 shrink-0 items-center justify-center rounded-md bg-indigo-50 text-indigo-600">
+                                                    <span class="outcraft-icon !text-[22px]">target</span>
                                                 </span>
                                                 <div class="min-w-0">
                                                     <h3 class="text-base font-semibold leading-6 text-gray-950">Campaign Goal</h3>
@@ -515,8 +515,8 @@
                                     <article class="rounded-lg border border-gray-200 bg-white p-5 shadow-sm">
                                         <div class="flex items-start justify-between gap-4">
                                             <div class="flex min-w-0 items-start gap-3">
-                                                <span class="flex size-9 shrink-0 items-center justify-center rounded-md bg-indigo-50 text-indigo-600">
-                                                    <span class="outcraft-icon !text-[19px]">users</span>
+                                                <span class="flex size-10 shrink-0 items-center justify-center rounded-md bg-indigo-50 text-indigo-600">
+                                                    <span class="outcraft-icon !text-[22px]">users</span>
                                                 </span>
                                                 <div class="min-w-0">
                                                     <h3 class="text-base font-semibold leading-6 text-gray-950">Lead Situation</h3>
@@ -532,9 +532,9 @@
                                         <article class="rounded-lg border border-gray-200 bg-white p-5 shadow-sm" :class="item.type === 'short_conversation_instructions' ? '!pb-0 overflow-hidden' : ''">
                                             <div class="flex items-start justify-between gap-4">
                                                 <div class="flex min-w-0 items-start gap-3">
-                                                    <span class="flex size-9 shrink-0 items-center justify-center rounded-md bg-indigo-50 text-indigo-600">
-                                                        <span x-show="briefBuilderItemSvgIcon(item.type)" class="size-[21px]" x-html="briefBuilderItemSvgIcon(item.type)"></span>
-                                                        <span x-show="! briefBuilderItemSvgIcon(item.type)" class="outcraft-icon !text-[19px]" x-text="briefBuilderItemIcon(item.type)"></span>
+                                                    <span class="flex size-10 shrink-0 items-center justify-center rounded-md bg-indigo-50 text-indigo-600">
+                                                        <span x-show="briefBuilderItemSvgIcon(item.type)" class="size-6" x-html="briefBuilderItemSvgIcon(item.type)"></span>
+                                                        <span x-show="! briefBuilderItemSvgIcon(item.type)" class="outcraft-icon !text-[22px]" x-text="briefBuilderItemIcon(item.type)"></span>
                                                     </span>
                                                     <div class="min-w-0">
                                                         <h3 class="text-base font-semibold leading-6 text-gray-950" x-text="briefBuilderItemTitle(item.type)"></h3>

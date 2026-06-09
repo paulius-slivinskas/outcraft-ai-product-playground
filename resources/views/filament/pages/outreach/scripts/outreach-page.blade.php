@@ -551,6 +551,30 @@
                 campaignDetailDirtyPanels: [],
                 campaignDetailSelectedBrandId: '',
                 campaignDetailBrandPickerOpen: false,
+                campaignDetailBrandInlineEditorOpen: false,
+                campaignDetailAiAgentInlineEditorOpen: false,
+                campaignDetailAiAgentInlineEditingId: '',
+                brandPageInlineEditorOpen: false,
+                brandPageWizardOpen: false,
+                brandPageInlineEditingId: '',
+                brandPageInlineCreating: false,
+                campaignDetailBrandInlineForm: {
+                    name: '',
+                    website: '',
+                    pronunciationEnabled: false,
+                    pronunciation: '',
+                    industry: '',
+                    description: '',
+                    problem: '',
+                    differentiators: '',
+                    icp: '',
+                    faqs: '',
+                    supportEmail: '',
+                    termsUrl: '',
+                    privacyUrl: '',
+                    certifications: '',
+                    compliance: '',
+                },
                 campaignDetailSelectedAgentIds: [],
                 campaignDetailAgentPickerOpen: false,
                 campaignDetailAgentPickerIds: [],
@@ -803,6 +827,8 @@
                 aiAgentLanguageBatchContext: 'global',
                 aiAgentLanguageSearch: '',
                 aiAgentLanguageBatchSelection: [],
+                aiAgentPageInlineEditorOpen: false,
+                aiAgentPageInlineEditingId: '',
                 aiAgentAdvancedOpen: false,
                 aiAgentCampaignAssignmentsOpen: false,
                 aiAgentCampaignAssignmentSearch: '',
@@ -2716,6 +2742,9 @@
                     this.campaignCreationV2UnlockedPanels = ['company-brand'];
                     this.campaignDetailMobilePanelOpen = false;
                     this.campaignDetailBrandPickerOpen = false;
+                    this.campaignDetailBrandInlineEditorOpen = false;
+                    this.campaignDetailAiAgentInlineEditorOpen = false;
+                    this.campaignDetailAiAgentInlineEditingId = '';
                     this.campaignDetailAgentPickerOpen = false;
                     this.campaignDetailAgentPickerIds = [];
                     this.abTestDetailOpen = false;
@@ -3208,12 +3237,8 @@
                         compliance: '',
                     };
                 },
-                openBrandCreateModal(brand = null, options = {}) {
-                    this.brandEditingId = brand?.id || null;
-                    this.brandModalReturnToCampaignBuilder = Boolean(options.returnToCampaignBuilder);
-                    this.brandModalReturnToCampaignDetail = Boolean(options.returnToCampaignDetail);
-                    this.brandModalStep = 1;
-                    Object.assign(this.brandForm, this.defaultBrandForm(), brand ? {
+                brandFormFromRecord(brand = {}) {
+                    return {
                         name: brand.name || '',
                         website: brand.website || '',
                         pronunciationEnabled: Boolean(brand.pronunciation),
@@ -3229,7 +3254,16 @@
                         privacyUrl: brand.privacyUrl || '',
                         certifications: brand.certifications || '',
                         compliance: brand.compliance || '',
-                    } : {});
+                    };
+                },
+                openBrandCreateModal(brand = null, options = {}) {
+                    this.brandEditingId = brand?.id || null;
+                    this.brandModalReturnToCampaignBuilder = Boolean(options.returnToCampaignBuilder);
+                    this.brandModalReturnToCampaignDetail = Boolean(options.returnToCampaignDetail);
+                    this.brandModalStep = 1;
+                    Object.assign(this.brandForm, this.defaultBrandForm(), brand ? this.brandFormFromRecord(brand) : {});
+                    this.brandPageInlineEditorOpen = false;
+                    this.brandPageWizardOpen = false;
                     this.brandModalOpen = true;
                 },
                 closeBrandCreateModal() {
@@ -3389,6 +3423,110 @@
 
                     this.openBrandCreateModal(brand, { returnToCampaignBuilder: this.campaignBuilderOpen });
                 },
+                openBrandPageInlineEditor(company = null) {
+                    const brand = company ? this.ensureBrandForCompanyOption(company) : null;
+
+                    this.brandPageInlineEditingId = brand?.id || '';
+                    this.brandPageInlineCreating = ! brand;
+                    Object.assign(this.campaignDetailBrandInlineForm, this.defaultBrandForm(), brand ? this.brandFormFromRecord(brand) : {});
+                    this.brandModalOpen = false;
+                    this.brandPageWizardOpen = false;
+                    this.brandPageInlineEditorOpen = true;
+
+                    this.$nextTick(() => {
+                        this.$refs.workspaceMain?.scrollTo?.({ top: 0, behavior: 'smooth' });
+                    });
+                },
+                closeBrandPageInlineEditor() {
+                    this.brandPageInlineEditorOpen = false;
+                    this.brandPageInlineEditingId = '';
+                    this.brandPageInlineCreating = false;
+                },
+                openBrandPageWizard() {
+                    this.brandEditingId = null;
+                    this.brandModalReturnToCampaignBuilder = false;
+                    this.brandModalReturnToCampaignDetail = false;
+                    this.brandModalStep = 1;
+                    Object.assign(this.brandForm, this.defaultBrandForm());
+                    this.brandModalOpen = false;
+                    this.brandPageInlineEditorOpen = false;
+                    this.brandPageWizardOpen = true;
+
+                    this.$nextTick(() => {
+                        this.$refs.workspaceMain?.scrollTo?.({ top: 0, behavior: 'smooth' });
+                    });
+                },
+                closeBrandPageWizard() {
+                    this.brandPageWizardOpen = false;
+                    this.brandEditingId = null;
+                    this.brandModalReturnToCampaignBuilder = false;
+                    this.brandModalReturnToCampaignDetail = false;
+                    this.brandModalStep = 1;
+                    Object.assign(this.brandForm, this.defaultBrandForm());
+                },
+                saveBrandPageWizard() {
+                    const invalidStep = this.firstInvalidBrandStep();
+
+                    if (invalidStep !== null) {
+                        this.brandModalStep = invalidStep;
+                        return;
+                    }
+
+                    this.saveBrandModal();
+                    this.brandPageWizardOpen = false;
+                },
+                brandPageInlineCurrentBrand() {
+                    return this.brands.find((brand) => brand.id === this.brandPageInlineEditingId) || null;
+                },
+                brandPageInlineRecord() {
+                    const currentBrand = this.brandPageInlineCurrentBrand() || {};
+                    const form = this.campaignDetailBrandInlineForm;
+                    const id = currentBrand.id || this.brandPageInlineEditingId || `brand-${Date.now()}`;
+                    const hasLegal = Boolean(String(form.termsUrl || '').trim() && String(form.privacyUrl || '').trim());
+
+                    return {
+                        ...currentBrand,
+                        id,
+                        name: String(form.name || '').trim() || 'Untitled Brand',
+                        website: String(form.website || '').trim() || 'example.com',
+                        pronunciation: form.pronunciationEnabled ? String(form.pronunciation || '').trim() : '',
+                        industry: String(form.industry || '').trim() || 'Uncategorized',
+                        description: String(form.description || '').trim(),
+                        problem: String(form.problem || '').trim(),
+                        differentiators: String(form.differentiators || '').trim(),
+                        icp: String(form.icp || '').trim(),
+                        faqs: String(form.faqs || '').trim(),
+                        supportEmail: String(form.supportEmail || '').trim(),
+                        termsUrl: String(form.termsUrl || '').trim(),
+                        privacyUrl: String(form.privacyUrl || '').trim(),
+                        certifications: String(form.certifications || '').trim(),
+                        compliance: String(form.compliance || '').trim(),
+                        status: 'Active',
+                        legalStatus: hasLegal ? 'Ready' : 'Needs Legal',
+                        modified: 'just now',
+                    };
+                },
+                saveBrandPageInlineSection(sectionLabel, sectionKey) {
+                    if (! this.campaignDetailInlineBrandSectionValid(sectionKey)) {
+                        this.showCaptureToast('Fill in the required brand fields before saving this section.', 'Brand Needs Details');
+                        return;
+                    }
+
+                    const record = this.brandPageInlineRecord();
+                    const index = this.brands.findIndex((brand) => brand.id === record.id);
+
+                    if (index >= 0) {
+                        this.brands.splice(index, 1, record);
+                    } else {
+                        this.brands.unshift(record);
+                    }
+
+                    this.brandPageInlineEditingId = record.id;
+                    this.brandPageInlineCreating = false;
+                    this.upsertCompanyDemoFromBrand(record);
+                    this.removeDuplicateCompanyDemoOptions(record);
+                    this.showCaptureToast(`${sectionLabel} saved for ${record.name}.`, 'Brand Updated');
+                },
                 removeDuplicateCompanyDemoOptions(brand) {
                     if (! brand) {
                         return;
@@ -3415,7 +3553,7 @@
 
                     const brand = this.brandForCompanyOption(company);
                     const deletedIds = [company.id, brand?.id].filter(Boolean);
-                    const matchesDeletedBrand = (item) => deletedIds.includes(item.id) || this.brandMatchesCompany(item, company) || this.brandMatchesCompany(item, brand);
+                    const matchesDeletedBrand = (item) => Boolean(item) && (deletedIds.includes(item.id) || this.brandMatchesCompany(item, company) || this.brandMatchesCompany(item, brand));
 
                     this.brands = this.brands.filter((item) => ! matchesDeletedBrand(item));
                     this.companySetupDemoCompanies = this.companySetupDemoCompanies.filter((item) => ! matchesDeletedBrand(item));
@@ -3429,6 +3567,10 @@
 
                     if (deletedIds.includes(this.campaignDetailSelectedBrandId) || matchesDeletedBrand(this.selectedCampaignDetailBrand())) {
                         this.campaignDetailSelectedBrandId = '';
+                    }
+
+                    if (deletedIds.includes(this.brandPageInlineEditingId) || matchesDeletedBrand(this.brandPageInlineCurrentBrand())) {
+                        this.closeBrandPageInlineEditor();
                     }
 
                     this.pinnedCampaigns.forEach((campaign) => {
@@ -3729,12 +3871,9 @@
                     this.closeAiAgentLanguageBatchModal();
                     this.scheduleCampaignBuilderLayoutUpdate();
                 },
-                openAiAgentCreateModal(agent = null, languageCode = '', options = {}) {
+                loadAiAgentForm(agent = null, languageCode = '') {
                     const language = languageCode || agent?.languageCode || this.campaignSetup.activeLanguage || 'US';
 
-                    this.aiAgentEditingId = agent?.id || null;
-                    this.aiAgentModalReturnToCampaignBuilder = Boolean(options.returnToCampaignBuilder);
-                    this.aiAgentModalReturnToCampaignDetail = Boolean(options.returnToCampaignDetail);
                     this.aiAgentAdvancedOpen = false;
                     this.aiAgentCampaignAssignmentsOpen = false;
                     this.aiAgentCampaignAssignmentSearch = '';
@@ -3753,7 +3892,44 @@
                         agentPersonality: agent.agentPersonality || '',
                         agentSpeechStyle: agent.agentSpeechStyle || '',
                     } : { languageCode: language });
+                },
+                openAiAgentCreateModal(agent = null, languageCode = '', options = {}) {
+                    this.aiAgentEditingId = agent?.id || null;
+                    this.aiAgentModalReturnToCampaignBuilder = Boolean(options.returnToCampaignBuilder);
+                    this.aiAgentModalReturnToCampaignDetail = Boolean(options.returnToCampaignDetail);
+                    this.loadAiAgentForm(agent, languageCode);
                     this.aiAgentModalOpen = true;
+                },
+                openAiAgentPageInlineEditor(agent = null) {
+                    const record = agent || this.aiAgents[0] || null;
+
+                    if (! record) {
+                        return;
+                    }
+
+                    this.activeNav = 'AI Agents';
+                    this.campaignBuilderOpen = false;
+                    this.campaignDetailOpen = false;
+                    this.campaignCreationV2Open = false;
+                    this.campaignDetailAgentPickerOpen = false;
+                    this.aiAgentPageInlineEditorOpen = true;
+                    this.aiAgentPageInlineEditingId = record.id;
+                    this.aiAgentEditingId = record.id;
+                    this.aiAgentModalOpen = false;
+                    this.aiAgentLanguageBatchModalOpen = false;
+                    this.aiAgentModalReturnToCampaignBuilder = false;
+                    this.aiAgentModalReturnToCampaignDetail = false;
+                    this.loadAiAgentForm(record);
+                    this.$nextTick(() => window.scrollTo({ top: 0, behavior: 'auto' }));
+                },
+                closeAiAgentPageInlineEditor() {
+                    this.aiAgentPageInlineEditorOpen = false;
+                    this.aiAgentPageInlineEditingId = '';
+                    this.aiAgentEditingId = null;
+                    this.aiAgentCampaignAssignmentIds = [];
+                    this.aiAgentAdvancedOpen = false;
+                    this.aiAgentCampaignAssignmentsOpen = false;
+                    this.aiAgentCampaignAssignmentSearch = '';
                 },
                 openAiAgentCreateModalFromCampaignSetup() {
                     this.openAiAgentLanguageBatchModal('campaign-creation');
@@ -3789,6 +3965,12 @@
                     const languageName = language ? this.campaignSetupLanguageDisplay(language) : (agent?.language || 'Language');
 
                     return `${languageName} AI Agent`;
+                },
+                aiAgentFormTitle() {
+                    const language = this.campaignSetupLanguageOptions.find((item) => item.code === this.aiAgentForm.languageCode);
+                    const languageName = String(language?.name || '').trim();
+
+                    return `${languageName || 'AI'} AI Agent`;
                 },
                 aiAgentFlagUrl(agent) {
                     const language = this.aiAgentLanguage(agent);
@@ -3880,6 +4062,14 @@
 
                     if (this.aiAgentEditingId === agentId) {
                         this.closeAiAgentCreateModal();
+                    }
+
+                    if (this.aiAgentPageInlineEditingId === agentId) {
+                        this.closeAiAgentPageInlineEditor();
+                    }
+
+                    if (this.campaignDetailAiAgentInlineEditingId === agentId) {
+                        this.closeCampaignDetailAiAgentInlineEditor();
                     }
 
                     this.syncSelectedCampaignAgentAssignments();
@@ -4000,7 +4190,7 @@
                         agentSpeechStyle: agent.agentSpeechStyle || this.campaignSetup.agentSpeechStyle,
                     });
                 },
-                saveAiAgentModal() {
+                persistAiAgentFormRecord() {
                     const creating = ! this.aiAgentEditingId;
                     const id = this.aiAgentEditingId || `agent-${Date.now()}`;
                     const language = this.campaignSetupLanguageOptions.find((item) => item.code === this.aiAgentForm.languageCode) || this.campaignSetupLanguageOptions[0];
@@ -4044,11 +4234,29 @@
 
                     this.applyAiAgentCampaignAssignments(record.id);
                     this.refreshCampaignDetailAgentAssignments();
+
+                    return {
+                        record,
+                        creating,
+                        shouldSelectForCampaignDetail,
+                    };
+                },
+                saveAiAgentModal() {
+                    const { record, shouldSelectForCampaignDetail } = this.persistAiAgentFormRecord();
+
                     this.closeAiAgentCreateModal();
 
                     if (shouldSelectForCampaignDetail) {
                         this.addCampaignDetailAgent(record.id);
                     }
+                },
+                saveAiAgentPageInlineEditor() {
+                    const { record } = this.persistAiAgentFormRecord();
+
+                    this.aiAgentEditingId = record.id;
+                    this.aiAgentPageInlineEditingId = record.id;
+                    this.aiAgentPageInlineEditorOpen = true;
+                    this.showCaptureToast(`${this.aiAgentTitle(record)} saved.`, 'AI Agent Updated');
                 },
                 selectCompanyForSetup(companyId) {
                     this.companySetupSelectedCompany = companyId;
@@ -5729,12 +5937,12 @@
 
                     return this.campaignSetup.capturedConversationQuestions.some((entry) => entry.id === id);
                 },
-                showCaptureToast(message = 'Added to Conversation Intelligence for review.') {
+                showCaptureToast(message = 'Added to Conversation Intelligence for review.', title = 'Question Captured') {
                     if (this.captureToast.timer) {
                         window.clearTimeout(this.captureToast.timer);
                     }
 
-                    this.captureToast.title = 'Question Captured';
+                    this.captureToast.title = title;
                     this.captureToast.message = message;
                     this.captureToast.visible = true;
                     this.captureToast.timer = window.setTimeout(() => {
@@ -8156,6 +8364,100 @@
                 closeCampaignDetailBrandPicker() {
                     this.campaignDetailBrandPickerOpen = false;
                 },
+                openCampaignDetailBrandInlineEditor() {
+                    const brand = this.selectedCampaignDetailBrand();
+
+                    if (! brand) {
+                        this.openCampaignDetailBrandPicker();
+                        return;
+                    }
+
+                    Object.assign(this.campaignDetailBrandInlineForm, this.defaultBrandForm(), this.brandFormFromRecord(brand));
+                    this.campaignDetailBrandInlineEditorOpen = true;
+                    this.campaignDetailBrandPickerOpen = false;
+
+                    this.$nextTick(() => {
+                        this.$refs.workspaceMain?.scrollTo?.({ top: 0, behavior: 'smooth' });
+                    });
+                },
+                closeCampaignDetailBrandInlineEditor() {
+                    this.campaignDetailBrandInlineEditorOpen = false;
+                },
+                campaignDetailInlineBrandSectionValid(section) {
+                    if (section === 'details') {
+                        return this.brandFieldFilled(this.campaignDetailBrandInlineForm.name)
+                            && this.brandFieldFilled(this.campaignDetailBrandInlineForm.website);
+                    }
+
+                    if (section === 'industry') {
+                        return this.brandFieldFilled(this.campaignDetailBrandInlineForm.industry)
+                            && this.brandFieldFilled(this.campaignDetailBrandInlineForm.description);
+                    }
+
+                    return true;
+                },
+                campaignDetailBrandInlineRecord() {
+                    const currentBrand = this.selectedCampaignDetailBrand() || {};
+                    const form = this.campaignDetailBrandInlineForm;
+                    const id = currentBrand.id || this.campaignDetailSelectedBrandId || `brand-${Date.now()}`;
+                    const hasLegal = Boolean(String(form.termsUrl || '').trim() && String(form.privacyUrl || '').trim());
+
+                    return {
+                        ...currentBrand,
+                        id,
+                        name: String(form.name || '').trim() || 'Untitled Brand',
+                        website: String(form.website || '').trim() || 'example.com',
+                        pronunciation: form.pronunciationEnabled ? String(form.pronunciation || '').trim() : '',
+                        industry: String(form.industry || '').trim() || 'Uncategorized',
+                        description: String(form.description || '').trim(),
+                        problem: String(form.problem || '').trim(),
+                        differentiators: String(form.differentiators || '').trim(),
+                        icp: String(form.icp || '').trim(),
+                        faqs: String(form.faqs || '').trim(),
+                        supportEmail: String(form.supportEmail || '').trim(),
+                        termsUrl: String(form.termsUrl || '').trim(),
+                        privacyUrl: String(form.privacyUrl || '').trim(),
+                        certifications: String(form.certifications || '').trim(),
+                        compliance: String(form.compliance || '').trim(),
+                        status: 'Active',
+                        legalStatus: hasLegal ? 'Ready' : 'Needs Legal',
+                        modified: 'just now',
+                    };
+                },
+                saveCampaignDetailBrandInlineSection(sectionLabel, sectionKey) {
+                    if (! this.campaignDetailInlineBrandSectionValid(sectionKey)) {
+                        this.showCaptureToast('Fill in the required brand fields before saving this section.', 'Brand Needs Details');
+                        return;
+                    }
+
+                    const record = this.campaignDetailBrandInlineRecord();
+                    const index = this.brands.findIndex((brand) => brand.id === record.id);
+
+                    if (index >= 0) {
+                        this.brands.splice(index, 1, record);
+                    } else {
+                        this.brands.unshift(record);
+                    }
+
+                    this.campaignDetailSelectedBrandId = record.id;
+                    this.upsertCompanyDemoFromBrand(record);
+                    this.removeDuplicateCompanyDemoOptions(record);
+                    this.selectCompanyForSetup(record.id);
+
+                    if (this.selectedCampaign) {
+                        this.selectedCampaign.brandId = record.id;
+                    }
+
+                    this.pinnedCampaigns.forEach((campaign) => {
+                        if (this.selectedCampaign?.name && campaign.name === this.selectedCampaign.name) {
+                            campaign.brandId = record.id;
+                            campaign.modified = 'just now';
+                        }
+                    });
+
+                    this.markCampaignDetailPanelChanged('company-brand');
+                    this.showCaptureToast(`${sectionLabel} saved for ${record.name}.`, 'Brand Updated');
+                },
                 defaultBrandForCampaignType(typeName) {
                     if (['Recover Abandoned Checkout', 'Upsell Post-Purchase', 'Post-Delivery Follow-Up', 'Inbound Refund Request'].includes(typeName)) {
                         return this.brands.find((brand) => brand.id === 'brand-example-commerce')?.id || this.brands[0]?.id || '';
@@ -8172,6 +8474,7 @@
 
                     this.campaignDetailSelectedBrandId = brand.id;
                     this.campaignDetailBrandPickerOpen = false;
+                    this.campaignDetailBrandInlineEditorOpen = false;
                     this.upsertCompanyDemoFromBrand(brand);
                     this.selectCompanyForSetup(brand.id);
 
@@ -8189,6 +8492,51 @@
                     return this.campaignDetailSelectedAgentIds
                         .map((agentId) => this.aiAgents.find((agent) => agent.id === agentId))
                         .filter(Boolean);
+                },
+                openCampaignDetailAiAgentInlineEditor(agent = null) {
+                    const record = agent || this.campaignDetailSelectedAgents()[0] || null;
+
+                    if (! record) {
+                        return;
+                    }
+
+                    this.campaignDetailAiAgentInlineEditorOpen = true;
+                    this.campaignDetailAiAgentInlineEditingId = record.id;
+                    this.aiAgentEditingId = record.id;
+                    this.aiAgentModalOpen = false;
+                    this.aiAgentLanguageBatchModalOpen = false;
+                    this.aiAgentModalReturnToCampaignBuilder = false;
+                    this.aiAgentModalReturnToCampaignDetail = false;
+                    this.campaignDetailAgentPickerOpen = false;
+                    this.loadAiAgentForm(record);
+
+                    this.$nextTick(() => {
+                        this.$refs.workspaceMain?.scrollTo?.({ top: 0, behavior: 'smooth' });
+                    });
+                },
+                closeCampaignDetailAiAgentInlineEditor() {
+                    this.campaignDetailAiAgentInlineEditorOpen = false;
+                    this.campaignDetailAiAgentInlineEditingId = '';
+                    this.aiAgentEditingId = null;
+                    this.aiAgentCampaignAssignmentIds = [];
+                    this.aiAgentAdvancedOpen = false;
+                    this.aiAgentCampaignAssignmentsOpen = false;
+                    this.aiAgentCampaignAssignmentSearch = '';
+                },
+                saveCampaignDetailAiAgentInlineEditor() {
+                    const { record } = this.persistAiAgentFormRecord();
+
+                    this.aiAgentEditingId = record.id;
+                    this.campaignDetailAiAgentInlineEditingId = record.id;
+                    this.campaignDetailAiAgentInlineEditorOpen = true;
+
+                    if (! this.campaignDetailSelectedAgentIds.includes(record.id)) {
+                        this.campaignDetailSelectedAgentIds.push(record.id);
+                    }
+
+                    this.syncSelectedCampaignAgentAssignments();
+                    this.markCampaignDetailPanelChanged('campaign-agent');
+                    this.showCaptureToast(`${this.aiAgentTitle(record)} saved.`, 'AI Agent Updated');
                 },
                 syncSelectedCampaignAgentAssignments() {
                     if (! this.selectedCampaign?.name) {
@@ -8337,7 +8685,7 @@
                         return;
                     }
 
-                    this.openAiAgentCreateModal(agent);
+                    this.openCampaignDetailAiAgentInlineEditor(agent);
                 },
                 openCampaignDetailAiAgentModal() {
                     this.openAiAgentCreateModal(null, this.campaignSetup.activeLanguage || 'US', { returnToCampaignDetail: true });
@@ -8426,6 +8774,9 @@
                     this.campaignDetailDirtyPanels = [];
                     this.campaignDetailSelectedAgentIds = this.campaignAgentIds(campaign).filter((id) => this.aiAgents.some((agent) => agent.id === id));
                     this.campaignDetailMobilePanelOpen = false;
+                    this.campaignDetailBrandInlineEditorOpen = false;
+                    this.campaignDetailAiAgentInlineEditorOpen = false;
+                    this.campaignDetailAiAgentInlineEditingId = '';
                     this.mobileNavOpen = false;
                     this.resetTopNavHeaderScroll();
 
@@ -8467,6 +8818,9 @@
                     this.campaignDetailDirtyPanels = [];
                     this.campaignDetailSelectedBrandId = '';
                     this.campaignDetailBrandPickerOpen = false;
+                    this.campaignDetailBrandInlineEditorOpen = false;
+                    this.campaignDetailAiAgentInlineEditorOpen = false;
+                    this.campaignDetailAiAgentInlineEditingId = '';
                     this.campaignDetailSelectedAgentIds = [];
                     this.campaignDetailAgentPickerOpen = false;
                     this.campaignDetailAgentPickerIds = [];
@@ -8486,6 +8840,9 @@
                     this.campaignDetailDirtyPanels = [];
                     this.campaignDetailSelectedBrandId = '';
                     this.campaignDetailBrandPickerOpen = false;
+                    this.campaignDetailBrandInlineEditorOpen = false;
+                    this.campaignDetailAiAgentInlineEditorOpen = false;
+                    this.campaignDetailAiAgentInlineEditingId = '';
                     this.campaignDetailSelectedAgentIds = [];
                     this.campaignDetailAgentPickerOpen = false;
                     this.campaignDetailAgentPickerIds = [];
